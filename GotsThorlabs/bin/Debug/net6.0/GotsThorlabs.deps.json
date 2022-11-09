@@ -13,7 +13,12 @@
           "Microsoft.IdentityModel.Tokens": "6.25.0",
           "Swashbuckle.AspNetCore": "6.2.3",
           "System.Data.SqlClient": "4.8.4",
-          "System.IdentityModel.Tokens.Jwt": "6.25.0"
+          "System.IdentityModel.Tokens.Jwt": "6.25.0",
+          "Thorlabs.MotionControl.DeviceManagerCLI": "1.14.35.20468",
+          "Thorlabs.MotionControl.GenericMotorCLI": "1.14.35.20468",
+          "Thorlabs.MotionControl.KCube.InertialMotorCLI": "1.14.35.20468",
+          "Thorlabs.MotionControl.Tools.Common": "1.0.0.20468",
+          "Thorlabs.MotionControl.Tools.Logging": "1.0.0.20468"
         },
         "runtime": {
           "GotsThorlabs.dll": {}
@@ -257,7 +262,55 @@
           "System.Runtime": "4.3.0"
         }
       },
-      "System.Text.Json/4.7.2": {}
+      "System.Text.Json/4.7.2": {},
+      "Thorlabs.MotionControl.DeviceManagerCLI/1.14.35.20468": {
+        "runtime": {
+          "Thorlabs.MotionControl.DeviceManagerCLI.dll": {
+            "assemblyVersion": "1.14.35.20468",
+            "fileVersion": "1.14.35.20468"
+          }
+        }
+      },
+      "Thorlabs.MotionControl.GenericMotorCLI/1.14.35.20468": {
+        "runtime": {
+          "Thorlabs.MotionControl.GenericMotorCLI.dll": {
+            "assemblyVersion": "1.14.35.20468",
+            "fileVersion": "1.14.35.20468"
+          }
+        }
+      },
+      "Thorlabs.MotionControl.KCube.InertialMotorCLI/1.14.35.20468": {
+        "runtime": {
+          "Thorlabs.MotionControl.KCube.InertialMotorCLI.dll": {
+            "assemblyVersion": "1.14.35.20468",
+            "fileVersion": "1.14.35.20468"
+          }
+        }
+      },
+      "Thorlabs.MotionControl.Tools.Common/1.0.0.20468": {
+        "runtime": {
+          "Thorlabs.MotionControl.Tools.Common.dll": {
+            "assemblyVersion": "1.0.0.20468",
+            "fileVersion": "1.0.0.20468"
+          }
+        }
+      },
+      "Thorlabs.MotionControl.Tools.Logging/1.0.0.20468": {
+        "runtime": {
+          "Thorlabs.MotionControl.Tools.Logging.dll": {
+            "assemblyVersion": "1.0.0.20468",
+            "fileVersion": "1.0.0.20468"
+          }
+        }
+      },
+      "Thorlabs.MotionControl.PrivateInternal/1.14.35.20468": {
+        "runtime": {
+          "Thorlabs.MotionControl.PrivateInternal.dll": {
+            "assemblyVersion": "1.14.35.20468",
+            "fileVersion": "1.14.35.20468"
+          }
+        }
+      }
     }
   },
   "libraries": {
@@ -468,6 +521,36 @@
       "sha512": "sha512-TcMd95wcrubm9nHvJEQs70rC0H/8omiSGGpU4FQ/ZA1URIqD4pjmFJh2Mfv1yH1eHgJDWTi2hMDXwTET+zOOyg==",
       "path": "system.text.json/4.7.2",
       "hashPath": "system.text.json.4.7.2.nupkg.sha512"
+    },
+    "Thorlabs.MotionControl.DeviceManagerCLI/1.14.35.20468": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Thorlabs.MotionControl.GenericMotorCLI/1.14.35.20468": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Thorlabs.MotionControl.KCube.InertialMotorCLI/1.14.35.20468": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Thorlabs.MotionControl.Tools.Common/1.0.0.20468": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Thorlabs.MotionControl.Tools.Logging/1.0.0.20468": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Thorlabs.MotionControl.PrivateInternal/1.14.35.20468": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
     }
   }
 }
