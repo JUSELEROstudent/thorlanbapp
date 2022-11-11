@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "D:\\ThorlabsApp\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj": {}
+    "C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\GotsThorlabs.csproj": {}
   },
   "projects": {
-    "D:\\ThorlabsApp\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj": {
+    "C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\GotsThorlabs.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\ThorlabsApp\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj",
+        "projectUniqueName": "C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\GotsThorlabs.csproj",
         "projectName": "GotsThorlabs",
-        "projectPath": "D:\\ThorlabsApp\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj",
-        "packagesPath": "C:\\Users\\German\\.nuget\\packages\\",
-        "outputPath": "D:\\ThorlabsApp\\thorlanbapp\\GotsThorlabs\\obj\\",
+        "projectPath": "C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\GotsThorlabs.csproj",
+        "packagesPath": "C:\\Users\\cocuy\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\German\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\cocuy\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -75,7 +75,8 @@
             "net47",
             "net471",
             "net472",
-            "net48"
+            "net48",
+            "net481"
           ],
           "assetTargetFallback": true,
           "warn": true,
@@ -87,7 +88,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.202\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.402\\RuntimeIdentifierGraph.json"
         }
       }
     }

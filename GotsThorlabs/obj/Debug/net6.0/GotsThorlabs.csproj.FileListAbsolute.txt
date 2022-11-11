@@ -92,3 +92,9 @@ D:\ThorlabsApp\thorlanbapp\GotsThorlabs\bin\Debug\net6.0\Thorlabs.MotionControl.
 D:\ThorlabsApp\thorlanbapp\GotsThorlabs\bin\Debug\net6.0\Thorlabs.MotionControl.Tools.Logging.dll
 D:\ThorlabsApp\thorlanbapp\GotsThorlabs\bin\Debug\net6.0\Thorlabs.MotionControl.PrivateInternal.dll
 D:\ThorlabsApp\thorlanbapp\GotsThorlabs\bin\Debug\net6.0\Thorlabs.MotionControl.GenericMotorCLI.dll
+C:\Users\cocuy\OneDrive\Escritorio\thorlabs\GotsThorlabs\GotsThorlabs\bin\Debug\net6.0\Thorlabs.MotionControl.DeviceManagerCLI.dll
+C:\Users\cocuy\OneDrive\Escritorio\thorlabs\GotsThorlabs\GotsThorlabs\bin\Debug\net6.0\Thorlabs.MotionControl.GenericMotorCLI.dll
+C:\Users\cocuy\OneDrive\Escritorio\thorlabs\GotsThorlabs\GotsThorlabs\bin\Debug\net6.0\Thorlabs.MotionControl.KCube.InertialMotorCLI.dll
+C:\Users\cocuy\OneDrive\Escritorio\thorlabs\GotsThorlabs\GotsThorlabs\bin\Debug\net6.0\Thorlabs.MotionControl.Tools.Common.dll
+C:\Users\cocuy\OneDrive\Escritorio\thorlabs\GotsThorlabs\GotsThorlabs\bin\Debug\net6.0\Thorlabs.MotionControl.Tools.Logging.dll
+C:\Users\cocuy\OneDrive\Escritorio\thorlabs\GotsThorlabs\GotsThorlabs\bin\Debug\net6.0\Thorlabs.MotionControl.PrivateInternal.dll

@@ -12,16 +12,22 @@
         </div>
       </div>
     </div>
+    <li>
+      <ol v-for="servo in listdevices" :key="servo.id">
+        {{servo}}
+      </ol>
+    </li>
   <chat-body class="col-5"></chat-body>
+  <widget-motion></widget-motion>
   </div>
 </template>
 
 <script>
 // import ChatBody from '@/components/components/Chat'
-
+import WidgetMotion from '@/components/MovilitywidgetThotlab.vue'
 export default ({
   name: 'profileUser',
-  // components: { ChatBody },
+  components: { WidgetMotion },
   data () {
     return {
       Userclass: [],
@@ -42,7 +48,7 @@ export default ({
     },
     listdeviceson: function (deviceson) {
       console.log(deviceson)
-      this.listdevices = deviceson.json()
+      this.listdevices = deviceson
     }
   },
   mounted () {
@@ -58,7 +64,7 @@ export default ({
     fetch('https://localhost:7166/home/devices', requestOptions)
       .then(response => response.json())
       .then(data => this.listdeviceson(data))
-      .catch(error => console.log('error', error))
+      .catch(error => console.log('errror', error))
   }
 
 })
