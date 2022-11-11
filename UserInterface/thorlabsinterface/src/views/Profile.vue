@@ -25,6 +25,7 @@ export default ({
   data () {
     return {
       Userclass: [],
+      listdevices: [],
       name: null,
       email: null,
       age: null,
@@ -38,6 +39,10 @@ export default ({
       this.name = dataProfile[0].name
       this.email = dataProfile[0].email
       this.age = dataProfile[0].age
+    },
+    listdeviceson: function (deviceson) {
+      console.log(deviceson)
+      this.listdevices = deviceson.json()
     }
   },
   mounted () {
@@ -50,9 +55,9 @@ export default ({
       redirect: 'follow'
     }
 
-    fetch('https://localhost:7166/api/login', requestOptions)
+    fetch('https://localhost:7166/home/devices', requestOptions)
       .then(response => response.json())
-      .then(data => this.getprofileinfo(data))
+      .then(data => this.listdeviceson(data))
       .catch(error => console.log('error', error))
   }
 

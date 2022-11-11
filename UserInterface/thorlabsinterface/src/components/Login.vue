@@ -1,12 +1,12 @@
 <template>
   <div>
-    <h1>Titulo de login</h1>
-    <form>
+    <h1 id="displayerrormsg">Titulo de login</h1>
+    <form @submit.prevent="veryfylogin">
       <label> Usuario o contrasena</label>
       <input type="text" v-model="user" />
       <label > inserte la conrasena</label>
       <input type="password" v-model="password" />
-      <button @click="veryfylogin">enviar</button>
+      <button type="submit">enviar</button>
     </form>
   </div>
 </template>
@@ -41,6 +41,7 @@ export default {
         window.location.href = 'http://localhost:8080/profile'
       } else {
         console.log('ocurrio un error haciendo la peticion')
+        document.getElementById('displayerrormsg')[0].innerHTML = 'nombre de usuario o contrasean incorrecta'
       }
     }
   }

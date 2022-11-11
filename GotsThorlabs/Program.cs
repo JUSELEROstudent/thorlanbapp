@@ -1,5 +1,6 @@
 using System.Xml.Serialization;
 using GotsThorlabs.NodesApi;
+using Thorlabs.MotionControl.DeviceManagerCLI;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,14 +29,10 @@ if (app.Environment.IsDevelopment())
 
 
 app.UseHttpsRedirection();
-
-//var summaries = new[]
-//{
-//    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-//};
-
+SimulationManager.Instance.InitializeSimulations();
 var variableapinode = new NodeGenerics(app);
 var loginloginnodes = new NodeLogin(app);
+var Nodehomepages = new NodeHomepage(app);
 
 //app.MapGet("/weatherforecast", () =>
 //{

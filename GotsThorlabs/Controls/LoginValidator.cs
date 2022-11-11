@@ -25,7 +25,7 @@ namespace apitest.Controllers
                  respuesta = rowsAffected.Count() > 0 ? rowsAffected : respuesta.ToList();
                 if (respuesta.Count > 0)
                 {
-                    var token = TokenGenerator.GenerateTokenJwt(rowsAffected[0].Userid.ToString());
+                    var token = TokenGenerator.GenerateTokenJwt(rowsAffected[0].userId.ToString());
                     return Ok(token);
                 } else
                 {
