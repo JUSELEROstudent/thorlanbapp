@@ -1,6 +1,7 @@
 using System.Xml.Serialization;
 using GotsThorlabs.NodesApi;
 using Thorlabs.MotionControl.DeviceManagerCLI;
+using GotsThorlabs.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddCors();
-
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
@@ -48,6 +49,7 @@ var Nodehomepages = new NodeHomepage(app);
 //})
 //.WithName("GetWeatherForecast");
 
+app.MapHub<ChatHub>("/chatHub");
 
 app.Run();
 

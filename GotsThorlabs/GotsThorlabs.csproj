@@ -18,6 +18,7 @@
   <ItemGroup>
     <PackageReference Include="AForge.Video.DirectShow" Version="2.2.5" />
     <PackageReference Include="Dapper.Contrib" Version="2.0.78" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Common" Version="7.0.0" />
     <PackageReference Include="Microsoft.Data.SqlClient.SNI.runtime" Version="5.0.1" />
     <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="6.25.0" />
     <PackageReference Include="OpenCvSharp4" Version="4.6.0.20220608" />

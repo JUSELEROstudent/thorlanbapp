@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 
 
-namespace apitest.Hubs
+namespace GotsThorlabs.Hubs
 {
     public class ChatHub : Hub
     {

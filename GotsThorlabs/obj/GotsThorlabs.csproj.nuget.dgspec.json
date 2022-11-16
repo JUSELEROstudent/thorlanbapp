@@ -52,6 +52,10 @@
               "target": "Package",
               "version": "[2.0.78, )"
             },
+            "Microsoft.AspNetCore.SignalR.Common": {
+              "target": "Package",
+              "version": "[7.0.0, )"
+            },
             "Microsoft.Data.SqlClient.SNI.runtime": {
               "target": "Package",
               "version": "[5.0.1, )"
