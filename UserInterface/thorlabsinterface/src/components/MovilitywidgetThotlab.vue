@@ -7,6 +7,8 @@
     <div class="col">columna 1 </div><div class="col Primary">cloumna 2 </div><div class="col" id="confirmarconeccion">cloumna 3 </div>
     </div>
     <button v-on:click="respuest"> enviar mensajes </button>
+    <button v-on:click="coneccionstream"> test streaming </button>
+
   </div>
 </template>
 
@@ -17,11 +19,17 @@ const connection = new signalR.HubConnectionBuilder().withUrl('https://localhost
   transport: signalR.HttpTransportType.WebSockets
 }).build()
 
+const connectionsream = new signalR.HubConnectionBuilder().withUrl('https://localhost:7166/StreamingHub', {
+  skipNegotiation: true,
+  transport: signalR.HttpTransportType.WebSockets
+}).build()
+
 export default ({
   name: 'movilityWidget',
   data () {
     return {
-      nombremio: ' adfdf'
+      nombremio: ' adfdf',
+      listastreamin: []
     }
   },
   methods: {
@@ -38,10 +46,36 @@ export default ({
     respuest: function () {
       connection.send('SendMessage', 'Mensaje predeterminado', 'segundo valor !"#"')
       console.log(connection.state)
+    },
+    coneccionstream: function () {
+      console.log('EL ESTADO ES ' + connectionsream.state)
+      connectionsream.stream('Counter', 10, 3000)
+        .subscribe({
+          next: (item) => {
+            const li = document.createElement('li')
+            li.textContent = item
+            console.log('inicia lla conexion de streamin')
+            console.log(connection.state)
+            console.log(item)
+          },
+          complete: () => {
+            const li = document.createElement('li')
+            li.textContent = 'Stream completed'
+            console.log('coneccion TERMINADA')
+          },
+          error: (err) => {
+            const li = document.createElement('li')
+            li.textContent = err
+            console.log(err)
+          }
+        })
     }
   },
   mounted () {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     this.coneccionhub()
+    connectionsream.start().catch((err) => document.write(err))
   }
 })
 </script>

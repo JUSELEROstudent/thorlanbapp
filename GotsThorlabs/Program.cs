@@ -50,6 +50,8 @@ var Nodehomepages = new NodeHomepage(app);
 //.WithName("GetWeatherForecast");
 
 app.MapHub<ChatHub>("/chatHub");
+app.MapHub<StreamingHub>("/StreamingHub");
+
 
 app.Run();
 

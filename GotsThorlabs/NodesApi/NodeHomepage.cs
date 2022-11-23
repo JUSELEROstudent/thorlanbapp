@@ -49,9 +49,9 @@ namespace GotsThorlabs.NodesApi
             using var window = new Window("capture");
             var image = new Mat();
 
-            capture.Read(image);
-            string pathsave = string.Format("{0}\\camtaked.jpg", AppDomain.CurrentDomain.BaseDirectory);
-            image.SaveImage(pathsave);
+            //capture.Read(image);
+            //string pathsave = string.Format("{0}\\camtaked.jpg", AppDomain.CurrentDomain.BaseDirectory);
+            //image.SaveImage(pathsave);
 
             //while (true)
             //{
