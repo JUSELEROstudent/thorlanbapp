@@ -29,7 +29,7 @@ namespace GotsThorlabs.NodesApi
                 }
                 List<string> serialNumbers = DeviceManagerCLI.GetDeviceList(KCubeInertialMotor.DevicePrefix_KIM101);
                 //CargaDispositivos();
-                Readcameras();
+               // Readcameras();
                 return serialNumbers;
             });
         }
@@ -49,24 +49,24 @@ namespace GotsThorlabs.NodesApi
             using var window = new Window("capture");
             var image = new Mat();
 
-            //capture.Read(image);
-            //string pathsave = string.Format("{0}\\camtaked.jpg", AppDomain.CurrentDomain.BaseDirectory);
-            //image.SaveImage(pathsave);
+            capture.Read(image);
+            string pathsave = string.Format("{0}\\camtaked.jpg", AppDomain.CurrentDomain.BaseDirectory);
+            image.SaveImage(pathsave);
 
-            //while (true)
-            //{
-            //    capture.Read(image);
-            //    if (image.Empty())
-            //        break;
+            while (true)
+            {
+                capture.Read(image);
+                if (image.Empty())
+                    break;
 
-            //    window.ShowImage(image);
-            //    int c = Cv2.WaitKey(sleepTime);
-            //    if (c >= 0)
-            //    {
-            //        break;
-            //    }
-            //}
-        }       
+                window.ShowImage(image);
+                int c = Cv2.WaitKey(sleepTime);
+                if (c >= 0)
+                {
+                    break;
+                }
+            }
+        }
 
     }
 }
