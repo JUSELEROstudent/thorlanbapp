@@ -8,6 +8,7 @@
     </div>
     <button v-on:click="respuest"> enviar mensajes </button>
     <button v-on:click="coneccionstream"> test streaming </button>
+    <video autoplay></video>
 
   </div>
 </template>
@@ -23,7 +24,10 @@ const connectionsream = new signalR.HubConnectionBuilder().withUrl('https://loca
   skipNegotiation: true,
   transport: signalR.HttpTransportType.WebSockets
 }).build()
-
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+// let vidElement: Element = document.querySelector('video')
+// const vidElement = document.querySelector('video')
 export default ({
   name: 'movilityWidget',
   data () {
@@ -47,16 +51,18 @@ export default ({
       connection.send('SendMessage', 'Mensaje predeterminado', 'segundo valor !"#"')
       console.log(connection.state)
     },
-    coneccionstream: function () {
-      console.log('EL ESTADO ES ' + connectionsream.state)
-      connectionsream.stream('Counter', 10, 3000)
+    sourceOpen: async function (evt: Event) {
+      console.log('se llama por evento handelr')
+      // URL.revokeObjectURL(vidElement.src)
+      const mime = 'video/webm; codecs="opus, vp09.00.10.08"'
+      const mediaSource = evt.target
+      const sourceBuffer = mediaSource.addSourceBuffer(mime)
+      await connectionsream.stream('Counter', 10, 3000)
         .subscribe({
           next: (item) => {
-            const li = document.createElement('li')
-            li.textContent = item
-            console.log('inicia lla conexion de streamin')
+            console.log('SE SUSCRIBE')
+            console.log('la respuesta es ' + item)
             console.log(connection.state)
-            console.log(item)
           },
           complete: () => {
             const li = document.createElement('li')
@@ -69,6 +75,14 @@ export default ({
             console.log(err)
           }
         })
+    },
+    coneccionstream: function () {
+      const vidElement = document.querySelector('video')
+      console.log('EL ESTADO ES ' + connectionsream.state)
+      console.log(vidElement + 'ESTE ESTADO')
+      const mediaSource = new MediaSource()
+      vidElement.src = URL?.createObjectURL(mediaSource)
+      mediaSource.addEventListener('sourceopen', this.sourceOpen)
     }
   },
   mounted () {
