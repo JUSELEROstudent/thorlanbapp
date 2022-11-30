@@ -14,20 +14,21 @@ namespace GotsThorlabs.Hubs
         CancellationToken cancellationToken)
         {
             var acptationvalue = true;
+            using var capture = new VideoCapture(0, VideoCaptureAPIs.DSHOW);
             //for (var i = 0; i < count; i++)
-            while(acptationvalue)
+            while (acptationvalue)
             {
-                using var capture = new VideoCapture(0, VideoCaptureAPIs.DSHOW);
-                if (!capture.IsOpened())
+
+                if (!capture.IsOpened()) {
                     acptationvalue = false;
+                    capture.FrameWidth = 1920;
+                    capture.FrameHeight = 1280;
+                    capture.AutoFocus = true;
 
-                capture.FrameWidth = 1920;
-                capture.FrameHeight = 1280;
-                capture.AutoFocus = true;
+                    const int sleepTime = 10;
+                }
 
-                const int sleepTime = 10;
-
-                using var window = new Window("capture");
+                //using var window = new Window("capture");
                 var image = new Mat();
 
                 capture.Read(image);

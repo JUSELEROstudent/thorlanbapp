@@ -9,7 +9,7 @@
     <button v-on:click="respuest"> enviar mensajes </button>
     <button v-on:click="coneccionstream"> test streaming </button>
     <video autoplay></video>
-
+    <img  v-bind:src="'data:image/png;base64,' + imagen">
   </div>
 </template>
 
@@ -33,7 +33,8 @@ export default ({
   data () {
     return {
       nombremio: ' adfdf',
-      listastreamin: []
+      listastreamin: [],
+      imagen: ''
     }
   },
   methods: {
@@ -57,11 +58,15 @@ export default ({
       const mime = 'video/webm; codecs="opus, vp09.00.10.08"'
       const mediaSource = evt.target
       const sourceBuffer = mediaSource.addSourceBuffer(mime)
-      await connectionsream.stream('Counter', 10, 3000)
+      await connectionsream.stream('Counter', 10, 10)
         .subscribe({
           next: (item) => {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            this.imagen = item
+            // Document?.getElementById('ItemPreview').src = 'data:image/png;base64,' + item
             console.log('SE SUSCRIBE')
-            console.log('la respuesta es ' + item)
+            // console.log('la respuesta es ' + item)
             console.log(connection.state)
           },
           complete: () => {
