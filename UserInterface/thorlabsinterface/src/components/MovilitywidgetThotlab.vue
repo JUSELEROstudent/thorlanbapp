@@ -54,14 +54,19 @@ export default ({
     sourceOpen: async function (evt: Event) {
       console.log('se llama por evento handelr')
       // URL.revokeObjectURL(vidElement.src)
-      const mime = 'video/webm; codecs="opus, vp09.00.10.08"'
+      const mime = 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"'
       const mediaSource = evt.target
-      const sourceBuffer = mediaSource.addSourceBuffer(mime)
-      await connectionsream.stream('Counter', 10, 3000)
+      const sourceBuffer = mediaSource?.addSourceBuffer(mime)
+      await connectionsream.stream('Counter', 10, 10)
         .subscribe({
           next: (item) => {
             console.log('SE SUSCRIBE')
-            console.log('la respuesta es ' + item)
+            try {
+              sourceBuffer.append(item)
+            } catch (err) {
+              console.log(err)
+            }
+            console.log(item)
             console.log(connection.state)
           },
           complete: () => {

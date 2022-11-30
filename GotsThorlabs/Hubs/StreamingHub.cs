@@ -14,20 +14,22 @@ namespace GotsThorlabs.Hubs
         CancellationToken cancellationToken)
         {
             var acptationvalue = true;
-            //for (var i = 0; i < count; i++)
-            while(acptationvalue)
+            using var capture = new VideoCapture(0, VideoCaptureAPIs.DSHOW);
+            for (var i = 0; i < count; i++)
+            // while(acptationvalue)
             {
-                using var capture = new VideoCapture(0, VideoCaptureAPIs.DSHOW);
-                if (!capture.IsOpened())
+               
+                if (!capture.IsOpened()) {
                     acptationvalue = false;
+                    capture.FrameWidth = 1920;
+                    capture.FrameHeight = 1280;
+                    capture.AutoFocus = true;
 
-                capture.FrameWidth = 1920;
-                capture.FrameHeight = 1280;
-                capture.AutoFocus = true;
+                    const int sleepTime = 10;
 
-                const int sleepTime = 10;
-
-                using var window = new Window("capture");
+                    // using var window = new Window("capture");
+                   
+                }
                 var image = new Mat();
 
                 capture.Read(image);
@@ -35,22 +37,22 @@ namespace GotsThorlabs.Hubs
                 image.SaveImage(pathsave);
                 var imgretonr =image.ToBytes();
 
-                //while (true)
-                //{
-                //    capture.Read(image);
-                //    if (image.Empty())
-                //        break;
+                    //while (true)
+                    //{
+                    //    capture.Read(image);
+                    //    if (image.Empty())
+                    //        break;
 
-                //    //window.ShowImage(image);
-                //    int c = Cv2.WaitKey(sleepTime);
-                //    if (c >= 0)
-                //    {
-                //        break;
-                //    }
-                //}
-                // Check the cancellation token regularly so that the server will stop
-                // producing items if the client disconnects.
-                cancellationToken.ThrowIfCancellationRequested();
+                    //    //window.ShowImage(image);
+                    //    int c = Cv2.WaitKey(sleepTime);
+                    //    if (c >= 0)
+                    //    {
+                    //        break;
+                    //    }
+                    //}
+                    // Check the cancellation token regularly so that the server will stop
+                    // producing items if the client disconnects.
+                    cancellationToken.ThrowIfCancellationRequested();
 
                 yield return imgretonr;
 
