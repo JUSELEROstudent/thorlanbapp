@@ -7,7 +7,8 @@
     <div class="col">columna 1 </div><div class="col Primary">cloumna 2 </div><div class="col" id="confirmarconeccion">cloumna 3 </div>
     </div>
     <button v-on:click="respuest"> enviar mensajes </button>
-    <button v-on:click="coneccionstream"> test streaming </button>
+    <button v-show="streamstate" v-on:click="sourceOpen"> test streaming </button>
+    <button v-show="!streamstate" v-on:click="endstream">end stream </button>
     <video autoplay></video>
     <img  v-bind:src="'data:image/png;base64,' + imagen">
   </div>
@@ -34,7 +35,8 @@ export default ({
     return {
       nombremio: ' adfdf',
       listastreamin: [],
-      imagen: ''
+      imagen: '',
+      streamstate: true
     }
   },
   methods: {
@@ -52,17 +54,32 @@ export default ({
       connection.send('SendMessage', 'Mensaje predeterminado', 'segundo valor !"#"')
       console.log(connection.state)
     },
+    endstream: function () {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+      this.streamstate = !this.streamstate
+      connectionsream.stop()
+    },
     sourceOpen: async function (evt: Event) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      this.streamstate = !this.streamstate
+      if (!(connectionsream.state.toString() === 'Connected')) {
+        await connectionsream.start().catch((err) => document.write(err + '{}{}{ EL ERROR}'))
+      }
       console.log('se llama por evento handelr')
       // URL.revokeObjectURL(vidElement.src)
       const mime = 'video/webm; codecs="opus, vp09.00.10.08"'
       const mediaSource = evt.target
-      const sourceBuffer = mediaSource.addSourceBuffer(mime)
+      // const sourceBuffer = mediaSource.addSourceBuffer(mime)
       await connectionsream.stream('Counter', 10, 10)
         .subscribe({
           next: (item) => {
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
+            this.imagen = ''
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-igno
             this.imagen = item
             // Document?.getElementById('ItemPreview').src = 'data:image/png;base64,' + item
             console.log('SE SUSCRIBE')
@@ -86,7 +103,7 @@ export default ({
       console.log('EL ESTADO ES ' + connectionsream.state)
       console.log(vidElement + 'ESTE ESTADO')
       const mediaSource = new MediaSource()
-      vidElement.src = URL?.createObjectURL(mediaSource)
+      // vidElement.src = URL?.createObjectURL(mediaSource)
       mediaSource.addEventListener('sourceopen', this.sourceOpen)
     }
   },

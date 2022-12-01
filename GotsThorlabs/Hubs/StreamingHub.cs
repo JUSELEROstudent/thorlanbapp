@@ -18,11 +18,11 @@ namespace GotsThorlabs.Hubs
             //for (var i = 0; i < count; i++)
             while (acptationvalue)
             {
-
+                
                 if (!capture.IsOpened()) {
                     acptationvalue = false;
                     capture.FrameWidth = 1920;
-                    capture.FrameHeight = 1280;
+                    capture.FrameHeight = 1080;
                     capture.AutoFocus = true;
 
                     const int sleepTime = 10;
