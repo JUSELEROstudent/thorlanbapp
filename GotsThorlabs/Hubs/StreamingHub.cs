@@ -15,21 +15,20 @@ namespace GotsThorlabs.Hubs
         {
             var acptationvalue = true;
             using var capture = new VideoCapture(0, VideoCaptureAPIs.DSHOW);
-            for (var i = 0; i < count; i++)
-            // while(acptationvalue)
+            //for (var i = 0; i < count; i++)
+            while (acptationvalue)
             {
-               
+                
                 if (!capture.IsOpened()) {
                     acptationvalue = false;
                     capture.FrameWidth = 1920;
-                    capture.FrameHeight = 1280;
+                    capture.FrameHeight = 1080;
                     capture.AutoFocus = true;
 
                     const int sleepTime = 10;
-
-                    // using var window = new Window("capture");
-                   
                 }
+
+                //using var window = new Window("capture");
                 var image = new Mat();
 
                 capture.Read(image);
