@@ -1,6 +1,6 @@
 <template>
   <div >
-    <div class="row">
+    <!-- <div class="row">
       <div class="col-5">
         <div class="card bg-tres">
           <h3 class="card-header">{{name}}</h3>
@@ -18,7 +18,7 @@
       </ol>
     </li>
   <chat-body class="col-5"></chat-body>
-  <widget-motion></widget-motion>
+  <widget-motion></widget-motion> -->
   </div>
 </template>
 
@@ -27,7 +27,7 @@
 import WidgetMotion from '@/components/MovilitywidgetThotlab.vue'
 export default ({
   name: 'profileUser',
-  components: { WidgetMotion },
+  // components: { WidgetMotion },
   data () {
     return {
       Userclass: [],

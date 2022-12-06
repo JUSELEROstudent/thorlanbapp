@@ -1,7 +1,6 @@
 <template>
-  <div class="container" id="respuestadehub">se crea un estilo bootstrap 5
-    <div class="row">
-    <div class="col">columna 1 </div><div class="col">cloumna 2 </div>
+     <div>
+    <!--<div class="col">columna 1 </div><div class="col">cloumna 2 </div>
     </div>
     <div class="row">
     <div class="col">columna 1 </div><div class="col Primary">cloumna 2 </div><div class="col" id="confirmarconeccion">cloumna 3 </div>
@@ -10,18 +9,56 @@
     <button v-show="streamstate" v-on:click="sourceOpen"> test streaming </button>
     <button v-show="!streamstate" v-on:click="endstream">end stream </button>
     <video autoplay></video>
-    <img  v-bind:src="'data:image/png;base64,' + imagen">
+    <img v-show="!streamstate" v-bind:src="'data:image/png;base64,' + imagen">
+    <button type="button" class="btn btn-primary" >
+    Launch demo modal 2
+  </button> -->
+  <v-app>
+  <v-navigation-drawer app>
+    <!-- -->
+  </v-navigation-drawer>
+  <v-main>
+
+<!-- Provides the application the proper gutter -->
+<v-container fluid>
+
+  <!-- If using vue-router -->
+  <router-view></router-view>
+</v-container>
+</v-main>
+  <v-card>
+    <v-card-title>
+      <span v-text="nombremio"></span>
+      <v-img
+        max-height="350"
+        max-width="500"
+        v-bind:src="'data:image/png;base64,' + imagen"
+      ></v-img>
+      <v-spacer></v-spacer>
+
+    </v-card-title>
+
+    <v-card-text>
+      <v-btn v-show="streamstate" @click="sourceOpen">
+        Iniciar
+      </v-btn>
+      <v-btn v-show="!streamstate" @click="endstream">
+        Terminar Transmision
+      </v-btn>
+    </v-card-text>
+  </v-card>
+  </v-app>
   </div>
 </template>
 
 <script  lang="ts">
 import * as signalR from '@microsoft/signalr'
-const connection = new signalR.HubConnectionBuilder().withUrl('https://localhost:7166/chatHub', {
+const connection = new signalR.HubConnectionBuilder().withUrl('https://192.168.1.36:45455/chatHub', {
   skipNegotiation: true,
   transport: signalR.HttpTransportType.WebSockets
 }).build()
 
-const connectionsream = new signalR.HubConnectionBuilder().withUrl('https://localhost:7166/StreamingHub', {
+const connectionsream = new signalR.HubConnectionBuilder().withUrl('https://192.168.1.36:45455/StreamingHub', {
   skipNegotiation: true,
   transport: signalR.HttpTransportType.WebSockets
 }).build()
@@ -33,7 +70,7 @@ export default ({
   name: 'movilityWidget',
   data () {
     return {
-      nombremio: ' adfdf',
+      nombremio: 'Juan Sebastian Leon Rodriguez',
       listastreamin: [],
       imagen: '',
       streamstate: true
@@ -53,6 +90,9 @@ export default ({
     respuest: function () {
       connection.send('SendMessage', 'Mensaje predeterminado', 'segundo valor !"#"')
       console.log(connection.state)
+    },
+    actionbutton: function () {
+      console.log('el boton se preciono')
     },
     endstream: function () {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -79,7 +119,7 @@ export default ({
             // @ts-ignore
             this.imagen = ''
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-igno
+            // @ts-ignore
             this.imagen = item
             // Document?.getElementById('ItemPreview').src = 'data:image/png;base64,' + item
             console.log('SE SUSCRIBE')
