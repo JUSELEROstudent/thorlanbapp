@@ -1,5 +1,9 @@
 <template>
   <div >
+    <v-app>
+    <v-app-bar
+     elevation="4">
+    </v-app-bar>
     <!-- <div class="row">
       <div class="col-5">
         <div class="card bg-tres">
@@ -17,8 +21,46 @@
         {{servo}}
       </ol>
     </li>
-  <chat-body class="col-5"></chat-body>
-  <widget-motion></widget-motion> -->
+  <chat-body class="col-5"></chat-body>-->
+    <v-navigation-drawer permanent>
+      <v-list-item>
+        <v-list-item-content>
+          <v-list-item-title class="text-h6">
+            Application
+          </v-list-item-title>
+          <v-list-item-subtitle>
+            subtext
+          </v-list-item-subtitle>
+        </v-list-item-content>
+      </v-list-item>
+
+      <v-divider></v-divider>
+
+      <v-list
+        dense
+        nav
+      >
+        <v-list-item
+          v-for="item in items"
+          :key="item.title"
+          link
+        >
+          <v-list-item-icon>
+            <v-icon>{{ item.icon }}</v-icon>
+          </v-list-item-icon>
+
+          <v-list-item-content>
+            <v-list-item-title>{{ item.title }}</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+      </v-list>
+     </v-navigation-drawer>
+     <widget-motion></widget-motion>
+    <v-list-item v-for="device in listdevices" :key=" device.id">
+      {{device.toString}}
+    </v-list-item>
+    </v-app>
+  <widget-motion></widget-motion>
   </div>
 </template>
 
@@ -27,7 +69,7 @@
 import WidgetMotion from '@/components/MovilitywidgetThotlab.vue'
 export default ({
   name: 'profileUser',
-  // components: { WidgetMotion },
+  components: { WidgetMotion },
   data () {
     return {
       Userclass: [],
@@ -35,7 +77,8 @@ export default ({
       name: null,
       email: null,
       age: null,
-      id: null
+      id: null,
+      items: [{ title: 'lista row 1', icon: 'mdi-arrow-up' }, { title: 'lista row 1', icon: 'mdi-arrow-up' }]
     }
   },
   methods: {
@@ -65,6 +108,7 @@ export default ({
       .then(response => response.json())
       .then(data => this.listdeviceson(data))
       .catch(error => console.log('errror', error))
+    console.log(this.listdevices)
   }
 
 })

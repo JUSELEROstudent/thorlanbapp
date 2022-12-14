@@ -1,5 +1,5 @@
 <template>
-     <div>
+     <div style="width:50%; margin:auto;">
     <!--<div class="col">columna 1 </div><div class="col">cloumna 2 </div>
     </div>
     <div class="row">
@@ -13,25 +13,14 @@
     <button type="button" class="btn btn-primary" >
     Launch demo modal 2
   </button> -->
-  <v-app>
-  <v-navigation-drawer app>
-    <!-- -->
-  </v-navigation-drawer>
-  <v-main>
 
 <!-- Provides the application the proper gutter -->
-<v-container fluid>
 
   <!-- If using vue-router -->
-  <router-view></router-view>
-</v-container>
-</v-main>
   <v-card>
     <v-card-title>
       <span v-text="nombremio"></span>
       <v-img
-        max-height="350"
-        max-width="500"
         v-bind:src="'data:image/png;base64,' + imagen"
       ></v-img>
       <v-spacer></v-spacer>
@@ -47,7 +36,7 @@
       </v-btn>
     </v-card-text>
   </v-card>
-  </v-app>
+
   </div>
 </template>
 
