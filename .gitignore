@@ -1,4 +1,6 @@
 
-GotsThorlabs/bin/Debug/net6.0/
+GotsThorlabs/bin
 
 GotsThorlabs/obj/
+
+.vs
