@@ -1,65 +1,5 @@
 <template>
   <div >
-    <v-app>
-    <v-app-bar
-     elevation="4">
-    </v-app-bar>
-    <!-- <div class="row">
-      <div class="col-5">
-        <div class="card bg-tres">
-          <h3 class="card-header">{{name}}</h3>
-          <div class="card-body bg-cinco">
-            <div class="card-text"> Email: {{email}}</div>
-            <div class="card-text"> Edad: {{age}}</div>
-            <div class="card-text">Identificacion: {{id}}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <li>
-      <ol v-for="servo in listdevices" :key="servo.id">
-        {{servo}}
-      </ol>
-    </li>
-  <chat-body class="col-5"></chat-body>-->
-    <v-navigation-drawer permanent>
-      <v-list-item>
-        <v-list-item-content>
-          <v-list-item-title class="text-h6">
-            Application
-          </v-list-item-title>
-          <v-list-item-subtitle>
-            subtext
-          </v-list-item-subtitle>
-        </v-list-item-content>
-      </v-list-item>
-
-      <v-divider></v-divider>
-
-      <v-list
-        dense
-        nav
-      >
-        <v-list-item
-          v-for="item in items"
-          :key="item.title"
-          link
-        >
-          <v-list-item-icon>
-            <v-icon>{{ item.icon }}</v-icon>
-          </v-list-item-icon>
-
-          <v-list-item-content>
-            <v-list-item-title>{{ item.title }}</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-      </v-list>
-     </v-navigation-drawer>
-     <widget-motion></widget-motion>
-    <v-list-item v-for="device in listdevices" :key=" device.id">
-      {{device.toString}}
-    </v-list-item>
-    </v-app>
   <widget-motion></widget-motion>
   </div>
 </template>
@@ -78,7 +18,8 @@ export default ({
       email: null,
       age: null,
       id: null,
-      items: [{ title: 'lista row 1', icon: 'mdi-arrow-up' }, { title: 'lista row 1', icon: 'mdi-arrow-up' }]
+      drawer: null,
+      itemslist: [{ title: 'lista row 1', icon: 'mdi-arrow-up' }, { title: 'lista row 1', icon: 'mdi-share-all' }]
     }
   },
   methods: {
