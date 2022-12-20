@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import PofileUser from '@/views/Profile.vue'
+import StreamToAll from '@/views/StreamtoAllView.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -20,6 +21,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/profile',
     name: 'profile',
     component: PofileUser
+  },
+  {
+    path: '/streamall',
+    name: 'streamall',
+    component: StreamToAll
   }
 ]
 

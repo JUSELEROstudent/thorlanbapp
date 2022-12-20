@@ -49,7 +49,7 @@ export default defineComponent({
       //
       drawer: false,
       group: null,
-      itemslist: [{ title: 'Trabajo pesado', icon: 'mdi-arrow-up', dir: 'profile' }, { title: 'compartir', icon: 'mdi-share-all', dir: 'about' }, { title: 'Home', icon: 'mdi-home', dir: '/' }]
+      itemslist: [{ title: 'Trabajo pesado', icon: 'mdi-arrow-up', dir: 'profile' }, { title: 'compartir', icon: 'mdi-share-all', dir: 'about' }, { title: 'Home', icon: 'mdi-home', dir: 'streamall' }]
     }
   }
 })
