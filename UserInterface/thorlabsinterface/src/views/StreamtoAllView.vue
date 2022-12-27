@@ -7,7 +7,7 @@
         <button v-show="streamstate" @click="sourceOpen">
           Iniciar
         </button>
-        <button v-show="!streamstate" @click="endstream">
+        <button v-show="!streamstate" @click="endstreams">
           Terminar Transmision
         </button>
       </div>
@@ -16,7 +16,7 @@
 
 <script  lang="ts">
 import * as signalR from '@microsoft/signalr'
-const connectionsream = new signalR.HubConnectionBuilder().withUrl('https://192.168.1.36:45455/StreamingHub', {
+const connectionsreamall = new signalR.HubConnectionBuilder().withUrl('https://192.168.1.36:45455/StreamingHub', {
   skipNegotiation: true,
   transport: signalR.HttpTransportType.WebSockets
 }).build()
@@ -29,7 +29,7 @@ export default ({
     }
   },
   methods: {
-    endstream: function () {
+    endstreams: function () {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       this.streamstate = !this.streamstate
@@ -39,10 +39,10 @@ export default ({
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       this.streamstate = !this.streamstate
-      if (!(connectionsream.state.toString() === 'Connected')) {
-        await connectionsream.start().catch((err) => document.write(err + '{}{}{ EL ERROR}'))
+      if (!(connectionsreamall.state.toString() === 'Connected')) {
+        await connectionsreamall.start().catch((err) => document.write(err + '{}{}{ EL ERROR}'))
       }
-      await connectionsream.stream('Counter', 10, 10)
+      await connectionsreamall.stream('Counter', 10, 10)
         .subscribe({
           next: (item) => {
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -52,7 +52,7 @@ export default ({
             // @ts-ignore
             this.imagen = item
             console.log('SE SUSCRIBE')
-            console.log(connectionsream.state)
+            console.log(connectionsreamall.state)
           },
           complete: () => {
             const li = document.createElement('li')
@@ -65,7 +65,6 @@ export default ({
         })
     }
   }
-
 })
 </script>
 

@@ -2,6 +2,7 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import PofileUser from '@/views/Profile.vue'
 import StreamToAll from '@/views/StreamtoAllView.vue'
+import PlayGround from '@/views/PlayGround.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -26,6 +27,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/streamall',
     name: 'streamall',
     component: StreamToAll
+  },
+  {
+    path: '/playground',
+    name: 'playground',
+    component: PlayGround
   }
 ]
 

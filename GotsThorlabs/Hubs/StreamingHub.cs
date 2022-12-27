@@ -13,6 +13,8 @@ namespace GotsThorlabs.Hubs
          [EnumeratorCancellation]
         CancellationToken cancellationToken)
         {
+            var idconection = Context.ConnectionAborted;
+            Console.WriteLine(idconection);
             var acptationvalue = true;
             using var capture = new VideoCapture(0, VideoCaptureAPIs.DSHOW);
             //for (var i = 0; i < count; i++)
@@ -36,28 +38,14 @@ namespace GotsThorlabs.Hubs
                 image.SaveImage(pathsave);
                 var imgretonr =image.ToBytes();
 
-                    //while (true)
-                    //{
-                    //    capture.Read(image);
-                    //    if (image.Empty())
-                    //        break;
-
-                    //    //window.ShowImage(image);
-                    //    int c = Cv2.WaitKey(sleepTime);
-                    //    if (c >= 0)
-                    //    {
-                    //        break;
-                    //    }
-                    //}
-                    // Check the cancellation token regularly so that the server will stop
-                    // producing items if the client disconnects.
+                    // Hace falta agregar una capa de seguridad de acuerdo a los roles para poder ejecutar esta linea
                     cancellationToken.ThrowIfCancellationRequested();
 
                 yield return imgretonr;
 
                 // Use the cancellationToken in other APIs that accept cancellation
                 // tokens so the cancellation can flow down to them.
-                await Task.Delay(delay, cancellationToken);
+                await Task.Delay(delay);// , cancellationToken);
             }
         }
     }

@@ -34,39 +34,39 @@ namespace GotsThorlabs.NodesApi
             });
         }
 
-        public void Readcameras() 
-        {
-            using var capture = new VideoCapture(0, VideoCaptureAPIs.DSHOW);
-            if (!capture.IsOpened())
-                return;
+        //public void Readcameras() 
+        //{
+        //    using var capture = new VideoCapture(0, VideoCaptureAPIs.DSHOW);
+        //    if (!capture.IsOpened())
+        //        return;
 
-            capture.FrameWidth = 1920;
-            capture.FrameHeight = 1280;
-            capture.AutoFocus = true;
+        //    capture.FrameWidth = 1920;
+        //    capture.FrameHeight = 1280;
+        //    capture.AutoFocus = true;
 
-            const int sleepTime = 10;
+        //    const int sleepTime = 10;
 
-            using var window = new Window("capture");
-            var image = new Mat();
+        //    using var window = new Window("capture");
+        //    var image = new Mat();
 
-            capture.Read(image);
-            string pathsave = string.Format("{0}\\camtaked.jpg", AppDomain.CurrentDomain.BaseDirectory);
-            image.SaveImage(pathsave);
+        //    capture.Read(image);
+        //    string pathsave = string.Format("{0}\\camtaked.jpg", AppDomain.CurrentDomain.BaseDirectory);
+        //    image.SaveImage(pathsave);
 
-            while (true)
-            {
-                capture.Read(image);
-                if (image.Empty())
-                    break;
+        //    while (true)
+        //    {
+        //        capture.Read(image);
+        //        if (image.Empty())
+        //            break;
 
-                window.ShowImage(image);
-                int c = Cv2.WaitKey(sleepTime);
-                if (c >= 0)
-                {
-                    break;
-                }
-            }
-        }
+        //        window.ShowImage(image);
+        //        int c = Cv2.WaitKey(sleepTime);
+        //        if (c >= 0)
+        //        {
+        //            break;
+        //        }
+        //    }
+        //}
 
     }
 }

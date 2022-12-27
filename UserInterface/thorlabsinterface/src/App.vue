@@ -49,7 +49,10 @@ export default defineComponent({
       //
       drawer: false,
       group: null,
-      itemslist: [{ title: 'Trabajo pesado', icon: 'mdi-arrow-up', dir: 'profile' }, { title: 'compartir', icon: 'mdi-share-all', dir: 'about' }, { title: 'Home', icon: 'mdi-home', dir: 'streamall' }]
+      itemslist: [{ title: 'Home', icon: 'mdi-home', dir: 'profile' },
+        { title: 'Vision Macro', icon: 'mdi-magnify-scan', dir: 'about' },
+        { title: 'Visitante', icon: 'mdi-monitor-multiple', dir: 'streamall' },
+        { title: 'Thorlabs', icon: 'mdi-seesaw', dir: 'playground' }]
     }
   }
 })
