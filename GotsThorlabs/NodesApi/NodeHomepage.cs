@@ -15,6 +15,7 @@ namespace GotsThorlabs.NodesApi
 {
     public class NodeHomepage
     {
+        Decimal positionchanel = 0;
         FrameSource frameSource;
         public static void Move_Method1(KCubeInertialMotor device, InertialMotorStatus.MotorChannels channel, int position)
         {
@@ -54,7 +55,7 @@ namespace GotsThorlabs.NodesApi
                 // Readcameras
                 //SimulationManager.Instance.UninitializeSimulations();
 
-                KCubeInertialMotor device = KCubeInertialMotor.CreateKCubeInertialMotor(serialNumbers[0]);
+                KCubeInertialMotor device = KCubeInertialMotor.CreateKCubeInertialMotor(serialNumbers[0]);// nunca misrar esta varable linea 
                 if (device == null)
                 {
                     // An error occured
@@ -100,8 +101,10 @@ namespace GotsThorlabs.NodesApi
 
                 // Zero the device
                 //device.SetPositionAs(InertialMotorStatus.MotorChannels.Channel1, 0);
+                positionchanel = device.GetPosition(InertialMotorStatus.MotorChannels.Channel1);
+                int position =  100;
+                position = positionchanel == position ? position + 100 : 100;
 
-                int position = 1000;
                 Move_Method1(device, InertialMotorStatus.MotorChannels.Channel1, position);
                 serialNumbers.Add("se ha movido");
                 // or
@@ -114,12 +117,11 @@ namespace GotsThorlabs.NodesApi
                 device.StopPolling();
                 device.Disconnect(true);
 
-                Console.ReadKey();
 
 
                 return serialNumbers;
             });
-        }
+        } 
 
         public bool builddeviceslist ()
         {
