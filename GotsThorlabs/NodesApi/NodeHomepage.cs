@@ -9,7 +9,8 @@ using System.Diagnostics;
 using System.Net;
 using Thorlabs.MotionControl.Tools.Common;
 using Thorlabs.MotionControl.Tools.Logging;
-
+using Microsoft.AspNetCore.Mvc;
+using static Thorlabs.MotionControl.KCube.InertialMotorCLI.InertialMotorStatus;
 
 namespace GotsThorlabs.NodesApi
 {
@@ -17,55 +18,59 @@ namespace GotsThorlabs.NodesApi
     {
         Decimal positionchanel = 0;
         FrameSource frameSource;
-        public static void Move_Method1(KCubeInertialMotor device, InertialMotorStatus.MotorChannels channel, int position)
+        public static bool Move_Method1(KCubeInertialMotor device, InertialMotorStatus.MotorChannels channel, int position)
         {
             try
             {
                 Console.WriteLine("Moving Device to {0}", position);
                 device.MoveTo(channel, position, 60000);
+
             }
             catch (Exception)
             {
-                Console.WriteLine("Failed to move to position");
-                Console.ReadKey();
-                return;
+                
+                return false;
             }
             Console.WriteLine("Device Moved");
+            return true;
+        }
+        public bool builddeviceslist()
+        {
+            try
+            {
+                // Tell the device manager to get the list of all devices connected to the computer
+                DeviceManagerCLI.BuildDeviceList();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // An error occurred - see ex for details
+                Console.WriteLine("eccepcion Creada en el paso BuildDeviceList {0}", ex);
+                return false;
+
+            }
         }
 
         public NodeHomepage(WebApplication App)
         {
-            App.MapGet("/home/devices", async () =>
+            App.MapPost("/movedevice",  ([FromBody]ObjMovement movestosite) =>
             {
+                
                 // SimulationManager.Instance.InitializeSimulations();
-                try
-                {
-                    // Tell the device manager to get the list of all devices connected to the computer
-                    DeviceManagerCLI.BuildDeviceList();
-                }
-                catch (Exception ex)
-                {
-                    // An error occurred - see ex for details
-                    Console.WriteLine("Exception raised by BuildDeviceList {0}", ex);
-                    Console.ReadKey();
+                if (!builddeviceslist()) return new List<string> { "No se ha podido iniciar la lista de dispositivos" };
+                List<string>  serialNumbers = DeviceManagerCLI.GetDeviceList(KCubeInertialMotor.DevicePrefix_KIM101);
 
-                }
-                List<string> serialNumbers = DeviceManagerCLI.GetDeviceList(KCubeInertialMotor.DevicePrefix_KIM101);
-                //CargaDispositivos();
-                // Readcameras
-                //SimulationManager.Instance.UninitializeSimulations();
-
-                KCubeInertialMotor device = KCubeInertialMotor.CreateKCubeInertialMotor(serialNumbers[0]);// nunca misrar esta varable linea 
+                KCubeInertialMotor device = KCubeInertialMotor.CreateKCubeInertialMotor(movestosite.deviceId);// nunca misrar esta varable linea 
                 if (device == null)
                 {
                     // An error occured
+                    serialNumbers.Add("no existe un componente conectado");
 
                 }
-
                 // Open a connection to the device.
                 try
                 {
-                    device.Connect(serialNumbers[0]);
+                    device.Connect(movestosite.deviceId);
                 }
                 catch (Exception)
                 {
@@ -77,11 +82,11 @@ namespace GotsThorlabs.NodesApi
                 {
                     try
                     {
-                        device.WaitForSettingsInitialized(5000);
+                        device.WaitForSettingsInitialized(1000);
                     }
                     catch (Exception)
                     {
-                        serialNumbers.Add("Settings failed to initialize");
+                        serialNumbers.Add("Settings failed to initialize"); // esta pasando todo el timepo aca
                     }
                 }
                 DeviceInfo deviceInfo = device.GetDeviceInfo();
@@ -91,22 +96,28 @@ namespace GotsThorlabs.NodesApi
                 device.EnableDevice();
                 Thread.Sleep(500);
 
-                InertialMotorConfiguration InertialMotorConfiguration = device.GetInertialMotorConfiguration(serialNumbers[0]);
+                InertialMotorConfiguration InertialMotorConfiguration = device.GetInertialMotorConfiguration(movestosite.deviceId);
                 ThorlabsInertialMotorSettings currentDeviceSettings = ThorlabsInertialMotorSettings.GetSettings(InertialMotorConfiguration);
 
+                Dictionary<int, InertialMotorStatus.MotorChannels> chanelsDevice = new Dictionary<int, InertialMotorStatus.MotorChannels>()
+                {
+                    {1, InertialMotorStatus.MotorChannels.Channel1},
+                    {2, InertialMotorStatus.MotorChannels.Channel2},
+                    {3, InertialMotorStatus.MotorChannels.Channel3},
+                    {4, InertialMotorStatus.MotorChannels.Channel4}
+                };
+
                 // Set the 'Step' paramaters for the Inertia Motor and download to device
-                currentDeviceSettings.Drive.Channel(InertialMotorStatus.MotorChannels.Channel1).StepRate = 500;
-                currentDeviceSettings.Drive.Channel(InertialMotorStatus.MotorChannels.Channel1).StepAcceleration = 100000;
+                currentDeviceSettings.Drive.Channel(chanelsDevice[movestosite.chaneltomove]).StepRate = movestosite.steprate;
+                currentDeviceSettings.Drive.Channel(chanelsDevice[movestosite.chaneltomove]).StepAcceleration = movestosite.stepaceleration;
                 device.SetSettings(currentDeviceSettings, true, true);
 
-                // Zero the device
-                //device.SetPositionAs(InertialMotorStatus.MotorChannels.Channel1, 0);
                 positionchanel = device.GetPosition(InertialMotorStatus.MotorChannels.Channel1);
-                int position =  100;
-                position = positionchanel == position ? position + 100 : 100;
+                int position = movestosite.moveto;
+                // position = positionchanel == position ? position + 100 : 100;
 
-                Move_Method1(device, InertialMotorStatus.MotorChannels.Channel1, position);
-                serialNumbers.Add("se ha movido");
+                bool estatusMovement = Move_Method1(device, chanelsDevice[movestosite.chaneltomove], position);
+                if (!estatusMovement) return new List<string> { "Ocurrio un erro al mover el dispositvo" };
                 // or
                 // Move_Method2(device, InertialMotorStatus.MotorChannels.Channel1, position);
 
@@ -119,61 +130,36 @@ namespace GotsThorlabs.NodesApi
 
 
 
+                return new List<string> { "Ok" };
+            });
+
+            App.MapGet("/home/devices", async () =>
+            {
+                // Como procedimiento normal se trata de inicializar en la api la lista de los dispositivos conectados 
+                try
+                {
+                    // Tell the device manager to get the list of all devices connected to the computer
+                    DeviceManagerCLI.BuildDeviceList();
+                }
+                catch (Exception ex)
+                {
+                    // An error occurred - see ex for details
+                    Console.WriteLine("Exception raised by BuildDeviceList {0}", ex);
+                    return new List<string> { "No se ha podido iniciar la lista de dispositivos" };
+
+                }
+                List<string> serialNumbers = DeviceManagerCLI.GetDeviceList(KCubeInertialMotor.DevicePrefix_KIM101);
                 return serialNumbers;
             });
         } 
-
-        public bool builddeviceslist ()
-        {
-            try
-            {
-                // Tell the device manager to get the list of all devices connected to the computer
-                DeviceManagerCLI.BuildDeviceList();
-                return true;
-            }
-            catch (Exception ex)
-            {
-                // An error occurred - see ex for details
-                Console.WriteLine("Exception raised by BuildDeviceList {0}", ex);
-                Console.ReadKey();
-                return false;
-
-            }
-        }
-
-        //public void Readcameras() 
-        //{
-        //    using var capture = new VideoCapture(0, VideoCaptureAPIs.DSHOW);
-        //    if (!capture.IsOpened())
-        //        return;
-
-        //    capture.FrameWidth = 1920;
-        //    capture.FrameHeight = 1280;
-        //    capture.AutoFocus = true;
-
-        //    const int sleepTime = 10;
-
-        //    using var window = new Window("capture");
-        //    var image = new Mat();
-
-        //    capture.Read(image);
-        //    string pathsave = string.Format("{0}\\camtaked.jpg", AppDomain.CurrentDomain.BaseDirectory);
-        //    image.SaveImage(pathsave);
-
-        //    while (true)
-        //    {
-        //        capture.Read(image);
-        //        if (image.Empty())
-        //            break;
-
-        //        window.ShowImage(image);
-        //        int c = Cv2.WaitKey(sleepTime);
-        //        if (c >= 0)
-        //        {
-        //            break;
-        //        }
-        //    }
-        //}
-
     }
+}
+
+public class ObjMovement
+{
+   public string deviceId { get; set; }
+   public int chaneltomove { get; set; }
+   public int moveto { get; set; }
+   public int steprate { get; set; }
+   public int stepaceleration { get; set;  }
 }
