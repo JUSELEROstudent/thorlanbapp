@@ -6,10 +6,15 @@ using System.IdentityModel.Tokens.Jwt;
 
 namespace apitest.Controllers
 {
-    
-    public class Innerlogin : ControllerBase
+    [ApiController]
+    [Route("[Controller]")]
+    public class InnerloginController : ControllerBase
     {
-        
+
+        [HttpPut(Name = "sincontexto")]
+        [Authorize]
+        public IActionResult Put() { return Ok("hola entro"); }
+        [HttpPost]
         public IActionResult Postdata(login sesionuser)
         {
             //var nuevovalor = otherData.ToString();

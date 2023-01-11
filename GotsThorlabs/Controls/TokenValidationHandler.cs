@@ -6,16 +6,28 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 
 namespace apitest.Controllers
 {
+
+    public class Httpcontextentry : IAuthorizationRequirement
+    {
+        public Httpcontextentry(bool request) =>
+            Requestentry = request;
+
+        public bool Requestentry { get; }
+    }
     /// <summary>
     /// Token validator for Authorization Request using a DelegatingHandler
     /// </summary>
-    internal class TokenValidationHandler 
+    internal class TokenValidationHandler : AuthorizationHandler<Httpcontextentry>
     {
-        //private IConfiguration _config;
+        // CONSTRUCTOR
+        private readonly IHttpContextAccessor _httpContextAccessor; 
+
+
         protected static bool TryRetrieveToken(HttpContext request, out string token)
         {
             token = null;
@@ -33,16 +45,17 @@ namespace apitest.Controllers
         }
 
         //public Task<HttpStatusCode> SendAsync(HttpContext request, CancellationToken cancellationToken)  se quita el token de cancelacion
-        public Task<HttpStatusCode> SendAsync(HttpContext request)
+        protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, Httpcontextentry requirement)
         {
-            HttpStatusCode statusCode;
+            var httpContextentry = _httpContextAccessor;
+            // HttpStatusCode statusCode;
             string token;
 
             // determine whether a jwt exists or not
-            if (!TryRetrieveToken(request, out token))
+            if (!TryRetrieveToken(httpContextentry.HttpContext, out token))
             {
-                statusCode = HttpStatusCode.Unauthorized;
-                return SendAsync(request);
+
+                return Task.CompletedTask;
             }
 
             try
@@ -68,19 +81,18 @@ namespace apitest.Controllers
                 // Extract and assign Current Principal and user
                 Thread.CurrentPrincipal = tokenHandler.ValidateToken(token, validationParameters, out securityToken);
                 //HttpContext.Current.User = tokenHandler.ValidateToken(token, validationParameters, out securityToken);
-
-                return Task<HttpStatusCode>.Factory.StartNew(() => HttpStatusCode.OK);
+                context.Succeed(requirement);
             }
             catch (SecurityTokenValidationException)
             {
-                statusCode = HttpStatusCode.Unauthorized;
+                return Task.CompletedTask;
             }
             catch (Exception)
             {
-                statusCode = HttpStatusCode.InternalServerError;
+                return Task.CompletedTask;
             }
-
-            return Task<HttpStatusCode>.Factory.StartNew(() => statusCode);
+            return Task.CompletedTask;
+            
         }
 
         public bool LifetimeValidator(DateTime? notBefore, DateTime? expires, SecurityToken securityToken, TokenValidationParameters validationParameters)

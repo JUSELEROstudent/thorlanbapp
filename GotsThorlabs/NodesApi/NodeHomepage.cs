@@ -17,7 +17,7 @@ namespace GotsThorlabs.NodesApi
     public class NodeHomepage
     {
         Decimal positionchanel = 0;
-        FrameSource frameSource;
+        // FrameSource frameSource;
         public static bool Move_Method1(KCubeInertialMotor device, InertialMotorStatus.MotorChannels channel, int position)
         {
             try

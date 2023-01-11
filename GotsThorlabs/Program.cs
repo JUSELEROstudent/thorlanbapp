@@ -2,16 +2,45 @@ using System.Xml.Serialization;
 using GotsThorlabs.NodesApi;
 using Thorlabs.MotionControl.DeviceManagerCLI;
 using GotsThorlabs.Hubs;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using apitest.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
-
+builder.Services.AddControllers();
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddCors();
 builder.Services.AddSignalR();
-
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(o =>
+{
+    o.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey
+        (Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = false,
+        ValidateIssuerSigningKey = true
+    };
+});
+builder.Services.AddAuthorization((options) =>
+{
+    options.AddPolicy("Jwtvalidator", (policy) =>
+    {
+        policy.Requirements.Add(new Httpcontextentry(true));
+    });
+});
 var app = builder.Build();
 
 app.UseCors(builder =>
@@ -34,7 +63,7 @@ SimulationManager.Instance.InitializeSimulations();
 var variableapinode = new NodeGenerics(app);
 var loginloginnodes = new NodeLogin(app);
 var Nodehomepages = new NodeHomepage(app);
-
+app.MapControllers();
 
 app.MapHub<ChatHub>("/chatHub");
 app.MapHub<StreamingHub>("/StreamingHub");
