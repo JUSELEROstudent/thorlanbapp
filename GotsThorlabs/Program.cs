@@ -17,6 +17,7 @@ builder.Services.AddCors();
 builder.Services.AddSignalR();
 builder.Services.AddAuthentication(options =>
 {
+    // El sistema de autenticacion de esta forma definido solo fuciona para la minimal api. cuando se desea hacer para la forma de webApi controlladores es mejor hacerlo de otra forma
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -24,16 +25,18 @@ builder.Services.AddAuthentication(options =>
 {
     o.TokenValidationParameters = new TokenValidationParameters
     {
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
+        ValidIssuer = builder.Configuration["CustomCOnfig:JWT_ISSUER_TOKEN"],
+        ValidAudience = builder.Configuration["CustomCOnfig:JWT_AUDIENCE_TOKEN"],
         IssuerSigningKey = new SymmetricSecurityKey
-        (Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
+        (Encoding.UTF8.GetBytes(builder.Configuration["CustomCOnfig:JWT_SECRET_KEY"])),
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidateLifetime = false,
         ValidateIssuerSigningKey = true
     };
 });
+
+
 builder.Services.AddAuthorization((options) =>
 {
     options.AddPolicy("Jwtvalidator", (policy) =>
@@ -41,6 +44,8 @@ builder.Services.AddAuthorization((options) =>
         policy.Requirements.Add(new Httpcontextentry(true));
     });
 });
+
+
 var app = builder.Build();
 
 app.UseCors(builder =>
@@ -57,13 +62,15 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-
+app.MapGet("/security/getMessageSecure", () => "Hello World!").RequireAuthorization();
 app.UseHttpsRedirection();
 SimulationManager.Instance.InitializeSimulations();
 var variableapinode = new NodeGenerics(app);
 var loginloginnodes = new NodeLogin(app);
 var Nodehomepages = new NodeHomepage(app);
 app.MapControllers();
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapHub<ChatHub>("/chatHub");
 app.MapHub<StreamingHub>("/StreamingHub");
