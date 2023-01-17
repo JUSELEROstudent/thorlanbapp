@@ -43,6 +43,8 @@ builder.Services.AddAuthorization((options) =>
     {
         policy.Requirements.Add(new Httpcontextentry(true));
     });
+    options.AddPolicy("administrator", policy =>
+        policy.Requirements.Add(new Authorizationadmin(4)));
 });
 
 
@@ -62,7 +64,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.MapGet("/security/getMessageSecure", () => "Hello World!").RequireAuthorization();
+app.MapGet("/security/getMessageSecure", () => "Hello World!"); //.RequireAuthorization("administrator"); esta parte es para agregar politicas no es necesario por ahora
+app.MapGet("/security/getMessage2", () => "Hello World!");
 app.UseHttpsRedirection();
 SimulationManager.Instance.InitializeSimulations();
 var variableapinode = new NodeGenerics(app);

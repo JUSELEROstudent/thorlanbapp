@@ -3,12 +3,18 @@ import HomeView from '../views/HomeView.vue'
 import PofileUser from '@/views/Profile.vue'
 import StreamToAll from '@/views/StreamtoAllView.vue'
 import PlayGround from '@/views/PlayGround.vue'
+import LoginForm from '@/components/Login.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
     name: 'home',
     component: HomeView
+  },
+  {
+    path: '/login',
+    name: 'login',
+    component: LoginForm
   },
   {
     path: '/about',

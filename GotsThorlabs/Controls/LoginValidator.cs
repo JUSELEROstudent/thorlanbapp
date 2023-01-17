@@ -11,7 +11,8 @@ namespace apitest.Controllers
     public class InnerloginController : ControllerBase
     {
 
-        [HttpPut(Name = "sincontexto")]
+        [HttpPut]
+        //[Authorize(Policy = "administrator")]
         [Authorize]
         public IActionResult Put() { return Ok("hola entro"); }
         [HttpPost]
@@ -25,7 +26,6 @@ namespace apitest.Controllers
 
                 queryable.Open();
                 string loginString = "SELECT * FROM usertesting WHERE (name = @User OR email = @user) AND contrasena = @Password";
-                //string loginString = "SELECT * FROM usertesting ";
                 var rowsAffected = queryable.Query(loginString, sesionuser).ToList();
                  respuesta = rowsAffected.Count() > 0 ? rowsAffected : respuesta.ToList();
                 if (respuesta.Count > 0)
@@ -34,7 +34,7 @@ namespace apitest.Controllers
                     return Ok(token);
                 } else
                 {
-                    return BadRequest(new { error = "no idea", cargo = "la chongada" });
+                    return BadRequest(new errorresponse { Error = "Fallo en la validacion", Description = "intente de nuevo iniciar session" });
                 }
             }
         }
@@ -65,5 +65,11 @@ namespace apitest.Controllers
     
         public string User { get; set; }
         public string Password { get; set; }
+    }
+
+    public class errorresponse { 
+        public string Error { get; set; }
+
+        public string Description { get; set; }
     }
 }

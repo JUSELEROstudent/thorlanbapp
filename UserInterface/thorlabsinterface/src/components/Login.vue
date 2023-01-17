@@ -1,26 +1,40 @@
 <template>
-  <div>
+  <div class="bodyLogin">
     <h1 id="displayerrormsg">Titulo de login</h1>
-    <form @submit.prevent="veryfylogin">
-      <label> Usuario o contrasena</label>
-      <input type="text" v-model="user" />
-      <label > inserte la conrasena</label>
-      <input type="password" v-model="password" />
-      <button type="submit">enviar</button>
-    </form>
+    <v-form @submit.prevent="this.veryfylogin">
+      <v-text-field
+      v-model="user"
+      label=" Usuario o contrasena">
+     </v-text-field>
+
+      <v-text-field
+      :append-icon="passwordseen ? 'mdi-eye' : 'mdi-eye-off'"
+      :type="passwordseen ? 'text' : 'password'"
+      @click:append="passwordseen = !passwordseen"
+      label=" inserte la conrasena"
+      v-model="password" >
+      </v-text-field>
+      <v-btn
+      @click="veryfylogin"
+      color="success"
+       >enviar</v-btn >
+    </v-form>
   </div>
 </template>
+
 <script>
 export default {
   name: 'UserLogin',
   data () {
     return {
+      passwordseen: true,
       user: null,
       password: null
     }
   },
   methods: {
     async veryfylogin () {
+      console.log('Entra A la PETICION')
       const myHeaders = new Headers()
       myHeaders.append('Content-Type', 'application/json')
       const raw = JSON.stringify({
@@ -33,15 +47,15 @@ export default {
         headers: myHeaders,
         body: raw
       }
-      const response = await fetch('https://localhost:7166/api/login', requestOptions)
+      const response = await fetch('https://localhost:7166/innerlogin', requestOptions)
       const data = await response.text()
       if (response.ok) {
         localStorage.setItem('stringjwt', data) // Guardado del token generado en la peticion para la autenticacion.
         console.log(data + 'ahora se hace DIFERENTE LA PETICION')
-        window.location.href = 'http://localhost:8080/profile'
+        window.location.href = 'http://localhost:8080/playground'
       } else {
         console.log('ocurrio un error haciendo la peticion')
-        document.getElementById('displayerrormsg')[0].innerHTML = 'nombre de usuario o contrasean incorrecta'
+        // document.getElementById('displayerrormsg')[0].innerHTML = 'nombre de usuario o contrasean incorrecta'
       }
     }
   }
@@ -49,7 +63,7 @@ export default {
 </script>
 
 <style scoped>
-div {
+.bodyLogin {
   width: 60%;
   max-width: 300px;
   height: auto;
@@ -61,7 +75,7 @@ div {
 }
 form {
   text-align: left;
-  background: rgb(196, 196, 230);
+  background: rgb(10, 114, 211);
   border: rgb(52, 54, 52);
   border-radius: 8px;
   color: white;
@@ -74,14 +88,7 @@ button {
   display: block;
   margin: 25px;
   border-radius: 9px;
-  background: white;
-  box-shadow: 2px 2px 30px 5px rgb(200, 207, 211);
-  border: solid rgb(121, 122, 114) 1px;
-}
-button:hover {
-  box-shadow: 2px 2px 30px 5px rgb(132, 217, 164);
-  background: rgb(155, 255, 194);
-  border-color:  rgb(79, 244, 142);
+  border: solid rgb(76, 212, 194) 1px;
 }
 
 </style>

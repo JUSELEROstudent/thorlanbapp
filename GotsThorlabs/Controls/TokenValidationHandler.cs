@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using apitest.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 
@@ -19,10 +20,21 @@ namespace apitest.Controllers
 
         public bool Requestentry { get; }
     }
-    /// <summary>
-    /// Token validator for Authorization Request using a DelegatingHandler
-    /// </summary>
-    internal class TokenValidationHandler : AuthorizationHandler<Httpcontextentry>
+    ///<summary>
+    ///   descripcion de los usuario que pueden ingresar de acuerdo a la politica de entrada que se va a implementar
+    ///</summary>
+     public class Authorizationadmin : IAuthorizationRequirement
+    {
+        public Authorizationadmin(int hierarchy) =>
+            Hierarchyadmin = hierarchy;
+
+    public int Hierarchyadmin { get; }
+}
+
+/// <summary>
+/// Token validator for Authorization Request using a DelegatingHandler
+/// </summary>
+internal class TokenValidationHandler : AuthorizationHandler<Httpcontextentry>
     {
         // CONSTRUCTOR
         private readonly IHttpContextAccessor _httpContextAccessor; 
@@ -103,5 +115,19 @@ namespace apitest.Controllers
             }
             return false;
         }
+    }
+}
+
+internal class TokenValidationHandlerr : AuthorizationHandler<Authorizationadmin>
+{
+    protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, Authorizationadmin requirement)
+    {
+        //var requestactual = context.User.Claims;
+        //if (true)  // requirement == requestactual.
+        //{
+        context.Succeed(requirement);
+        //}
+        
+         return Task.CompletedTask;
     }
 }

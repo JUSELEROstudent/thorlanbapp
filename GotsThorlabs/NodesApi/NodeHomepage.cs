@@ -150,7 +150,7 @@ namespace GotsThorlabs.NodesApi
                 }
                 List<string> serialNumbers = DeviceManagerCLI.GetDeviceList(KCubeInertialMotor.DevicePrefix_KIM101);
                 return serialNumbers;
-            });
+            }).RequireAuthorization();
         } 
     }
 }

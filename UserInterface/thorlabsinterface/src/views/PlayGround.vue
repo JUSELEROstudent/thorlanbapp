@@ -82,7 +82,7 @@ export default {
     fetch('https://localhost:7166/home/devices', requestOptions)
       .then(response => response.json())
       .then(data => this.listdeviceson(data))
-      .catch(error => console.log('errror', error))
+      .catch(error => console.log('ERRRONRRRRRR', error))
   }
 }
 </script>
