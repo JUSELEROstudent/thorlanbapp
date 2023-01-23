@@ -1,9 +1,5 @@
 <template>
   <div class="body">
-    <h1>Play ground para la vista Thorlabs</h1>
-    <v-btn
-    elevation="2"
-  >Precionar para mover </v-btn>
   <v-form>
     <h1>Move Manually</h1>
     <v-select
@@ -88,8 +84,8 @@ export default {
 </script>
 
 <style scoped>
-.body {
+/* .body {
   margin: auto;
   max-width: 50%;
-}
+} */
 </style>

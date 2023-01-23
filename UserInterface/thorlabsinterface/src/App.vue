@@ -54,6 +54,7 @@ export default defineComponent({
         { title: 'Vision Macro', icon: 'mdi-magnify-scan', dir: 'about' },
         { title: 'Visitante', icon: 'mdi-monitor-multiple', dir: 'streamall' },
         { title: 'Thorlabs', icon: 'mdi-seesaw', dir: 'playground' },
+        { title: 'EdicionLive', icon: 'mdi-check', dir: 'currentstate' },
         { title: 'Exit', icon: 'mdi-exit-run', dir: 'login' }]
     }
   },

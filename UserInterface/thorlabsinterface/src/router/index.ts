@@ -4,6 +4,7 @@ import PofileUser from '@/views/Profile.vue'
 import StreamToAll from '@/views/StreamtoAllView.vue'
 import PlayGround from '@/views/PlayGround.vue'
 import LoginForm from '@/components/Login.vue'
+import CurrentState from '@/views/CurrentState.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -38,6 +39,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/playground',
     name: 'playground',
     component: PlayGround
+  },
+  {
+    path: '/currentstate',
+    name: 'currentstate',
+    component: CurrentState
   }
 ]
 
