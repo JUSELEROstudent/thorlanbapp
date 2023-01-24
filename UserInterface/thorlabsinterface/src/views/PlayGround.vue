@@ -1,7 +1,9 @@
 <template>
+  <v-card :elevation="5">
   <div class="body">
   <v-form>
-    <h1>Move Manually</h1>
+    <v-card-title><h1>Move Manually</h1></v-card-title>
+    <v-col cols="11">
     <v-select
     v-model="configdeviceselect.deviceId"
     :items="listdevices" required
@@ -25,11 +27,12 @@
     v-model="configdeviceselect.chaneltomove"
     :items="[ 1, 2, 3, 4]" required
     ></v-select>
-
+  </v-col>
   </v-form>
-  <v-btn v-on:click="moverunpaso" v-if="onrequest">Move whit configuration</v-btn>
+  <v-btn v-on:click="moverunpaso" v-if="onrequest" color="success"  large block>Move whit configuration</v-btn>
     <div   v-if="!onrequest" ><v-btn disabled>Move whit configuration</v-btn></div>
   </div>
+  </v-card>
 </template>
 
 <script>

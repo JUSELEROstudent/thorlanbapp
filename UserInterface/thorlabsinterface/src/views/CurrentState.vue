@@ -1,9 +1,9 @@
 <template>
-  <div class="d-md-flex">
-<v-col cols="6" >
+  <div class="d-md-flex d-block-sm">
+<v-col  >
   <motor-state ></motor-state>
 </v-col>
-<v-col cols="6" >
+<v-col >
   <motor-Mobility></motor-Mobility>
 </v-col>
 </div>
