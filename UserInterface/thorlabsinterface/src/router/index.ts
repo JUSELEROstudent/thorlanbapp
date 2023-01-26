@@ -5,6 +5,7 @@ import StreamToAll from '@/views/StreamtoAllView.vue'
 import PlayGround from '@/views/PlayGround.vue'
 import LoginForm from '@/components/Login.vue'
 import CurrentState from '@/views/CurrentState.vue'
+import AutoMove from '@/views/AutomaticMovement.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -44,6 +45,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/currentstate',
     name: 'currentstate',
     component: CurrentState
+  },
+  {
+    path: '/automatic',
+    name: 'atimatic',
+    component: AutoMove
   }
 ]
 

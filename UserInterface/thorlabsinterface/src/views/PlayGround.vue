@@ -34,15 +34,15 @@
     <div class="joystick">
       <table>
         <tr>
-          <td colspan="3"><div> <div class=" row up">1</div></div> </td>
+          <td colspan="3"><div> <div class=" row up"  @click="alertonclick('up')"> </div></div> </td>
         </tr>
         <tr>
-          <td ><div class="row left">1 </div> </td>
-          <td><div class="center">0 </div></td>
-          <td><div class="row right">1</div></td>
+          <td ><div class="row left" @click="alertonclick('left')"> </div> </td>
+          <td><div class="center"> </div></td>
+          <td><div class="row right"  @click="alertonclick('right')"> </div></td>
         </tr>
         <tr>
-          <td colspan="3"><div class="row down">1</div></td>
+          <td colspan="3"><div class="row down"  @click="alertonclick('down')"> </div></td>
         </tr>
       </table>
       <!-- <div class="up">1</div>
@@ -89,6 +89,9 @@ export default {
     },
     listdeviceson: function (data) {
       this.listdevices = data
+    },
+    alertonclick: function (roowselect) {
+      alert(roowselect.toString())
     }
   },
   beforeCreate () {
@@ -148,6 +151,9 @@ export default {
   margin: auto;
   z-index: 10;
   cursor: pointer;
+  border-right:2px solid #ffffff;
+  border-left:2px solid #ffffff;
+  border-bottom:2px solid #ffffff;
 }
 .row::before{
   z-index: -2;
@@ -156,7 +162,7 @@ export default {
   width: 50px ;
   background: gray;
   top: -24px;
-  right: -10px;
+  right: -11px;
   rotate: 45deg;
   border-top:2px solid #24724e;
   border-left:2px solid #ffffff;
@@ -171,6 +177,14 @@ export default {
   top: 2px;
   right: -24px;
   content: '';
+}
+.row:hover {
+ background: rgb(99, 97, 97);
+ transition-delay: 0.1s 0.5s;
+}
+ .row:hover::before {
+ background: rgb(99, 97, 97);
+ transition-delay: 0.1s 0.5s;
 }
 
 </style>

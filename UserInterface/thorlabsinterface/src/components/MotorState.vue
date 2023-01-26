@@ -16,7 +16,7 @@
         ></v-select>
       </v-col>
     </div>
-    <div class="d-md-flex  align-center">
+    <div class="d-md-flex align-center">
       <v-col class="align-center">
         <v-icon title=":D" x-large >mdi-compass</v-icon>
       </v-col>

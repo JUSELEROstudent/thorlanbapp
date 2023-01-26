@@ -55,6 +55,7 @@ export default defineComponent({
         { title: 'Visitante', icon: 'mdi-monitor-multiple', dir: 'streamall' },
         { title: 'Thorlabs', icon: 'mdi-seesaw', dir: 'playground' },
         { title: 'EdicionLive', icon: 'mdi-check', dir: 'currentstate' },
+        { title: 'Automaticmove', icon: 'mdi-car', dir: 'automatic' },
         { title: 'Exit', icon: 'mdi-exit-run', dir: 'login' }]
     }
   },
