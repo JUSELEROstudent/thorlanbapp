@@ -1,5 +1,5 @@
 <template>
-     <div class="streamcontainer">
+  <div class="streamcontainer">
       <img
       v-show="!streamstate" v-bind:src="'data:image/png;base64,' + imagen"
       >
@@ -10,6 +10,18 @@
         <button v-show="!streamstate" @click="endstream">
           Terminar Transmision
         </button>
+      </div>
+      <div v-if="errors.errorstate">
+        <v-divider  inset
+          >
+        </v-divider>
+        <v-alert
+          outlined
+          type="warning"
+          prominent
+        >
+      {{errors.errorsmsj}}
+    </v-alert>
       </div>
   </div>
 </template>
@@ -36,7 +48,8 @@ export default ({
       nombremio: 'Juan Sebastian Leon Rodriguez',
       listastreamin: [],
       imagen: '',
-      streamstate: true
+      streamstate: true,
+      errors: { errorsmsj: 'Verificar que la aplicacin .net esta en ejecucion.', errorstate: false }
     }
   },
   methods: {
@@ -63,38 +76,49 @@ export default ({
       this.streamstate = !this.streamstate
       connectionsream.stop()
     },
-    sourceOpen: async function (evt: Event) {
-      await connectionsream.start().catch((err) => document.write(err))
+    errorhappen: function (errors: string) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-      this.streamstate = !this.streamstate
-      if (!(connectionsream.state.toString() === 'Connected')) {
-        await connectionsream.start().catch((err) => document.write(err + '{}{}{ EL ERROR}'))
+      // this.streamstate = true
+      this.errors.errorstate = true
+      console.log(errors)
+    },
+    sourceOpen: async function (evt: Event) {
+      try {
+        await connectionsream.start().catch((err) => this.errorhappen(err.toString()))
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        this.streamstate = !this.streamstate
+        if (!(connectionsream.state.toString() === 'Connected')) {
+          await connectionsream.start().catch((err) => console.log(err + '{}{}{ EL ERROR}'))
+        }
+        // const sourceBuffer = mediaSource.addSourceBuffer(mime)
+        await connectionsream.stream('Counter', 10, 10)
+          .subscribe({
+            next: (item) => {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+              this.imagen = ''
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
+              this.imagen = item
+              console.log('SE SUSCRIBE')
+              console.log(connection.state)
+            },
+            complete: () => {
+              const li = document.createElement('li')
+              li.textContent = 'Stream completed'
+              console.log('coneccion TERMINADA')
+            },
+            error: (err) => {
+              const li = document.createElement('li')
+              li.textContent = err
+              console.log(err)
+            }
+          })
+      } catch (error) {
+        console.log(error)
       }
-      // const sourceBuffer = mediaSource.addSourceBuffer(mime)
-      await connectionsream.stream('Counter', 10, 10)
-        .subscribe({
-          next: (item) => {
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            this.imagen = ''
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            this.imagen = item
-            console.log('SE SUSCRIBE')
-            console.log(connection.state)
-          },
-          complete: () => {
-            const li = document.createElement('li')
-            li.textContent = 'Stream completed'
-            console.log('coneccion TERMINADA')
-          },
-          error: (err) => {
-            const li = document.createElement('li')
-            li.textContent = err
-            console.log(err)
-          }
-        })
     },
     coneccionstream: function () {
       const vidElement = document.querySelector('video')

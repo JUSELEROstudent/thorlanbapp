@@ -22,6 +22,7 @@ const connectionsreamall = new signalR.HubConnectionBuilder().withUrl('https://1
 }).build()
 export default ({
   name: 'StreamToAll',
+  emits: ['hearerrors'],
   data () {
     return {
       streamstate: true,
@@ -34,35 +35,46 @@ export default ({
       // @ts-ignore
       this.streamstate = !this.streamstate
     },
-    sourceOpen: async function (evt: Event) {
-      // await connectionsream.start().catch((err) => document.write(err))
+    errorhappen: function (errors: string) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-      this.streamstate = !this.streamstate
-      if (!(connectionsreamall.state.toString() === 'Connected')) {
-        await connectionsreamall.start().catch((err) => document.write(err + '{}{}{ EL ERROR}'))
+      this.$emit('hearerrors', errors)
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      this.streamstate = false
+    },
+    sourceOpen: async function (evt: Event) {
+      try {
+        // await connectionsream.start().catch((err) => document.write(err))
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+        this.streamstate = !this.streamstate
+        if (!(connectionsreamall.state.toString() === 'Connected')) {
+          await connectionsreamall.start().catch((err) => this.errorhappen(err.toString()))
+        }
+        await connectionsreamall.stream('Counter', 10, 10)
+          .subscribe({
+            next: (item) => {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+              this.imagen = ''
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
+              this.imagen = item
+              console.log('SE SUSCRIBE')
+              console.log(connectionsreamall.state)
+            },
+            complete: () => {
+              const li = document.createElement('li')
+            },
+            error: (err) => {
+              // no se hace nada en estos casos mas que mensajes de consola
+              console.log(err)
+            }
+          })
+      } catch (error) {
+        // console.log(error)
       }
-      await connectionsreamall.stream('Counter', 10, 10)
-        .subscribe({
-          next: (item) => {
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            this.imagen = ''
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            this.imagen = item
-            console.log('SE SUSCRIBE')
-            console.log(connectionsreamall.state)
-          },
-          complete: () => {
-            const li = document.createElement('li')
-          },
-          error: (err) => {
-            const li = document.createElement('li')
-            // no se hace nada en estos casos mas que mensajes de consola
-            console.log(err)
-          }
-        })
     }
   }
 })

@@ -6,6 +6,7 @@ import PlayGround from '@/views/PlayGround.vue'
 import LoginForm from '@/components/Login.vue'
 import CurrentState from '@/views/CurrentState.vue'
 import AutoMove from '@/views/AutomaticMovement.vue'
+import ShareAll from '@/views/ShareAll.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -31,10 +32,15 @@ const routes: Array<RouteRecordRaw> = [
     name: 'profile',
     component: PofileUser
   },
+  // {
+  //   path: '/streamall',
+  //   name: 'streamall',
+  //   component: StreamToAll
+  // },
   {
     path: '/streamall',
     name: 'streamall',
-    component: StreamToAll
+    component: ShareAll
   },
   {
     path: '/playground',

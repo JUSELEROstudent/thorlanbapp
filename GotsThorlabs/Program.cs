@@ -68,9 +68,12 @@ app.MapGet("/security/getMessageSecure", () => "Hello World!"); //.RequireAuthor
 app.MapGet("/security/getMessage2", () => "Hello World!");
 app.UseHttpsRedirection();
 SimulationManager.Instance.InitializeSimulations();
+
 var variableapinode = new NodeGenerics(app);
 var loginloginnodes = new NodeLogin(app);
 var Nodehomepages = new NodeHomepage(app);
+var NodeMapping = new NodeMapping(app);
+
 app.MapControllers();
 app.UseAuthentication();
 app.UseAuthorization();
