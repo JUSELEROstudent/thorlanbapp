@@ -37,7 +37,7 @@ export default {
       this.status2 = 'ha sido enviado Calibrate'
       fetch('https://localhost:7166/automotion/calibrate', requestOptions)
         .then(response => response.text())
-        .then(result => console.log('EXITO metodo Calibrate' + result)).then(this.status2 = 'ha terminado la peticion CALIBRATE')
+        .then(result => console.log('EXITO metodo Calibrate' + result)).then(() => { this.status2 = 'ha terminado la peticion CALIBRATE' })
         .catch(error => console.log('error de el metodo Calibrate', error))
     }
   }

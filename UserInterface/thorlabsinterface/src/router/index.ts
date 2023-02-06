@@ -54,7 +54,7 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     path: '/automatic',
-    name: 'atimatic',
+    name: 'atomatic',
     component: AutoMove
   }
 ]
