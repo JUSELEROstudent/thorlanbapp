@@ -1,5 +1,6 @@
 ﻿using apitest.Controllers;
 using GotsThorlabs.BLL;
+using Thorlabs.MotionControl.KCube.InertialMotorCLI;
 
 namespace GotsThorlabs.NodesApi
 {
@@ -15,11 +16,21 @@ namespace GotsThorlabs.NodesApi
             App.MapGet("/automotion/mapping", () =>
             {
                 var inertialmotorkim = new Tim101_4_ch_inertial_motor();
-                var responser = inertialmotorkim.builddeviceslist();
-                var listado = inertialmotorkim.deviceslist();
-                Thread.Sleep(10000);
+                bool status = inertialmotorkim.Createimagemosaic();
+                //var listado = inertialmotorkim.deviceslist();
+                // if (listado == null) { return Results.BadRequest("Verifique el estado de la conexion a los dispositivos THORLABS"); }
+                //var deviceconnect = inertialmotorkim.Getobjdevicekim(listado[0]);
+                // FUNCION CONECCION Y MOVER AHORA IMPLEMENTAR LA TOMA DE IMAGENES EN LA CLASE PARA CONTINUAR
 
-                return Results.Ok(responser != true ? responser : listado);
+                return Results.Ok(status);
+            });
+            App.MapGet("/automotion/channelsstatus", () =>
+            {
+                var inertialmotorkim = new Tim101_4_ch_inertial_motor();
+                var status = inertialmotorkim.GetStatusChannels();
+                // METODO FUNCIONANDO = valorar la opcion de hacerlo por signalr tener en cuenta el polling que se hace al dispositivo . que es un llamado recurrente
+
+                return Results.Ok(status);
             });
         }
     }

@@ -12,6 +12,45 @@ namespace GotsThorlabs.BLL
     ///</remarks>
     public class Tim101_4_ch_inertial_motor
     {
+        Dictionary<int, InertialMotorStatus.MotorChannels> chanelsDevice = new Dictionary<int, InertialMotorStatus.MotorChannels>()
+                {
+                    {1, InertialMotorStatus.MotorChannels.Channel1},
+                    {2, InertialMotorStatus.MotorChannels.Channel2},
+                    {3, InertialMotorStatus.MotorChannels.Channel3},
+                    {4, InertialMotorStatus.MotorChannels.Channel4}
+                };
+
+        public bool Createimagemosaic() 
+        {
+            var listado = deviceslist();
+            if (listado == null) { return false; }
+            var deviceconnect = Getobjdevicekim(listado[0]);
+            deviceconnect.StartPolling(250);
+            Thread.Sleep(500);
+            deviceconnect.EnableDevice();
+            Thread.Sleep(500);
+
+            InertialMotorConfiguration InertialMotorConfiguration = deviceconnect.GetInertialMotorConfiguration(listado[0]);
+            ThorlabsInertialMotorSettings currentDeviceSettings = ThorlabsInertialMotorSettings.GetSettings(InertialMotorConfiguration);
+
+            // Set the 'Step' paramaters for the Inertia Motor and download to device
+            currentDeviceSettings.Drive.Channel(chanelsDevice[1]).StepRate = 200;
+            currentDeviceSettings.Drive.Channel(chanelsDevice[1]).StepAcceleration = 100;
+            deviceconnect.SetSettings(currentDeviceSettings, true, true);
+
+            bool estatusMovement = Move_Method1(deviceconnect, chanelsDevice[1], 100);
+            if (!estatusMovement) return false;
+            // or
+            // Move_Method2(device, InertialMotorStatus.MotorChannels.Channel1, position);
+
+            Decimal newPos = deviceconnect.GetPosition(InertialMotorStatus.MotorChannels.Channel1);
+
+            // Tidy up and exit
+            deviceconnect.StopPolling();
+            deviceconnect.Disconnect(true);
+
+            return true;
+        }
         ///<summary>
         ///Inicia la conexion con el dispositivo connectado 
         ///</summary>
@@ -48,7 +87,97 @@ namespace GotsThorlabs.BLL
         ///</param>
         public List<string> deviceslist()
         {
+            if (builddeviceslist() == false) { return null; }
             return DeviceManagerCLI.GetDeviceList(KCubeInertialMotor.DevicePrefix_KIM101);
+        }
+        ///<summary>
+        ///se crea el objeto que contiene el dispositivo que va a ser manejado en este caso y clase es un dispositi KIM04
+        ///</summary>
+        ///<return>
+        ///retorna un device De tipo  KCubeInertialMotor o NULL si no se pudo crear el objeto
+        ///</return>
+        ///<param>
+        ///nombre del dispositivo que se desea crear objeto para manejarlo
+        ///</param>
+        public KCubeInertialMotor Getobjdevicekim(string devicename)
+        {
+            KCubeInertialMotor device = KCubeInertialMotor.CreateKCubeInertialMotor(devicename);// nunca misrar esta varable linea 
+            if (device == null)
+            {
+                return null;
+            }
+            try
+            { 
+                // Open a connection to the device.
+                device.Connect(devicename);
+            }
+            catch (Exception)
+            { 
+                // Connection failed
+                return null;
+            }
+            if (!device.IsSettingsInitialized())
+            {
+                try
+                {
+                    device.WaitForSettingsInitialized(1000);
+                }
+                catch (Exception)
+                {
+                    return null;
+                }
+            }
+            return device;
+        }
+
+        ///<summary>
+        ///Funcion encargada de devolver el estado actual de cada canal en el dispositivo
+        ///</summary>
+        ///<return>
+        ///retorna un objeto dinamico que contiene los canales del dispositivo y posicion
+        ///</return>
+        ///<param>
+        /// VOID
+        ///</param>
+        public dynamic GetStatusChannels()
+        {
+            var listado = deviceslist();
+            if (listado == null) { return false; }
+            var deviceconnect = Getobjdevicekim(listado[0]);
+            deviceconnect.StartPolling(250);
+            Thread.Sleep(500);
+            deviceconnect.EnableDevice();
+            Thread.Sleep(500);
+            decimal positionchanel1 = deviceconnect.GetPosition(chanelsDevice[1]);
+            decimal positionchanel2 = deviceconnect.GetPosition(chanelsDevice[2]);
+            decimal positionchanel3 = deviceconnect.GetPosition(chanelsDevice[3]);
+            decimal positionchanel4 = deviceconnect.GetPosition(chanelsDevice[4]);
+            deviceconnect.StopPolling();
+            deviceconnect.Disconnect(true);
+
+            return (new { channel1 = positionchanel1, channel2 = positionchanel2, channel3 = positionchanel3, channel4 = positionchanel4 });
+        }
+        ///<summary>
+        ///metodo encargado del desplazamiento del motor
+        ///</summary>
+        ///<return>
+        ///true para un movimiento correcto
+        ///</return>
+        ///<param>
+        /// Device, canal a mover y posicion a mover.
+        ///</param>
+
+        public static bool Move_Method1(KCubeInertialMotor device, InertialMotorStatus.MotorChannels channel, int position)
+        {
+            try
+            {
+                device.MoveTo(channel, position, 60000);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+            return true;
         }
     }
 }
