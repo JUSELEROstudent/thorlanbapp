@@ -1,4 +1,6 @@
-﻿using Thorlabs.MotionControl.DeviceManagerCLI;
+﻿using OpenCvSharp;
+using System.Threading;
+using Thorlabs.MotionControl.DeviceManagerCLI;
 using Thorlabs.MotionControl.KCube.InertialMotorCLI;
 
 namespace GotsThorlabs.BLL
@@ -20,11 +22,33 @@ namespace GotsThorlabs.BLL
                     {4, InertialMotorStatus.MotorChannels.Channel4}
                 };
 
-        public bool Createimagemosaic() 
+        public async Task<bool> Createimagemosaic() 
         {
             var listado = deviceslist();
             if (listado == null) { return false; }
-            var deviceconnect = Getobjdevicekim(listado[0]);
+            //KCubeInertialMotor deviceconnect = await Getobjdevicekim(listado[0]);
+            KCubeInertialMotor deviceconnect = await Task.Run(() => KCubeInertialMotor.CreateKCubeInertialMotor(listado[0]));
+            try
+            {
+                // Open a connection to the device.
+                await Task.Run(() => deviceconnect.Connect(listado[0]));
+            }
+            catch (Exception)
+            {
+                deviceconnect.Disconnect();
+                // Connection failed
+                //return null;
+            }
+            if (!deviceconnect.IsSettingsInitialized())
+            {
+                try
+                {
+                    deviceconnect.WaitForSettingsInitialized(1000);
+                }
+                catch (Exception)
+                {
+                }
+            }
             deviceconnect.StartPolling(250);
             Thread.Sleep(500);
             deviceconnect.EnableDevice();
@@ -38,12 +62,50 @@ namespace GotsThorlabs.BLL
             currentDeviceSettings.Drive.Channel(chanelsDevice[1]).StepAcceleration = 100;
             deviceconnect.SetSettings(currentDeviceSettings, true, true);
 
-            bool estatusMovement = Move_Method1(deviceconnect, chanelsDevice[1], 100);
-            if (!estatusMovement) return false;
             // or
             // Move_Method2(device, InertialMotorStatus.MotorChannels.Channel1, position);
 
             Decimal newPos = deviceconnect.GetPosition(InertialMotorStatus.MotorChannels.Channel1);
+            // SECCION TOMA DE IMAGENES
+            var acptationvalue = true;
+            using var capture = new VideoCapture(0, VideoCaptureAPIs.DSHOW);
+            Mat[] image = new Mat[10];
+            
+            for (int i = 0;i < image.Length; i++)
+            {
+                Mat frame = new Mat();
+
+                bool estatusMovement = Move_Method1(deviceconnect, chanelsDevice[1], i*100);
+                if (!estatusMovement)
+                {
+                    deviceconnect.StopPolling();
+                    deviceconnect.Disconnect(true);
+                    return false;
+                }
+
+                if (!capture.IsOpened())
+                {
+                    acptationvalue = false;
+                    capture.FrameWidth = 1920;
+                    capture.FrameHeight = 1080;
+                    capture.AutoFocus = true;
+
+                    const int sleepTime = 10;
+                }
+
+                //using var window = new Window("capture");
+                //var image = new Mat();
+
+                capture.Read(frame);
+                image[i] = frame;
+                string pathsave = string.Format("{0}\\camtaked{1}.jpg", "C:\\Users\\cocuy\\AppData\\Local\\Temp\\tempimg", i*100);
+                frame.SaveImage(pathsave);
+                //var imgretonr = image.ToBytes(); COMENTADA PORQUE NO SE NECESITA COMBERTIR A FRAMES
+            }
+            Mat mosaic = new Mat();
+            Cv2.VConcat(image, mosaic);
+            string mosaicpath = string.Format("{0}\\camtaked{1}.jpg", "C:\\Users\\cocuy\\AppData\\Local\\Temp\\tempimg", "mosaic");
+            mosaic.SaveImage(mosaicpath);
 
             // Tidy up and exit
             deviceconnect.StopPolling();
@@ -99,20 +161,17 @@ namespace GotsThorlabs.BLL
         ///<param>
         ///nombre del dispositivo que se desea crear objeto para manejarlo
         ///</param>
-        public KCubeInertialMotor Getobjdevicekim(string devicename)
+        public async Task<KCubeInertialMotor> Getobjdevicekim(string devicename)
         {
-            KCubeInertialMotor device = KCubeInertialMotor.CreateKCubeInertialMotor(devicename);// nunca misrar esta varable linea 
-            if (device == null)
-            {
-                return null;
-            }
+            KCubeInertialMotor device = await Task.Run(() => KCubeInertialMotor.CreateKCubeInertialMotor(devicename));
             try
             { 
                 // Open a connection to the device.
-                device.Connect(devicename);
+                await Task.Run(() => device.Connect(devicename));
             }
             catch (Exception)
-            { 
+            {
+                device.Disconnect();
                 // Connection failed
                 return null;
             }
@@ -139,11 +198,11 @@ namespace GotsThorlabs.BLL
         ///<param>
         /// VOID
         ///</param>
-        public dynamic GetStatusChannels()
+        public async Task<dynamic> GetStatusChannels()
         {
             var listado = deviceslist();
             if (listado == null) { return false; }
-            var deviceconnect = Getobjdevicekim(listado[0]);
+            var deviceconnect = await Getobjdevicekim(listado[0]);
             deviceconnect.StartPolling(250);
             Thread.Sleep(500);
             deviceconnect.EnableDevice();
@@ -169,6 +228,8 @@ namespace GotsThorlabs.BLL
 
         public static bool Move_Method1(KCubeInertialMotor device, InertialMotorStatus.MotorChannels channel, int position)
         {
+            // se crea la condicion para que la posicion a mover no sea igual a la acutal
+            if (device.GetPosition(channel) == position) { return true; }
             try
             {
                 device.MoveTo(channel, position, 60000);

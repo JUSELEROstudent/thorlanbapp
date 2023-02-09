@@ -117,7 +117,12 @@ namespace GotsThorlabs.NodesApi
                 // position = positionchanel == position ? position + 100 : 100;
 
                 bool estatusMovement = Move_Method1(device, chanelsDevice[movestosite.chaneltomove], position);
-                if (!estatusMovement) return new List<string> { "Ocurrio un erro al mover el dispositvo" };
+                if (!estatusMovement)
+                {
+                    device.StopPolling();
+                    device.Disconnect(true);
+                    return new List<string> { "Ocurrio un erro al mover el dispositvo" };
+                }
                 // or
                 // Move_Method2(device, InertialMotorStatus.MotorChannels.Channel1, position);
 

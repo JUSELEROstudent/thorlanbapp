@@ -13,10 +13,10 @@ namespace GotsThorlabs.NodesApi
                 return Results.Ok("se logor comunicar");
 
             });
-            App.MapGet("/automotion/mapping", () =>
+            App.MapGet("/automotion/mapping", async () =>
             {
                 var inertialmotorkim = new Tim101_4_ch_inertial_motor();
-                bool status = inertialmotorkim.Createimagemosaic();
+                bool status = await inertialmotorkim.Createimagemosaic();
                 //var listado = inertialmotorkim.deviceslist();
                 // if (listado == null) { return Results.BadRequest("Verifique el estado de la conexion a los dispositivos THORLABS"); }
                 //var deviceconnect = inertialmotorkim.Getobjdevicekim(listado[0]);

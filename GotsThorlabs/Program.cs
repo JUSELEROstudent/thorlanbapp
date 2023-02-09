@@ -36,7 +36,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-
+SimulationManager.Instance.InitializeSimulations();
 builder.Services.AddAuthorization((options) =>
 {
     options.AddPolicy("Jwtvalidator", (policy) =>
@@ -67,7 +67,7 @@ if (app.Environment.IsDevelopment())
 app.MapGet("/security/getMessageSecure", () => "Hello World!"); //.RequireAuthorization("administrator"); esta parte es para agregar politicas no es necesario por ahora
 app.MapGet("/security/getMessage2", () => "Hello World!");
 app.UseHttpsRedirection();
-SimulationManager.Instance.InitializeSimulations();
+ //SimulationManager.Instance.InitializeSimulations();
 
 var variableapinode = new NodeGenerics(app);
 var loginloginnodes = new NodeLogin(app);
