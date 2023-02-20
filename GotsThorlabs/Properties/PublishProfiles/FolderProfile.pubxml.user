@@ -4,8 +4,8 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
 -->
 <Project>
   <PropertyGroup>
-    <_PublishTargetUrl>C:\Users\cocuy\OneDrive\Escritorio\thorlabs\GotsThorlabs\GotsThorlabs\bin\Release\net6.0\publish\</_PublishTargetUrl>
-    <History>True|2022-12-20T02:55:27.5425466Z;</History>
+    <_PublishTargetUrl>C:\Users\cocuy\OneDrive\Escritorio\publicar</_PublishTargetUrl>
+    <History>True|2023-02-19T14:10:04.1080782Z;False|2023-02-13T23:22:34.5005188-05:00;False|2023-02-13T23:22:13.2267351-05:00;True|2023-02-13T23:20:08.0715011-05:00;True|2023-02-13T22:50:08.4949602-05:00;True|2023-02-13T22:47:25.2999307-05:00;True|2023-02-13T22:45:22.8868839-05:00;True|2023-02-13T22:44:27.6784219-05:00;False|2023-02-13T22:44:05.0235587-05:00;True|2023-02-13T22:21:51.9508683-05:00;False|2023-02-13T22:20:54.1739832-05:00;False|2023-02-13T22:19:57.3022665-05:00;True|2022-12-19T21:55:27.5425466-05:00;</History>
     <LastFailureDetails />
   </PropertyGroup>
 </Project>

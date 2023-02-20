@@ -5,7 +5,7 @@
     <v-btn @click="startmapping">Iniciar Mapeado</v-btn> <v-card-subtitle>{{ status1 }}</v-card-subtitle>
     <v-btn @click="startcalibrate">Calibrate</v-btn> <v-card-subtitle>{{ status2 }}</v-card-subtitle>
   </v-card>
-
+ <img src="../assets/lxs.jpg">
 </template>
 <script>
 export default {

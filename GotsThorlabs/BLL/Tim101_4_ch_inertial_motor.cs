@@ -22,22 +22,20 @@ namespace GotsThorlabs.BLL
                     {4, InertialMotorStatus.MotorChannels.Channel4}
                 };
 
-        public async Task<bool> Createimagemosaic() 
+        public dynamic Createimagemosaic()
         {
             var listado = deviceslist();
             if (listado == null) { return false; }
             //KCubeInertialMotor deviceconnect = await Getobjdevicekim(listado[0]);
-            KCubeInertialMotor deviceconnect = await Task.Run(() => KCubeInertialMotor.CreateKCubeInertialMotor(listado[0]));
+            KCubeInertialMotor deviceconnect =  KCubeInertialMotor.CreateKCubeInertialMotor(listado[0]);
             try
             {
                 // Open a connection to the device.
-                await Task.Run(() => deviceconnect.Connect(listado[0]));
+                 deviceconnect.Connect(listado[0]);
             }
             catch (Exception)
             {
                 deviceconnect.Disconnect();
-                // Connection failed
-                //return null;
             }
             if (!deviceconnect.IsSettingsInitialized())
             {
@@ -70,41 +68,49 @@ namespace GotsThorlabs.BLL
             var acptationvalue = true;
             using var capture = new VideoCapture(0, VideoCaptureAPIs.DSHOW);
             Mat[] image = new Mat[10];
-            
-            for (int i = 0;i < image.Length; i++)
-            {
-                Mat frame = new Mat();
-
-                bool estatusMovement = Move_Method1(deviceconnect, chanelsDevice[1], i*100);
-                if (!estatusMovement)
+            Mat[] finalimg = new Mat[3];
+            for (int j = 0; j < finalimg.Length; j++)
+            { 
+                for (int i = 0; i < image.Length; i++)
                 {
-                    deviceconnect.StopPolling();
-                    deviceconnect.Disconnect(true);
-                    return false;
+                    Mat frame = new Mat();
+
+                    bool estatusMovement = Move_Method1(deviceconnect, chanelsDevice[1], i * 100);
+                    if (!estatusMovement)
+                    {
+                        deviceconnect.StopPolling();
+                        deviceconnect.Disconnect(true);
+                        return false;
+                    }
+
+                    if (!capture.IsOpened())
+                    {
+                        acptationvalue = false;
+                        capture.FrameWidth = 1920;
+                        capture.FrameHeight = 1080;
+                        capture.AutoFocus = true;
+
+                        const int sleepTime = 10;
+                    }
+
+                    //using var window = new Window("capture");
+                    //var image = new Mat();
+
+                    capture.Read(frame);
+                    image[i] = frame;
+                    string pathsave = string.Format("{0}\\camtaked{1}.jpg", "C:\\Users\\cocuy\\AppData\\Local\\Temp\\tempimg", i * 100);
+                    frame.SaveImage(pathsave);
+                    //var imgretonr = image.ToBytes(); COMENTADA PORQUE NO SE NECESITA COMBERTIR A FRAMES
                 }
-
-                if (!capture.IsOpened())
-                {
-                    acptationvalue = false;
-                    capture.FrameWidth = 1920;
-                    capture.FrameHeight = 1080;
-                    capture.AutoFocus = true;
-
-                    const int sleepTime = 10;
-                }
-
-                //using var window = new Window("capture");
-                //var image = new Mat();
-
-                capture.Read(frame);
-                image[i] = frame;
-                string pathsave = string.Format("{0}\\camtaked{1}.jpg", "C:\\Users\\cocuy\\AppData\\Local\\Temp\\tempimg", i*100);
-                frame.SaveImage(pathsave);
-                //var imgretonr = image.ToBytes(); COMENTADA PORQUE NO SE NECESITA COMBERTIR A FRAMES
+                Mat mosaicv = new Mat();
+                Cv2.VConcat(image, mosaicv);
+                finalimg[j] = mosaicv;
+                string mosaicpathv = string.Format("{0}\\camtakedV{1}.jpg", "C:\\Users\\cocuy\\AppData\\Local\\Temp\\tempimg", j);
+                mosaicv.SaveImage(mosaicpathv);
             }
             Mat mosaic = new Mat();
-            Cv2.VConcat(image, mosaic);
-            string mosaicpath = string.Format("{0}\\camtaked{1}.jpg", "C:\\Users\\cocuy\\AppData\\Local\\Temp\\tempimg", "mosaic");
+            Cv2.HConcat(finalimg, mosaic);
+            string mosaicpath = string.Format("{0}\\HxV{1}.jpg", "C:\\Users\\cocuy\\AppData\\Local\\Temp\\tempimg", "mosaic");
             mosaic.SaveImage(mosaicpath);
 
             // Tidy up and exit
@@ -198,11 +204,33 @@ namespace GotsThorlabs.BLL
         ///<param>
         /// VOID
         ///</param>
-        public async Task<dynamic> GetStatusChannels()
+        public dynamic GetStatusChannels(string channeltarget)
         {
             var listado = deviceslist();
-            if (listado == null) { return false; }
-            var deviceconnect = await Getobjdevicekim(listado[0]);
+            //var isonlist = from itemm in listado where itemm.ToString() == channeltarget select itemm;
+            var isonlist = listado.Any(x => x == channeltarget);
+            if (isonlist ==false) { return false;  }
+
+            KCubeInertialMotor deviceconnect = KCubeInertialMotor.CreateKCubeInertialMotor(listado[0]);
+            try
+            {
+                // Open a connection to the device.
+                deviceconnect.Connect(listado[0]);
+            }
+            catch (Exception)
+            {
+                deviceconnect.Disconnect();
+            }
+            if (!deviceconnect.IsSettingsInitialized())
+            {
+                try
+                {
+                    deviceconnect.WaitForSettingsInitialized(1000);
+                }
+                catch (Exception)
+                {
+                }
+            }
             deviceconnect.StartPolling(250);
             Thread.Sleep(500);
             deviceconnect.EnableDevice();
@@ -213,8 +241,9 @@ namespace GotsThorlabs.BLL
             decimal positionchanel4 = deviceconnect.GetPosition(chanelsDevice[4]);
             deviceconnect.StopPolling();
             deviceconnect.Disconnect(true);
+            var  currentdir = Environment.CurrentDirectory;
 
-            return (new { channel1 = positionchanel1, channel2 = positionchanel2, channel3 = positionchanel3, channel4 = positionchanel4 });
+            return (new { device = listado[0] , channelsa = new { channel1 = positionchanel1, channel2 = positionchanel2, channel3 = positionchanel3, channel4 = positionchanel4 } });
         }
         ///<summary>
         ///metodo encargado del desplazamiento del motor

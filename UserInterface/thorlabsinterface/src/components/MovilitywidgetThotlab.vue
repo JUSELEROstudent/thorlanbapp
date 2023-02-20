@@ -28,12 +28,12 @@
 
 <script  lang="ts">
 import * as signalR from '@microsoft/signalr'
-const connection = new signalR.HubConnectionBuilder().withUrl('https://192.168.1.36:45455/chatHub', {
+const connection = new signalR.HubConnectionBuilder().withUrl('https://localhost:7166/chatHub', {
   skipNegotiation: true,
   transport: signalR.HttpTransportType.WebSockets
 }).build()
 
-const connectionsream = new signalR.HubConnectionBuilder().withUrl('https://192.168.1.36:45455/StreamingHub', {
+const connectionsream = new signalR.HubConnectionBuilder().withUrl('https://localhost:7166/StreamingHub', {
   skipNegotiation: true,
   transport: signalR.HttpTransportType.WebSockets
 }).build()

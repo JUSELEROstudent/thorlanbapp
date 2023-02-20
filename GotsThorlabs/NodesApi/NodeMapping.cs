@@ -16,7 +16,7 @@ namespace GotsThorlabs.NodesApi
             App.MapGet("/automotion/mapping", async () =>
             {
                 var inertialmotorkim = new Tim101_4_ch_inertial_motor();
-                bool status = await inertialmotorkim.Createimagemosaic();
+                bool status = inertialmotorkim.Createimagemosaic();
                 //var listado = inertialmotorkim.deviceslist();
                 // if (listado == null) { return Results.BadRequest("Verifique el estado de la conexion a los dispositivos THORLABS"); }
                 //var deviceconnect = inertialmotorkim.Getobjdevicekim(listado[0]);
@@ -24,10 +24,10 @@ namespace GotsThorlabs.NodesApi
 
                 return Results.Ok(status);
             });
-            App.MapGet("/automotion/channelsstatus", () =>
+            App.MapGet("/automotion/channelsstatus", (string channel) =>
             {
                 var inertialmotorkim = new Tim101_4_ch_inertial_motor();
-                var status = inertialmotorkim.GetStatusChannels();
+                var status = inertialmotorkim.GetStatusChannels(channel);
                 // METODO FUNCIONANDO = valorar la opcion de hacerlo por signalr tener en cuenta el polling que se hace al dispositivo . que es un llamado recurrente
 
                 return Results.Ok(status);
