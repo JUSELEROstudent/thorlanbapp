@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using apitest.Controllers;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
@@ -74,6 +75,12 @@ var loginloginnodes = new NodeLogin(app);
 var Nodehomepages = new NodeHomepage(app);
 var NodeMapping = new NodeMapping(app);
 
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+           Path.Combine(builder.Environment.ContentRootPath, "StaticFiles")),
+    RequestPath = "/SouerceStaticFiles"
+});
 app.MapControllers();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -83,8 +90,3 @@ app.MapHub<StreamingHub>("/StreamingHub");
 
 
 app.Run();
-
-internal record WeatherForecast(DateTime Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}

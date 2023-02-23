@@ -6,17 +6,18 @@ using System.IdentityModel.Tokens.Jwt;
 
 namespace apitest.Controllers
 {
-    [ApiController]
     [Route("[Controller]")]
+    [ApiController]
     public class InnerloginController : ControllerBase
     {
 
-        [HttpPut]
+        
         //[Authorize(Policy = "administrator")]
         [Authorize]
+        [HttpPut]
         public IActionResult Put() { return Ok("hola entro"); }
         [HttpPost]
-        public IActionResult Postdata(login sesionuser)
+        public IActionResult Post(login sesionuser)
         {
             //var nuevovalor = otherData.ToString();
             var respuesta = new List<dynamic>();
@@ -38,6 +39,7 @@ namespace apitest.Controllers
                 }
             }
         }
+        [HttpGet]
         public IActionResult Getdata()//el iactionresult resulta la clase mas manejable falta ver la variante con "<>" la final
         {
             

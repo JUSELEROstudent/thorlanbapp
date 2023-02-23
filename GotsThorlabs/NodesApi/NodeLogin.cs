@@ -13,7 +13,7 @@ namespace GotsThorlabs.NodesApi
             App.MapPost("/api/login", async (login sesionuser) =>
             {
                 var loginverificationclass = new InnerloginController();
-                return Results.Ok(loginverificationclass.Postdata(sesionuser));
+                return Results.Ok(loginverificationclass.Post(sesionuser));
 
             }
             );
