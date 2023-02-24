@@ -16,7 +16,7 @@
 
 <script  lang="ts">
 import * as signalR from '@microsoft/signalr'
-const connectionsreamall = new signalR.HubConnectionBuilder().withUrl('https://192.168.1.36:45455/StreamingHub', {
+const connectionsreamall = new signalR.HubConnectionBuilder().withUrl('https://localhost:7166/StreamingHub', {
   skipNegotiation: true,
   transport: signalR.HttpTransportType.WebSockets
 }).build()
@@ -92,6 +92,7 @@ export default ({
   border-radius: 5px;
   flex-direction: column;
 }
+img {height: 50%;}
 .panelbutton{
   display: block;
   align-content: center;

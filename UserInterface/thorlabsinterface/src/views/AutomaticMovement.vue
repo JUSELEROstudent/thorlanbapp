@@ -2,35 +2,25 @@
   <!-- Crear la vista especial para el investigador se encargara de desarrollar el trasado de la preview y tambien de definir el sistema de
   barrido automatico que sera personalisable. -->
 <template>
-      <v-container class="bg-green">
-       <v-row>
-      <v-col class="bg-red" cols="9">
-        <v-card >
-          <v-card-title>Este es el titulo de la tarjeta</v-card-title>
-          <v-btn @click="startmapping">Iniciar Mapeado</v-btn> <v-card-subtitle>{{ status1 }}</v-card-subtitle>
-          <v-btn @click="startcalibrate">Calibrate</v-btn> <v-card-subtitle>{{ status2 }}</v-card-subtitle>
-        </v-card>
-      </v-col>
-      <v-col cols="3">
-       <v-row >
-        <h1 v-if="testdata">este es el automatico</h1>
-        <img src=" https://localhost:7166/SouerceStaticFiles/campos.svg" alt="">
-       </v-row>
-      </v-col>
-        <!-- <h1 v-if="testdata">este es el automatico</h1>
-        <img src=" https://localhost:7166/SouerceStaticFiles/campos.svg" alt=""> -->
-       </v-row>
-      <v-col class="bg-blue" cols="12">
-       <v-row >
-        <h1 v-if="testdata">este es el automatico</h1>
-        <img src=" https://localhost:7166/SouerceStaticFiles/campos.svg" >
-       </v-row>
-      </v-col>
+      <v-container fluid="true" class="bg-green">
+        <v-row >
+          <v-col class="bg-red"  cols="7">
+            <img class="resourceimg" src="https://localhost:7166/SouerceStaticFiles/campos.svg" alt="vista preeliminar" height="400">
+          </v-col>
+          <v-col class="bg-yellow" cols="5">
+            <play-ground>
+            </play-ground>
+          </v-col>
+        </v-row>
       </v-container>
+      <v-divider> b</v-divider>
+      <streamto-all-view width="200"></streamto-all-view>
 </template>
-
 <script>
+import StreamtoAllView from './StreamtoAllView.vue'
+import PlayGround from './PlayGround.vue'
 export default {
+  components: { StreamtoAllView, PlayGround },
   app: 'AutomaticMovement',
   data () {
     return {
@@ -65,3 +55,11 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.resourceimg {
+display: flex;
+margin: auto;
+background: #8fc49c;
+}
+</style>

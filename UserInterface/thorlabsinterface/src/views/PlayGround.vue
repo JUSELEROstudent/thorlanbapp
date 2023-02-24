@@ -6,6 +6,7 @@
     <v-col cols="12">
     <v-card-title><h1>Move Manually</h1></v-card-title>
     <v-select
+    label="Select device"
     v-model="configdeviceselect.deviceId"
     :items="listdevices" required
     ></v-select>
@@ -25,12 +26,13 @@
         required
     ></v-text-field>
     <v-select
+    label="Select channel"
     v-model="configdeviceselect.chaneltomove"
     :items="[ 1, 2, 3, 4]" required
     ></v-select>
   </v-col>
   </v-form>
-  <v-col>
+  <v-col cols="6" align-self="center">
     <div class="joystick">
       <table>
         <tr>
@@ -45,10 +47,6 @@
           <td colspan="3"><div class="row down"  @click="alertonclick('down')"> </div></td>
         </tr>
       </table>
-      <!-- <div class="up">1</div>
-      <div class="left">1 </div>
-      <div right="right">1</div>
-      <div class="down">1</div> -->
     </div>
   </v-col>
   </div>
