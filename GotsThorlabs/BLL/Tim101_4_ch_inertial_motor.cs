@@ -1,4 +1,5 @@
 ﻿using OpenCvSharp;
+using System.Collections;
 using System.Threading;
 using Thorlabs.MotionControl.DeviceManagerCLI;
 using Thorlabs.MotionControl.KCube.InertialMotorCLI;
@@ -118,6 +119,112 @@ namespace GotsThorlabs.BLL
             deviceconnect.Disconnect(true);
 
             return true;
+        }
+        ///<summary>
+        ///Metodo encargado de devolver paso a paso la creacion del mosaico 
+        ///</summary>
+        ///<remarks>
+        ///devuelve la url de la ubicacion en el servidor de la imagen actual del mapeo
+        ///</remarks>
+        public async IAsyncEnumerable<dynamic> Createmosaicstepbystep()
+        {
+            var developerurl = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
+            var listado = deviceslist();
+            if (listado == null) { yield return false; }
+            //KCubeInertialMotor deviceconnect = await Getobjdevicekim(listado[0]);
+            KCubeInertialMotor deviceconnect = KCubeInertialMotor.CreateKCubeInertialMotor(listado[0]);
+            try
+            {
+                // Open a connection to the device.
+                deviceconnect.Connect(listado[0]);
+            }
+            catch (Exception)
+            {
+                deviceconnect.Disconnect();
+            }
+            if (!deviceconnect.IsSettingsInitialized())
+            {
+                try
+                {
+                    deviceconnect.WaitForSettingsInitialized(1000);
+                }
+                catch (Exception)
+                {
+                }
+            }
+            deviceconnect.StartPolling(250);
+            Thread.Sleep(500);
+            deviceconnect.EnableDevice();
+            Thread.Sleep(500);
+
+            InertialMotorConfiguration InertialMotorConfiguration = deviceconnect.GetInertialMotorConfiguration(listado[0]);
+            ThorlabsInertialMotorSettings currentDeviceSettings = ThorlabsInertialMotorSettings.GetSettings(InertialMotorConfiguration);
+
+            // Set the 'Step' paramaters for the Inertia Motor and download to device
+            currentDeviceSettings.Drive.Channel(chanelsDevice[1]).StepRate = 200;
+            currentDeviceSettings.Drive.Channel(chanelsDevice[1]).StepAcceleration = 100;
+            deviceconnect.SetSettings(currentDeviceSettings, true, true);
+
+            // or
+            // Move_Method2(device, InertialMotorStatus.MotorChannels.Channel1, position);
+
+            Decimal newPos = deviceconnect.GetPosition(InertialMotorStatus.MotorChannels.Channel1);
+            // SECCION TOMA DE IMAGENES
+            var acptationvalue = true;
+            using var capture = new VideoCapture(0, VideoCaptureAPIs.DSHOW);
+            Mat[] image = new Mat[10];
+            Mat[] finalimg = new Mat[3];
+            for (int j = 0; j < finalimg.Length; j++)
+            {
+                for (int i = 0; i < image.Length; i++)
+                {
+                    Mat frame = new Mat();
+
+                    bool estatusMovement = Move_Method1(deviceconnect, chanelsDevice[1], i * 100);
+                    if (!estatusMovement)
+                    {
+                        deviceconnect.StopPolling();
+                        deviceconnect.Disconnect(true);
+                        yield return false;
+                    }
+
+                    if (!capture.IsOpened())
+                    {
+                        acptationvalue = false;
+                        capture.FrameWidth = 1920;
+                        capture.FrameHeight = 1080;
+                        capture.AutoFocus = true;
+
+                        const int sleepTime = 10;
+                    }
+
+                    //using var window = new Window("capture");
+                    //var image = new Mat();
+
+                    capture.Read(frame);
+                    image[i] = frame;
+                    string pathsave = string.Format("{0}\\camtaked{1}.jpg", "C:\\Users\\cocuy\\AppData\\Local\\Temp\\tempimg", i * 100);
+                    frame.SaveImage(pathsave);
+                    //var imgretonr = image.ToBytes(); COMENTADA PORQUE NO SE NECESITA COMBERTIR A FRAMES
+                }
+                Mat mosaicv = new Mat();
+                Cv2.VConcat(image, mosaicv);
+                finalimg[j] = mosaicv;
+                string mosaicpathv = string.Format("{0}\\camtakedV{1}.jpg", "C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles", j);                
+                mosaicv.SaveImage(mosaicpathv);
+                var developerurl2 = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
+                yield return mosaicpathv;
+            }
+            Mat mosaic = new Mat();
+            Cv2.HConcat(finalimg, mosaic);
+            string mosaicpath = string.Format("{0}\\HxV{1}.jpg", "C:\\Users\\cocuy\\AppData\\Local\\Temp\\tempimg", "mosaic");
+            mosaic.SaveImage(mosaicpath);
+
+            // Tidy up and exit
+            deviceconnect.StopPolling();
+            deviceconnect.Disconnect(true);
+            yield return false;
+
         }
         ///<summary>
         ///Inicia la conexion con el dispositivo connectado 

@@ -87,6 +87,7 @@ app.UseAuthorization();
 
 app.MapHub<ChatHub>("/chatHub");
 app.MapHub<StreamingHub>("/StreamingHub");
+app.MapHub<UpdateStatus>("/UpdateStatus");
 
 
 app.Run();

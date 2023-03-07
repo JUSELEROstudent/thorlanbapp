@@ -5,7 +5,8 @@
       <v-container fluid="true" class="bg-green">
         <v-row >
           <v-col class="bg-red"  cols="7">
-            <img class="resourceimg" src="https://localhost:7166/SouerceStaticFiles/campos.svg" alt="vista preeliminar" height="400">
+            <current-status-view></current-status-view>
+            <!-- <img class="resourceimg" src="https://localhost:7166/SouerceStaticFiles/campos.svg" alt="vista preeliminar" height="400"> -->
           </v-col>
           <v-col class="bg-yellow" cols="5">
             <play-ground>
@@ -19,8 +20,10 @@
 <script>
 import StreamtoAllView from './StreamtoAllView.vue'
 import PlayGround from './PlayGround.vue'
+import CurrentStatusView from '../components/CurrentstatusView.vue'
+
 export default {
-  components: { StreamtoAllView, PlayGround },
+  components: { StreamtoAllView, PlayGround, CurrentStatusView },
   app: 'AutomaticMovement',
   data () {
     return {
