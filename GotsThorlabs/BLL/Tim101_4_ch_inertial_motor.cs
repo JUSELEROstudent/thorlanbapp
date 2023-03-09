@@ -130,7 +130,10 @@ namespace GotsThorlabs.BLL
         {
             var developerurl = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
             var listado = deviceslist();
+            string path = Directory.GetCurrentDirectory();
             if (listado == null) { yield return false; }
+            var developerurl2 = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
+            var urlslocals = developerurl2.Split(";");
             //KCubeInertialMotor deviceconnect = await Getobjdevicekim(listado[0]);
             KCubeInertialMotor deviceconnect = KCubeInertialMotor.CreateKCubeInertialMotor(listado[0]);
             try
@@ -203,27 +206,34 @@ namespace GotsThorlabs.BLL
 
                     capture.Read(frame);
                     image[i] = frame;
-                    string pathsave = string.Format("{0}\\camtaked{1}.jpg", "C:\\Users\\cocuy\\AppData\\Local\\Temp\\tempimg", i * 100);
-                    frame.SaveImage(pathsave);
+                    //string pathsave = string.Format("{0}\\camtaked{1}.jpg", "C:\\Users\\cocuy\\AppData\\Local\\Temp\\tempimg", i * 100);
+                    //frame.SaveImage(pathsave);
                     //var imgretonr = image.ToBytes(); COMENTADA PORQUE NO SE NECESITA COMBERTIR A FRAMES
                 }
                 Mat mosaicv = new Mat();
                 Cv2.VConcat(image, mosaicv);
                 finalimg[j] = mosaicv;
-                string mosaicpathv = string.Format("{0}\\camtakedV{1}.jpg", "C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles", j);                
+                string mosaicpathv = string.Format("{0}\\camtakedV{1}.jpg", Directory.GetCurrentDirectory() + "\\StaticFiles", j);
                 mosaicv.SaveImage(mosaicpathv);
-                var developerurl2 = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
-                yield return mosaicpathv;
+                var namephoto1 = mosaicpathv.Split("\\");
+                int lengtpicpath1 = namephoto1.Length;
+                var namepicstream1 = namephoto1[lengtpicpath1 - 1];
+                var urlstaticfiles1 = urlslocals[0] + "/SouerceStaticFiles/" + namepicstream1;
+                yield return urlstaticfiles1;
             }
             Mat mosaic = new Mat();
             Cv2.HConcat(finalimg, mosaic);
-            string mosaicpath = string.Format("{0}\\HxV{1}.jpg", "C:\\Users\\cocuy\\AppData\\Local\\Temp\\tempimg", "mosaic");
+            string mosaicpath = string.Format("{0}\\HxV{1}.jpg", Directory.GetCurrentDirectory() + "\\StaticFiles", "mosaic");
             mosaic.SaveImage(mosaicpath);
+            var namephoto = mosaicpath.Split("\\");
+            int lengtpicpath = namephoto.Length;
+            var namepicstream = namephoto[lengtpicpath - 1];
 
             // Tidy up and exit
             deviceconnect.StopPolling();
             deviceconnect.Disconnect(true);
-            yield return false;
+            var urlstaticfiles = urlslocals[0] + "/SouerceStaticFiles/" + namepicstream;
+            yield return urlstaticfiles;
 
         }
         ///<summary>
