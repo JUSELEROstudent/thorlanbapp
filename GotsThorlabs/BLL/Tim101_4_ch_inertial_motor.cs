@@ -176,7 +176,7 @@ namespace GotsThorlabs.BLL
             var acptationvalue = true;
             using var capture = new VideoCapture(0, VideoCaptureAPIs.DSHOW);
             Mat[] image = new Mat[10];
-            Mat[] finalimg = new Mat[3];
+            Mat[] finalimg = new Mat[5];
             for (int j = 0; j < finalimg.Length; j++)
             {
                 for (int i = 0; i < image.Length; i++)

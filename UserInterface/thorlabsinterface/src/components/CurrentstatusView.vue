@@ -1,8 +1,14 @@
 <template>
-  <h1>current estatus</h1>
-  <h5>{{ Urlcurrentimg }}</h5>
+  <a :href=" Urlcurrentimg " Target="_blank">{{ Urlcurrentimg }}</a>
   <button @click="initconectionupdateimg">Iniciar</button>
-  <img :src=Urlcurrentimg >
+  <!-- <img :src=Urlcurrentimg > -->
+
+<figure class='zoom' v-on:mousemove=" zoom($event)" :style="{ backgroundImage: 'url(' + Urlcurrentimg + ')' }">
+  <a :href=" Urlcurrentimg " Target="_blank">
+  <img :src=Urlcurrentimg />
+</a>
+</figure>
+
 </template>
 
 <script  lang="ts">
@@ -17,11 +23,32 @@ export default {
   data () {
     return {
       testdata: true,
-      Urlcurrentimg: 'https://localhost:7166/SouerceStaticFiles/camtakedV1.jpg',
+      Urlcurrentimg: 'https://localhost:7166/SouerceStaticFiles/HxVmosaic.jpg',
       status2: ''
     }
   },
   methods: {
+    zoom: function (e: Event) {
+      const zoomer = e.currentTarget
+      let offsetX
+      let offsetY
+      // console.log(e)
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      e.offsetX ? (offsetX = e.offsetX) : (offsetX = e.touches[0].pageX)
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      e.offsetY ? (offsetY = e.offsetY) : (offsetX = e.touches[0].pageX)
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      const x = (offsetX / zoomer.offsetWidth) * 100
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      const y = (offsetY / zoomer.offsetHeight) * 100
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      zoomer.style.backgroundPosition = x + '% ' + y + '%'
+    },
     errorhappen: function (errors: string) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
@@ -68,7 +95,26 @@ export default {
 </script>
 
 <style scoped>
-img {
-  width: 30%;
+.zoom {
+  display: flex;
+  margin: auto;
+  background: violet;
+}
+
+figure.zoom {
+  background-position: 50% 50%;
+  position: relative;
+  overflow: hidden;
+  width: 50%;
+  cursor: zoom-in;
+}
+figure.zoom img:hover {
+  opacity: 0;
+}
+figure.zoom img {
+  transition: opacity 0.5s;
+  display: flex;
+  margin: auto;
+  max-height: 88vh;
 }
 </style>
