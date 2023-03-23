@@ -2,15 +2,19 @@
   <!-- Crear la vista especial para el investigador se encargara de desarrollar el trasado de la preview y tambien de definir el sistema de
   barrido automatico que sera personalisable. -->
 <template>
-      <v-container fluid="true" class="bg-green">
+      <v-container fluid="true">
         <v-row >
-          <v-col class="bg-red"  cols="7">
-            <current-status-view></current-status-view>
-            <!-- <img class="resourceimg" src="https://localhost:7166/SouerceStaticFiles/campos.svg" alt="vista preeliminar" height="400"> -->
+          <v-col   cols="7">
+            <current-status-view @addcarrousel="addimgtostack"></current-status-view>
           </v-col>
-          <v-col class="bg-yellow" cols="5">
+          <v-col cols="5">
             <play-ground>
             </play-ground>
+            <v-carousel>
+              <v-carousel-item  v-for="img in carousel" :key="img"
+                  :src=" img "
+                ></v-carousel-item>
+            </v-carousel>
           </v-col>
         </v-row>
       </v-container>
@@ -29,10 +33,17 @@ export default {
     return {
       testdata: true,
       status1: '',
-      status2: ''
+      status2: '',
+      carousel: ['https://localhost:7166/SouerceStaticFiles/HxVmosaic.jpg']
     }
   },
   methods: {
+    addimgtostack: function (stackedurl) {
+      // var namejsonurl = 'img' + this.carousel.length
+      this.carousel.push(stackedurl)
+      this.$forceUpdate()
+      console.log(stackedurl)
+    },
     startmapping: function () {
       const requestOptions = {
         method: 'GET',

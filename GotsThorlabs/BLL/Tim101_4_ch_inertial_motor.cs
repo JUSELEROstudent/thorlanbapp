@@ -232,7 +232,8 @@ namespace GotsThorlabs.BLL
             // Tidy up and exit
             deviceconnect.StopPolling();
             deviceconnect.Disconnect(true);
-            var urlstaticfiles = urlslocals[0] + "/SouerceStaticFiles/" + namepicstream;
+            var rand = new Random();
+            var urlstaticfiles = urlslocals[0] + "/SouerceStaticFiles/" + namepicstream + "?ranmd=" + rand.Next().ToString();
             yield return urlstaticfiles;
 
         }

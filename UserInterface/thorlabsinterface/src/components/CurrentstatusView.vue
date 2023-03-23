@@ -1,6 +1,6 @@
 <template>
-  <a :href=" Urlcurrentimg " Target="_blank">{{ Urlcurrentimg }}</a>
-  <button @click="initconectionupdateimg">Iniciar</button>
+  <!-- <a :href=" Urlcurrentimg " Target="_blank">{{ Urlcurrentimg }}</a> -->
+  <!-- <v-btn @click="initconectionupdateimg" color="success" large>Iniciar</v-btn> -->
   <!-- <img :src=Urlcurrentimg > -->
 
 <figure class='zoom' v-on:mousemove=" zoom($event)" :style="{ backgroundImage: 'url(' + Urlcurrentimg + ')' }">
@@ -8,7 +8,7 @@
   <img :src=Urlcurrentimg />
 </a>
 </figure>
-
+<button class="custombuttom" @click="initconectionupdateimg" color="success" large>Iniciar</button>
 </template>
 
 <script  lang="ts">
@@ -28,6 +28,11 @@ export default {
     }
   },
   methods: {
+    stackimgscarrousel: function (stackedurl: string) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      this.$emit('addcarrousel', stackedurl)
+    },
     zoom: function (e: Event) {
       const zoomer = e.currentTarget
       let offsetX
@@ -75,6 +80,7 @@ export default {
               // eslint-disable-next-line @typescript-eslint/ban-ts-comment
               // @ts-ignore
               this.Urlcurrentimg = item
+              this.stackimgscarrousel(item)
               console.log(item)
               console.log(connectionsreamall.state)
             },
@@ -98,7 +104,6 @@ export default {
 .zoom {
   display: flex;
   margin: auto;
-  background: violet;
 }
 
 figure.zoom {
@@ -116,5 +121,12 @@ figure.zoom img {
   display: flex;
   margin: auto;
   max-height: 88vh;
+}
+.custombuttom {
+  background: rgb(var(--v-theme-success)) !important;
+  border-radius: 4px;
+  width:100%;
+  font-weight: bold;
+  color: white;
 }
 </style>
