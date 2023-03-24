@@ -54,6 +54,13 @@
     <div   v-if="!onrequest" ><v-btn disabled>Move whit configuration</v-btn></div>
   </div>
   </v-card>
+  <v-alert v-if="boolalert==true" class="alert1"
+        closable
+        density="compact"
+        type="warning"
+        title="ha sucedido algo inesperado"
+        :text="textalert"
+      ></v-alert>
 </template>
 
 <script>
@@ -63,6 +70,8 @@ export default {
     return {
       onrequest: true,
       listdevices: [],
+      boolalert: true,
+      textalert: 'alerta desde el componente mover',
       configdeviceselect: { deviceId: null, steprate: 100, stepaceleration: 100, moveto: 500, chaneltomove: 1 }
     }
   },
@@ -183,6 +192,15 @@ export default {
  .row:hover::before {
  background: rgb(99, 97, 97);
  transition-delay: 0.1s 0.5s;
+}
+.alert1 {
+  position: sticky;
+  float: right;
+  width: 30vw;
+  left: 68vw;
+  top: 98vh;
+  z-index: 99;
+
 }
 
 </style>

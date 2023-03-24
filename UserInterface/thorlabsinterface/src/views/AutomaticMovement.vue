@@ -3,11 +3,24 @@
   barrido automatico que sera personalisable. -->
 <template>
       <v-container fluid="true">
+        <div>
+          <v-row justify="end">
+            <v-col cols="1" >
+              <v-switch
+                v-model="currentmode"
+                hide-details
+                value="picsmovemodule"
+                :label="`Switch: ${currentmode.toString()}`"
+              >
+            </v-switch>
+            </v-col>
+          </v-row>
+        </div>
         <v-row >
           <v-col   cols="7">
             <current-status-view @addcarrousel="addimgtostack"></current-status-view>
           </v-col>
-          <v-col cols="5">
+          <v-col v-if="currentmode == 'picsmovemodule'" cols="5">
             <play-ground>
             </play-ground>
             <v-carousel>
@@ -16,11 +29,21 @@
                 ></v-carousel-item>
             </v-carousel>
           </v-col>
+          <v-col v-else  cols="5">
+            <streamto-all-view width="200"></streamto-all-view>
+          </v-col>
         </v-row>
       </v-container>
-      <v-divider> b</v-divider>
-      <streamto-all-view width="200"></streamto-all-view>
+      <v-divider></v-divider>
+      <v-alert v-if="boolalert==true" class="alert1"
+        closable
+        density="compact"
+        type="success"
+        title="ha sucedido algo inesperado"
+        :text="textalert"
+      ></v-alert>
 </template>
+
 <script>
 import StreamtoAllView from './StreamtoAllView.vue'
 import PlayGround from './PlayGround.vue'
@@ -34,10 +57,16 @@ export default {
       testdata: true,
       status1: '',
       status2: '',
-      carousel: ['https://localhost:7166/SouerceStaticFiles/HxVmosaic.jpg']
+      carousel: ['https://localhost:7166/SouerceStaticFiles/HxVmosaic.jpg'],
+      currentmode: 'picsmovemodule',
+      textalert: 'zvczvzc',
+      boolalert: false
     }
   },
   methods: {
+    startalert: function (mesage) {
+      this.textalert = mesage
+    },
     addimgtostack: function (stackedurl) {
       // var namejsonurl = 'img' + this.carousel.length
       this.carousel.push(stackedurl)
@@ -75,5 +104,13 @@ export default {
 display: flex;
 margin: auto;
 background: #8fc49c;
+}
+.alert1 {
+  position: absolute;
+  float: right;
+  width: 30vw;
+  left: 68vw;
+  top: 98vh;
+
 }
 </style>
