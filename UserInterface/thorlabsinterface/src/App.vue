@@ -34,16 +34,19 @@
       </v-list>
     </v-navigation-drawer>
       <router-view/>
+      <alert-new></alert-new>
     </v-main>
   </v-app>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue'
+import store from './store/index'
+import AlertNew from './components/AlertsNew.vue'
 
 export default defineComponent({
   name: 'App',
-
+  components: { AlertNew },
   data () {
     return {
       //
@@ -59,6 +62,7 @@ export default defineComponent({
         { title: 'Exit', icon: 'mdi-exit-run', dir: 'login' }]
     }
   },
+  store,
   mounted: function () {
     console.log(window.location.href)
     const currentpath = window.location.href

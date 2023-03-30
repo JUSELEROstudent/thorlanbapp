@@ -10,7 +10,7 @@
                 v-model="currentmode"
                 hide-details
                 value="picsmovemodule"
-                :label="`Switch: ${currentmode.toString()}`"
+                :label="``"
               >
             </v-switch>
             </v-col>
@@ -35,19 +35,21 @@
         </v-row>
       </v-container>
       <v-divider></v-divider>
-      <v-alert v-if="boolalert==true" class="alert1"
+      <!-- <v-alert v-show="boolalert==true" class="alert1"
         closable
         density="compact"
-        type="success"
-        title="ha sucedido algo inesperado"
+        :type=alerttype
+        title="Ha sucedido algo inesperado"
         :text="textalert"
-      ></v-alert>
+      ></v-alert> -->
 </template>
 
 <script>
 import StreamtoAllView from './StreamtoAllView.vue'
 import PlayGround from './PlayGround.vue'
 import CurrentStatusView from '../components/CurrentstatusView.vue'
+import { warn } from 'vue'
+import { ConsoleLogger } from '@microsoft/signalr/dist/esm/Utils'
 
 export default {
   components: { StreamtoAllView, PlayGround, CurrentStatusView },
@@ -56,16 +58,27 @@ export default {
     return {
       testdata: true,
       status1: '',
-      status2: '',
+      status2: 'error',
+      alerttype: 'error',
       carousel: ['https://localhost:7166/SouerceStaticFiles/HxVmosaic.jpg'],
       currentmode: 'picsmovemodule',
       textalert: 'zvczvzc',
       boolalert: false
     }
   },
+  watch: {
+    currentmode: function (nuevovalor, anteriorvalor) {
+      if (this.alerttype === 'success') { this.alerttype = 'error' } else { this.alerttype = 'success' }
+      this.boolalert = true
+      this.$store.commit('setMessage', 'mi mensaje de valor')
+      console.log(this.$store.state.message)
+    }
+  },
   methods: {
-    startalert: function (mesage) {
+    startalert: function (typeerror, mesage) {
+      this.alerttype = typeerror
       this.textalert = mesage
+      this.boolalert = true
     },
     addimgtostack: function (stackedurl) {
       // var namejsonurl = 'img' + this.carousel.length
@@ -81,8 +94,8 @@ export default {
       this.status1 = 'ha sido enviado Mapping'
       fetch('https://localhost:7166/automotion/mapping', requestOptions)
         .then(response => response.text())
-        .then(result => console.log('EXITO metodo Mapping' + result)).then(() => { this.status1 = 'ha terminado la peticion MAPPING' })
-        .catch(error => console.log('error de el metodo Mapping', error))
+        .then(result => console.log('EXITO metodo Mapping' + result)).then(() => { this.startalert('succes', 'El mapeado a finalizado exitosamente') })
+        .catch(error => this.startalert('error', error))
     },
     startcalibrate: function () {
       const requestOptions = {
@@ -111,6 +124,6 @@ background: #8fc49c;
   width: 30vw;
   left: 68vw;
   top: 98vh;
-
+  z-index: 99;
 }
 </style>
