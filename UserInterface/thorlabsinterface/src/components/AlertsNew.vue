@@ -1,29 +1,19 @@
 <template>
-      <v-alert v-if="messagge != ''" class="alert1"
-        closable
-        density="compact"
-        :type="typeerrormsg"
-        title="Ha sucedido algo inesperado"
-        :text="messagge"
-      ></v-alert>
+  <v-alert closable v-if="viewstatus" density="compact" :type="type" :title="title" :text="msg" position="sticky">
+  </v-alert>
 </template>
 
 <script>
 
 export default {
   name: 'AlertsNew',
+  props: ['title', 'msg', 'type'],
   data: function () {
     return {
       typeerrormsg: 'error',
-      messagge: ''
+      messagge: '',
+      viewstatus: true
     }
-  },
-  mounted: function () {
-    this.$store.dispatch('showAlert', { message: 'funciono?', type: 'success' })// asi se debe llamar los store
-    console.log(this.$store.state.message + ' - ' + this.$store.state.type)
-    this.messagge = this.$store.state.message
-    this.typeerrormsg = this.$store.state.type
-    // console.log('PASO POR LA ALERTAAA')
   }
 }
 </script>
@@ -43,5 +33,14 @@ export default {
 .alert-danger {
   background-color: lightcoral;
   border-color: red;
+}
+
+.alert1 {
+  position: absolute;
+  float: right;
+  width: 30vw;
+  left: 68vw;
+  top: 90vh;
+  z-index: 99;
 }
 </style>

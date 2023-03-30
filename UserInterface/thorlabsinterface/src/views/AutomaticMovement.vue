@@ -18,7 +18,7 @@
         </div>
         <v-row >
           <v-col   cols="7">
-            <current-status-view @addcarrousel="addimgtostack"></current-status-view>
+            <current-status-view @addcarrousel="addimgtostack" @hearerrors="startalert"></current-status-view>
           </v-col>
           <v-col v-if="currentmode == 'picsmovemodule'" cols="5">
             <play-ground>
@@ -68,17 +68,16 @@ export default {
   },
   watch: {
     currentmode: function (nuevovalor, anteriorvalor) {
-      if (this.alerttype === 'success') { this.alerttype = 'error' } else { this.alerttype = 'success' }
-      this.boolalert = true
-      this.$store.commit('setMessage', 'mi mensaje de valor')
+      // if (this.alerttype === 'success') { this.alerttype = 'error' } else { this.alerttype = 'success' }
+      // this.boolalert = true
+      this.$store.dispatch('showAlert', { message: 'mensage emitido por el watcher', type: 'success', tittle: 'Se cambio de modo' })
+      this.$forceUpdate()
       console.log(this.$store.state.message)
     }
   },
   methods: {
-    startalert: function (typeerror, mesage) {
-      this.alerttype = typeerror
-      this.textalert = mesage
-      this.boolalert = true
+    startalert: function (mesage) {
+      this.$store.dispatch('showAlert', { message: mesage, type: 'warning', tittle: 'inicia el metodo Startalert' })
     },
     addimgtostack: function (stackedurl) {
       // var namejsonurl = 'img' + this.carousel.length
@@ -94,8 +93,8 @@ export default {
       this.status1 = 'ha sido enviado Mapping'
       fetch('https://localhost:7166/automotion/mapping', requestOptions)
         .then(response => response.text())
-        .then(result => console.log('EXITO metodo Mapping' + result)).then(() => { this.startalert('succes', 'El mapeado a finalizado exitosamente') })
-        .catch(error => this.startalert('error', error))
+        .then(result => console.log('EXITO metodo Mapping' + result)).then(() => { this.$store.dispatch('showAlert', { message: 'El mappeado finalizo exitosamente', type: 'success', tittle: 'mapping a fallado' }) })
+        .catch(error => this.$store.dispatch('showAlert', { message: error.toString, type: 'error', title: 'Ha fallado el mapeado' }))
     },
     startcalibrate: function () {
       const requestOptions = {

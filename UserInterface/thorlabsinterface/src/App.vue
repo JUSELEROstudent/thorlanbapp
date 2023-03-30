@@ -1,40 +1,27 @@
 <template>
   <v-app>
     <v-main>
-      <v-toolbar
-  elevation="5"
-  outlined
-  prominent
-  rounded
->
-<v-app-bar-nav-icon @click="drawer = true" v-show="!currentUrl"></v-app-bar-nav-icon>
-</v-toolbar>
-<v-navigation-drawer
-      v-model="drawer"
-      absolute
-      temporary
-    >
-      <v-list
-        nav
-        dense
-      >
-        <v-list-item-group
-          v-model="group"
-          active-class="text--accent-4"
-          v-for="item in itemslist" :key="item.dir"
-        >
-          <v-list-item>
-            <v-list-item-icon @click="changepath(item.dir)">
-              <v-icon>{{item.icon}}</v-icon>
-            </v-list-item-icon>
-            <v-list-item-title>{{item.title}}</v-list-item-title>
-          </v-list-item>
+      <v-toolbar elevation="5" outlined prominent rounded>
+        <v-app-bar-nav-icon @click="drawer = true" v-show="!currentUrl"></v-app-bar-nav-icon>
+      </v-toolbar>
+      <v-navigation-drawer v-model="drawer" absolute temporary>
+        <v-list nav dense>
+          <v-list-item-group v-model="group" active-class="text--accent-4" v-for="item in itemslist" :key="item.dir">
+            <v-list-item>
+              <v-list-item-icon @click="changepath(item.dir)">
+                <v-icon>{{ item.icon }}</v-icon>
+              </v-list-item-icon>
+              <v-list-item-title>{{ item.title }}</v-list-item-title>
+            </v-list-item>
 
-        </v-list-item-group>
-      </v-list>
-    </v-navigation-drawer>
-      <router-view/>
-      <alert-new></alert-new>
+          </v-list-item-group>
+        </v-list>
+      </v-navigation-drawer>
+      <router-view />
+
+      <div style="position: fixed;display: flex;flex-direction: column;bottom: 0;right: 0;padding: 20px;gap: 10px;max-width: 600px;" v-if="alerts.length > 0">
+        <alert-new v-for="a in alerts" :key="a.uuid" :title="a.title" :msg="a.msg" :type="a.type"></alert-new>
+      </div>
     </v-main>
   </v-app>
 </template>
@@ -69,6 +56,11 @@ export default defineComponent({
     const longurl = currentpath.split('/')
     const lengtharrayurl = longurl.length
     this.changepath(longurl[lengtharrayurl - 1])
+  },
+  computed: {
+    alerts: function () {
+      return store.state.alerts
+    }
   },
   methods: {
     changepath: function (item: string) {

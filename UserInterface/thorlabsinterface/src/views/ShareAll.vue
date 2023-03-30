@@ -2,14 +2,14 @@
   <h1>hola</h1>
    <streamto-all-view @hearerrors="(errors) =>hearerrorsf(errors)"></streamto-all-view>
    <div>
-  <v-alert v-if="errorsmsj.state"
+  <!-- <v-alert v-if="errorsmsj.state"
       outlined
       type="warning"
       prominent
 
     >
       {{errorsmsj.msjerror}}
-    </v-alert>
+    </v-alert> -->
   </div>
     <!-- <div v-if="errorsmsj.state"> se ve </div> -->
 </template>
@@ -31,8 +31,9 @@ export default {
   methods: {
     hearerrorsf: function (errors) {
       console.log('ENTRAR AL EMITTT>>>>>>' + errors)
-      this.errorsmsj.errors = errors
-      this.errorsmsj.state = true
+      // this.errorsmsj.errors = errors
+      // this.errorsmsj.state = true
+      this.$store.dispatch('showAlert', { message: errors, type: 'error', tittle: 'La conexion ha fallado' })
     }
   }
 }

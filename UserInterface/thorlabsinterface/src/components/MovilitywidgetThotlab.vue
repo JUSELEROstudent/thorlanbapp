@@ -15,13 +15,13 @@
         <v-divider  inset
           >
         </v-divider>
-        <v-alert
+        <!-- <v-alert
           outlined
           type="warning"
           prominent
         >
       {{errors.errorsmsj}}
-    </v-alert>
+    </v-alert> -->
       </div>
   </div>
 </template>

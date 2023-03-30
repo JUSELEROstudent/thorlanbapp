@@ -54,13 +54,13 @@
     <div   v-if="!onrequest" ><v-btn disabled>Move whit configuration</v-btn></div>
   </div>
   </v-card>
-  <v-alert v-if="boolalert==true" class="alert1"
+  <!-- <v-alert v-if="boolalert==true" class="alert1"
         closable
         density="compact"
         type="warning"
         title="ha sucedido algo inesperado"
         :text="textalert"
-      ></v-alert>
+      ></v-alert> -->
 </template>
 
 <script>
@@ -91,8 +91,8 @@ export default {
       fetch('https://localhost:7166/movedevice', requestOptions)
         .then(response => response.json())
         .then(data => console.log(data))
-        .then(this.onrequest = true)
-        .catch(error => console.log('errror', error))
+        .then(this.onrequest = true).then(() => { this.$store.dispatch('showAlert', { message: 'Se desplazo exitosamente', type: 'success', tittle: 'Correcto' }) })
+        .catch(error => { this.$store.dispatch('showAlert', { message: error, type: 'error', tittle: 'Fallo el mover de manera manual' }) })
     },
     listdeviceson: function (data) {
       this.listdevices = data
