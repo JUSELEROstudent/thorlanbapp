@@ -173,10 +173,16 @@ namespace GotsThorlabs.BLL
 
             Decimal newPos = deviceconnect.GetPosition(InertialMotorStatus.MotorChannels.Channel1);
             // SECCION TOMA DE IMAGENES
+            var currentPath = Directory.GetCurrentDirectory();
+            var rowshmosaic = 10;
+            var columnmosaic = 5;
             var acptationvalue = true;
             using var capture = new VideoCapture(0, VideoCaptureAPIs.DSHOW);
-            Mat[] image = new Mat[10];
-            Mat[] finalimg = new Mat[5];
+            var frameheight = capture.FrameHeight;
+            var framewidth = capture.FrameWidth;
+            Mat mosaic = new Mat(rowshmosaic*frameheight, columnmosaic*framewidth, MatType.CV_8UC3);
+            Mat[] image = new Mat[rowshmosaic];
+            Mat[] finalimg = new Mat[columnmosaic];
             for (int j = 0; j < finalimg.Length; j++)
             {
                 for (int i = 0; i < image.Length; i++)
@@ -200,20 +206,31 @@ namespace GotsThorlabs.BLL
 
                         const int sleepTime = 10;
                     }
+                    // se van a hacer dos verciones de la imagen que se van a guardar en la carpeta de archivos estaticos uno se enviara todo el tiempo el otro se enviara a lfinalizar
 
-                    //using var window = new Window("capture");
-                    //var image = new Mat();
+
 
                     capture.Read(frame);
                     image[i] = frame;
-                    //string pathsave = string.Format("{0}\\camtaked{1}.jpg", "C:\\Users\\cocuy\\AppData\\Local\\Temp\\tempimg", i * 100);
-                    //frame.SaveImage(pathsave);
+                    Rect region = new Rect(frame.Cols*j, frame.Rows * i, frame.Cols, frame.Rows);
+                    frame.CopyTo(mosaic.SubMat(region));
+                    string pathsave = string.Format("{0}\\unitofpics{1}.jpg", currentPath + "\\StaticFiles", i);
+                    mosaic.SaveImage(pathsave);
+                    var splitpathdir = pathsave.Split("\\");
+                    int dimpath = splitpathdir.Length;
+                    var namephotounits = splitpathdir[dimpath - 1];
+                    var urlunitpi = urlslocals[0] + "/SouerceStaticFiles/" + namephotounits;
+                    yield return urlunitpi;
                     //var imgretonr = image.ToBytes(); COMENTADA PORQUE NO SE NECESITA COMBERTIR A FRAMES
                 }
                 Mat mosaicv = new Mat();
                 Cv2.VConcat(image, mosaicv);
                 finalimg[j] = mosaicv;
-                string mosaicpathv = string.Format("{0}\\camtakedV{1}.jpg", Directory.GetCurrentDirectory() + "\\StaticFiles", j);
+                Point pts1 = new Point(100,27);
+                Point pts2 = new Point(350,600);
+                Cv2.Rectangle(mosaicv, pts1, pts2,new Scalar(0, 0, 255), 10);
+
+                string mosaicpathv = string.Format("{0}\\camtakedV{1}.jpg", currentPath + "\\StaticFiles", j);
                 mosaicv.SaveImage(mosaicpathv);
                 var namephoto1 = mosaicpathv.Split("\\");
                 int lengtpicpath1 = namephoto1.Length;
@@ -221,9 +238,9 @@ namespace GotsThorlabs.BLL
                 var urlstaticfiles1 = urlslocals[0] + "/SouerceStaticFiles/" + namepicstream1;
                 yield return urlstaticfiles1;
             }
-            Mat mosaic = new Mat();
+
             Cv2.HConcat(finalimg, mosaic);
-            string mosaicpath = string.Format("{0}\\HxV{1}.jpg", Directory.GetCurrentDirectory() + "\\StaticFiles", "mosaic");
+            string mosaicpath = string.Format("{0}\\HxV{1}.jpg", currentPath + "\\StaticFiles", "mosaic");
             mosaic.SaveImage(mosaicpath);
             var namephoto = mosaicpath.Split("\\");
             int lengtpicpath = namephoto.Length;
