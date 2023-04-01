@@ -54,7 +54,15 @@ export default {
       // @ts-ignore
       zoomer.style.backgroundPosition = x + '% ' + y + '%'
     },
+    succesend: function () {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      this.$store.dispatch('showAlert', { message: 'El mappeado finalizo exitosamente', type: 'success', tittle: 'Finalizo exItosamente' })
+    },
     errorhappen: function (errors: string) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      this.$store.dispatch('showAlert', { message: 'Error en el Mapeado', type: 'error', tittle: 'stream ha fallado por favor verifique el estado de la conexion' })
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       this.$emit('hearerrors', errors)
