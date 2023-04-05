@@ -19,6 +19,11 @@
         <v-row >
           <v-col   cols="7">
             <current-status-view @addcarrousel="addimgtostack" @hearerrors="startalert"></current-status-view>
+            <img id="imagen-descarga" src="https://localhost:7166/SouerceStaticFiles/HxVmosaic.jpg" alt="Imagen de ejemplo" style="display: none;">
+            <a :href=carousel[0] download="imgtest">
+              descargar
+            <!-- <button id="boton-descarga" @click="downloadimg">Descargar imagen</button> -->
+            </a>
           </v-col>
           <v-col v-if="currentmode == 'picsmovemodule'" cols="5">
             <play-ground>
@@ -76,6 +81,21 @@ export default {
     }
   },
   methods: {
+    downloadimg: function () {
+      const url = this.carousel[0]
+      // console.log(url)
+      // fetch(url, { mode: 'no-cors' })
+      //   .then(response => response.blob())
+      //   .then(blob => {
+      //     const blobUrl = window.URL.createObjectURL(blob)
+      //     const a = document.createElement('a')
+      //     a.download = url.replace(/^.*[\\\\/]/, '')
+      //     a.href = blobUrl
+      //     document.body.appendChild(a)
+      //     a.click()
+      //     a.remove()
+      //   })
+    },
     startalert: function (mesage) {
       this.$store.dispatch('showAlert', { message: mesage, type: 'warning', tittle: 'inicia el metodo Startalert' })
     },

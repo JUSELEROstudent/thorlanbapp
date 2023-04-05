@@ -3,6 +3,7 @@ using System.Collections;
 using System.Threading;
 using Thorlabs.MotionControl.DeviceManagerCLI;
 using Thorlabs.MotionControl.KCube.InertialMotorCLI;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace GotsThorlabs.BLL
 {
@@ -212,6 +213,21 @@ namespace GotsThorlabs.BLL
 
                     capture.Read(frame);
                     image[i] = frame;
+                    Mat copyofFrame = new Mat();
+                    copyofFrame = frame;
+                        // se hcae el calculo de la place para el estado del blur 
+                    Mat grayresult = new Mat();
+                    Mat shaperesult = new Mat();
+                    Cv2.CvtColor(copyofFrame, grayresult, ColorConversionCodes.BGR2GRAY);
+                    Cv2.Laplacian(grayresult, shaperesult, MatType.CV_64F); 
+                    //Cv2.ImShow("Imagen", shaperesult);
+                    //Cv2.WaitKey(0);
+                    Cv2.MeanStdDev(copyofFrame, out var mean, out var stddev);
+                    var resultadolaplace = (stddev.Val0 * stddev.Val0).ToString();
+
+                    Cv2.PutText(frame, "laplacian :" + resultadolaplace, new Point(20, 30), HersheyFonts.Italic, 0.8,1);
+
+
                     Rect region = new Rect(frame.Cols*j, frame.Rows * i, frame.Cols, frame.Rows);
                     frame.CopyTo(mosaic.SubMat(region));
                     string pathsave = string.Format("{0}\\unitofpics{1}.jpg", currentPath + "\\StaticFiles", i);
