@@ -184,6 +184,7 @@ namespace GotsThorlabs.BLL
             Mat mosaic = new Mat(rowshmosaic*frameheight, columnmosaic*framewidth, MatType.CV_8UC3);
             Mat[] image = new Mat[rowshmosaic];
             Mat[] finalimg = new Mat[columnmosaic];
+            var rand = new Random();
             for (int j = 0; j < finalimg.Length; j++)
             {
                 for (int i = 0; i < image.Length; i++)
@@ -235,7 +236,7 @@ namespace GotsThorlabs.BLL
                     var splitpathdir = pathsave.Split("\\");
                     int dimpath = splitpathdir.Length;
                     var namephotounits = splitpathdir[dimpath - 1];
-                    var urlunitpi = urlslocals[0] + "/SouerceStaticFiles/" + namephotounits;
+                    var urlunitpi = urlslocals[0] + "/SouerceStaticFiles/" + namephotounits + "?ranmd=" + rand.Next().ToString();
                     yield return urlunitpi;
                     //var imgretonr = image.ToBytes(); COMENTADA PORQUE NO SE NECESITA COMBERTIR A FRAMES
                 }
@@ -251,7 +252,7 @@ namespace GotsThorlabs.BLL
                 var namephoto1 = mosaicpathv.Split("\\");
                 int lengtpicpath1 = namephoto1.Length;
                 var namepicstream1 = namephoto1[lengtpicpath1 - 1];
-                var urlstaticfiles1 = urlslocals[0] + "/SouerceStaticFiles/" + namepicstream1;
+                var urlstaticfiles1 = urlslocals[0] + "/SouerceStaticFiles/" + namepicstream1 + "?ranmd=" + rand.Next().ToString();
                 yield return urlstaticfiles1;
             }
 
@@ -265,7 +266,6 @@ namespace GotsThorlabs.BLL
             // Tidy up and exit
             deviceconnect.StopPolling();
             deviceconnect.Disconnect(true);
-            var rand = new Random();
             var urlstaticfiles = urlslocals[0] + "/SouerceStaticFiles/" + namepicstream + "?ranmd=" + rand.Next().ToString();
             yield return urlstaticfiles;
 

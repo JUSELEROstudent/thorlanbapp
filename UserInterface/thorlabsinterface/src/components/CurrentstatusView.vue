@@ -98,6 +98,9 @@ export default {
             error: (err) => {
               // no se hace nada en estos casos mas que mensajes de consola
               console.log(err)
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
+              this.$store.dispatch('showAlert', { message: 'a sucedido un error al conectarse al sistema de mapeado por favor revisar conexion', type: 'error', tittle: 'Error' })
             }
           })
       } catch (error) {
