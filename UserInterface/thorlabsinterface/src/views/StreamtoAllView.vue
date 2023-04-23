@@ -16,7 +16,7 @@
 
 <script  lang="ts">
 import * as signalR from '@microsoft/signalr'
-const connectionsreamall = new signalR.HubConnectionBuilder().withUrl('https://localhost:7166/StreamingHub', {
+const connectionsreamall = new signalR.HubConnectionBuilder().withUrl('https://192.168.126.172:4040/StreamingHub', {
   skipNegotiation: true,
   transport: signalR.HttpTransportType.WebSockets
 }).build()
@@ -68,8 +68,10 @@ export default ({
               const li = document.createElement('li')
             },
             error: (err) => {
-              // no se hace nada en estos casos mas que mensajes de consola
-              console.log(err)
+            // no se hace nada en estos casos mas que mensajes de consola
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+              this.$store.dispatch('showAlert', { message: err, type: 'error', tittle: 'ha sucedido un error' })
             }
           })
       } catch (error) {

@@ -13,7 +13,7 @@
 
 <script  lang="ts">
 import * as signalR from '@microsoft/signalr'
-const connectionsreamall = new signalR.HubConnectionBuilder().withUrl('https://localhost:7166/UpdateStatus', {
+const connectionsreamall = new signalR.HubConnectionBuilder().withUrl('https://192.168.126.172:4040/UpdateStatus', {
   skipNegotiation: true,
   transport: signalR.HttpTransportType.WebSockets
 }).build()
@@ -23,7 +23,7 @@ export default {
   data () {
     return {
       testdata: true,
-      Urlcurrentimg: 'https://localhost:7166/SouerceStaticFiles/HxVmosaic.jpg',
+      Urlcurrentimg: 'https://192.168.126.172:4040/SouerceStaticFiles/HxVmosaic.jpg',
       status2: ''
     }
   },

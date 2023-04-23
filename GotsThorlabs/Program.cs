@@ -36,7 +36,6 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true
     };
 });
-
 SimulationManager.Instance.InitializeSimulations();
 builder.Services.AddAuthorization((options) =>
 {

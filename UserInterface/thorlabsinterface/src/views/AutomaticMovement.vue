@@ -65,7 +65,7 @@ export default {
       status1: '',
       status2: 'error',
       alerttype: 'error',
-      carousel: ['https://localhost:7166/SouerceStaticFiles/HxVmosaic.jpg'],
+      carousel: ['https://192.168.126.172:4040/SouerceStaticFiles/HxVmosaic.jpg'],
       currentmode: 'picsmovemodule',
       textalert: 'zvczvzc',
       boolalert: false

@@ -75,7 +75,7 @@ namespace GotsThorlabs.NodesApi
                 catch (Exception)
                 {
                     // Connection failed
-                    serialNumbers.Add("Failed to open device {0}");
+                    serialNumbers.Add("Failed to open device " + movestosite.deviceId);
                     return serialNumbers;
                 }
                 if (!device.IsSettingsInitialized())
@@ -155,7 +155,7 @@ namespace GotsThorlabs.NodesApi
                 }
                 List<string> serialNumbers = DeviceManagerCLI.GetDeviceList(KCubeInertialMotor.DevicePrefix_KIM101);
                 return serialNumbers;
-            }).RequireAuthorization();
+            });//.RequireAuthorization();
         } 
     }
 }
