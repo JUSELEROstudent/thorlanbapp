@@ -19,7 +19,23 @@ namespace GotsThorlabs.Hubs
             var idconection = Context.ConnectionAborted;
             Console.WriteLine(idconection);
             var acptationvalue = true;
-            using var capture = new VideoCapture(0, VideoCaptureAPIs.DSHOW);
+            using var capture = new VideoCapture(2, VideoCaptureAPIs.DSHOW);
+
+            int maxCameraIndex = 10; // Puedes ajustar esto según tus necesidades
+
+            for (int i = 0; i < maxCameraIndex; i++)
+            {
+                using (VideoCapture capture2 = new VideoCapture(i))
+                {
+                    // Intentar abrir el dispositivo de captura
+                    if (capture2.IsOpened())
+                    {
+                        string cameraName = capture2.GetBackendName().ToString(); //GetCaptureProperty(Emgu.CV.CvEnum.CapProp.FriendlyName).ToString();
+                        Console.WriteLine($"Cámara {i}: {cameraName}");
+                    }
+                    
+                }
+            }
             //for (var i = 0; i < count; i++)
             while (acptationvalue)
             {
@@ -56,11 +72,12 @@ namespace GotsThorlabs.Hubs
     public class UpdateStatus : Hub
     {
         public async IAsyncEnumerable<dynamic> Imgupdate(
+          int indexcam,
          [EnumeratorCancellation]
         CancellationToken cancellationToken)
         {
             var controlmotor = new Tim101_4_ch_inertial_motor();
-            var processimgs = controlmotor.Createmosaicstepbystep();
+            var processimgs = controlmotor.Createmosaicstepbystep(indexcam);
             await foreach (var url in processimgs)
             { 
                 yield return url;

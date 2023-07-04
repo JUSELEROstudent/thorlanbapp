@@ -55,7 +55,7 @@ namespace GotsThorlabs.NodesApi
         {
             App.MapPost("/movedevice",  ([FromBody]ObjMovement movestosite) =>
             {
-                
+
                 // SimulationManager.Instance.InitializeSimulations();
                 if (!builddeviceslist()) return new List<string> { "No se ha podido iniciar la lista de dispositivos" };
                 List<string>  serialNumbers = DeviceManagerCLI.GetDeviceList(KCubeInertialMotor.DevicePrefix_KIM101);
@@ -155,7 +155,31 @@ namespace GotsThorlabs.NodesApi
                 }
                 List<string> serialNumbers = DeviceManagerCLI.GetDeviceList(KCubeInertialMotor.DevicePrefix_KIM101);
                 return serialNumbers;
-            }).RequireAuthorization();
+            });//.RequireAuthorization();
+
+
+            App.MapGet("Home/cameras", async () =>
+            {
+                //Dictionary<int, string> cameraslist = new Dictionary<int, string>();
+                List<ObjCameras> cameralists = new List<ObjCameras>();
+                int maxCameraIndex = 10; // Puedes ajustar esto según tus necesidades
+                for (int i = 0; i < maxCameraIndex; i++)
+                {
+                    using (VideoCapture capture2 = new VideoCapture(i))
+                    {
+                        // Intentar abrir el dispositivo de captura
+                        if (capture2.IsOpened())
+                        {
+                            string cameraName = capture2.GetBackendName().ToString(); //GetCaptureProperty(Emgu.CV.CvEnum.CapProp.FriendlyName).ToString();
+                            Console.WriteLine($"Cámara {i}: {cameraName} {capture2.CvPtr}");
+                            //cameraslist.Add(i,cameraName);
+                            cameralists.Add(new ObjCameras { cameraId = (int)i, cameraName = cameraName.ToString() });
+                        }
+
+                    }
+                }
+                return cameralists;
+            });
         } 
     }
 }
@@ -167,4 +191,10 @@ public class ObjMovement
    public int moveto { get; set; }
    public int steprate { get; set; }
    public int stepaceleration { get; set;  }
+}
+
+public class ObjCameras
+{
+    public int cameraId { get; set; }
+    public string cameraName { get; set; }
 }

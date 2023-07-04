@@ -127,7 +127,7 @@ namespace GotsThorlabs.BLL
         ///<remarks>
         ///devuelve la url de la ubicacion en el servidor de la imagen actual del mapeo
         ///</remarks>
-        public async IAsyncEnumerable<dynamic> Createmosaicstepbystep()
+        public async IAsyncEnumerable<dynamic> Createmosaicstepbystep(int indexCam)
         {
             var developerurl = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
             var listado = deviceslist();
@@ -178,7 +178,7 @@ namespace GotsThorlabs.BLL
             var rowshmosaic = 10;
             var columnmosaic = 5;
             var acptationvalue = true;
-            using var capture = new VideoCapture(0, VideoCaptureAPIs.DSHOW);
+            using var capture = new VideoCapture(indexCam, VideoCaptureAPIs.DSHOW);
             var frameheight = capture.FrameHeight;
             var framewidth = capture.FrameWidth;
             Mat mosaic = new Mat(rowshmosaic*frameheight, columnmosaic*framewidth, MatType.CV_8UC3);

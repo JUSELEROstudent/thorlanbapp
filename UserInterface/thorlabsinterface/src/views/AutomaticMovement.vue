@@ -18,7 +18,14 @@
         </div>
         <v-row >
           <v-col   cols="7">
-            <current-status-view @addcarrousel="addimgtostack" @hearerrors="startalert"></current-status-view>
+
+            <v-select
+            v-model="currentcamera" label="Select camera"
+            item-title="cameraName" item-value="cameraId" :items="enablecameras"
+            required
+            ></v-select>
+
+            <current-status-view @addcarrousel="addimgtostack" @hearerrors="startalert"  :IndexCamera="4"></current-status-view>
             <img id="imagen-descarga" src="https://localhost:7166/SouerceStaticFiles/HxVmosaic.jpg" alt="Imagen de ejemplo" style="display: none;">
             <a :href=carousel[0] download="imgtest">
               descargar
@@ -68,7 +75,9 @@ export default {
       carousel: ['https://localhost:7166/SouerceStaticFiles/HxVmosaic.jpg'],
       currentmode: 'picsmovemodule',
       textalert: 'zvczvzc',
-      boolalert: false
+      boolalert: false,
+      enablecameras: [], // { cameraId: null, cameraName: '' },
+      currentcamera: null
     }
   },
   watch: {
@@ -126,7 +135,26 @@ export default {
         .then(response => response.text())
         .then(result => console.log('EXITO metodo Calibrate' + result)).then(() => { this.status2 = 'ha terminado la peticion CALIBRATE' })
         .catch(error => console.log('error de el metodo Calibrate', error))
+    },
+    pushcameras: function (cameras) {
+      console.log(cameras)
+      this.enablecameras = cameras
+      console.log(this.enablecameras)
     }
+  },
+  beforeCreate () {
+    const myHeaders = new Headers()
+    myHeaders.append('Authorization', 'Bearer ' + localStorage.getItem('stringjwt'))
+
+    const requestOptions = {
+      method: 'GET',
+      headers: myHeaders
+      // , redirect: 'follow'
+    }
+    fetch('https://localhost:7166/Home/cameras', requestOptions)
+      .then(response => response.json())
+      .then(data => this.pushcameras(data))
+      .catch(error => console.log('Error al cargar las camaras', error))
   }
 }
 </script>

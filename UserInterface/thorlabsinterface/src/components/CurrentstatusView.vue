@@ -12,18 +12,26 @@
 </template>
 
 <script  lang="ts">
+import { ref, PropType, defineComponent, defineProps } from 'vue'
 import * as signalR from '@microsoft/signalr'
 const connectionsreamall = new signalR.HubConnectionBuilder().withUrl('https://localhost:7166/UpdateStatus', {
   skipNegotiation: true,
   transport: signalR.HttpTransportType.WebSockets
 }).build()
-
+interface FlashInterface {
+    index: bigint
+}
+interface IProps{
+   camearaindice : FlashInterface
+}
+const props = defineProps<IProps>()
 export default {
   app: 'CurrentStatusView',
   data () {
     return {
       testdata: true,
       Urlcurrentimg: 'https://localhost:7166/SouerceStaticFiles/HxVmosaic.jpg',
+      indicecamara: props.camearaindice.index,
       status2: ''
     }
   },
@@ -79,7 +87,7 @@ export default {
         if (!(connectionsreamall.state.toString() === 'Connected')) {
           await connectionsreamall.start().catch((err) => this.errorhappen(err.toString()))
         }
-        await connectionsreamall.stream('Imgupdate')
+        await connectionsreamall.stream('Imgupdate', 2)
           .subscribe({
             next: (item) => {
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
