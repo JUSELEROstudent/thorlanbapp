@@ -1,4 +1,4 @@
-﻿using Thorlabs.MotionControl.DeviceManagerCLI;
+using Thorlabs.MotionControl.DeviceManagerCLI;
 using Thorlabs.MotionControl.KCube.InertialMotorCLI;
 using Thorlabs.MotionControl.GenericMotorCLI;
 using AForge.Video.DirectShow;
@@ -75,7 +75,7 @@ namespace GotsThorlabs.NodesApi
                 catch (Exception)
                 {
                     // Connection failed
-                    serialNumbers.Add("Failed to open device {0}");
+                    serialNumbers.Add("Failed to open device " + movestosite.deviceId);
                     return serialNumbers;
                 }
                 if (!device.IsSettingsInitialized())

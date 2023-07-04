@@ -14,7 +14,7 @@
 <script  lang="ts">
 import { ref, PropType, defineComponent, defineProps } from 'vue'
 import * as signalR from '@microsoft/signalr'
-const connectionsreamall = new signalR.HubConnectionBuilder().withUrl('https://localhost:7166/UpdateStatus', {
+const connectionsreamall = new signalR.HubConnectionBuilder().withUrl('https://192.168.126.172:4040/UpdateStatus', {
   skipNegotiation: true,
   transport: signalR.HttpTransportType.WebSockets
 }).build()

@@ -88,7 +88,7 @@ export default {
         body: raw
       }
 
-      fetch('https://localhost:7166/movedevice', requestOptions)
+      fetch('https://192.168.126.172:4040/movedevice', requestOptions)
         .then(response => response.json())
         .then(data => console.log(data))
         .then(this.onrequest = true).then(() => { this.$store.dispatch('showAlert', { message: 'Se desplazo exitosamente', type: 'success', tittle: 'Correcto' }) })
@@ -111,10 +111,10 @@ export default {
       // , redirect: 'follow'
     }
 
-    fetch('https://localhost:7166/home/devices', requestOptions)
+    fetch('https://192.168.126.172:4040/home/devices', requestOptions)
       .then(response => response.json())
       .then(data => this.listdeviceson(data))
-      .catch(error => console.log('ERRRONRRRRRR', error))
+      .catch(error => { this.$store.dispatch('showAlert', { message: error, type: 'error', tittle: 'Fallo el mover de manera manual' }) })
   }
 }
 </script>

@@ -32,6 +32,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <UserSecretsId>218bc930-ee4d-4a8a-98e0-0a1bf384e380</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

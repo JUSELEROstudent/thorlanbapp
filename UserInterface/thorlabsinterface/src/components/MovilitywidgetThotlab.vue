@@ -33,7 +33,7 @@ const connection = new signalR.HubConnectionBuilder().withUrl('https://localhost
   transport: signalR.HttpTransportType.WebSockets
 }).build()
 
-const connectionsream = new signalR.HubConnectionBuilder().withUrl('https://localhost:7166/StreamingHub', {
+const connectionsream = new signalR.HubConnectionBuilder().withUrl('https://192.168.126.172:4040/StreamingHub', {
   skipNegotiation: true,
   transport: signalR.HttpTransportType.WebSockets
 }).build()
@@ -111,9 +111,9 @@ export default ({
               console.log('coneccion TERMINADA')
             },
             error: (err) => {
-              const li = document.createElement('li')
-              li.textContent = err
-              console.log(err)
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
+              this.$store.dispatch('showAlert', { message: err, type: 'error', tittle: 'ha sucedido unerror' })
             }
           })
       } catch (error) {
