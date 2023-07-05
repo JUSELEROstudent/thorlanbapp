@@ -15,14 +15,18 @@
 </template>
 
 <script  lang="ts">
+import { defineComponent } from 'vue'
 import * as signalR from '@microsoft/signalr'
-const connectionsreamall = new signalR.HubConnectionBuilder().withUrl('https://192.168.126.172:4040/StreamingHub', {
+const connectionsreamall = new signalR.HubConnectionBuilder().withUrl('https://192.168.10.85:4040/StreamingHub', {
   skipNegotiation: true,
   transport: signalR.HttpTransportType.WebSockets
 }).build()
-export default ({
+export default defineComponent({
   name: 'StreamToAll',
   emits: ['hearerrors'],
+  // props: {
+  //   indexcamera: [Number, Boolean]
+  // },
   data () {
     return {
       streamstate: true,

@@ -12,26 +12,21 @@
 </template>
 
 <script  lang="ts">
-import { ref, PropType, defineComponent, defineProps } from 'vue'
+import { defineComponent } from 'vue'
 import * as signalR from '@microsoft/signalr'
-const connectionsreamall = new signalR.HubConnectionBuilder().withUrl('https://192.168.126.172:4040/UpdateStatus', {
+const connectionsreamall = new signalR.HubConnectionBuilder().withUrl('https://192.168.10.85:4040/UpdateStatus', {
   skipNegotiation: true,
   transport: signalR.HttpTransportType.WebSockets
 }).build()
-interface FlashInterface {
-    index: bigint
-}
-interface IProps{
-   camearaindice : FlashInterface
-}
-const props = defineProps<IProps>()
-export default {
+export default defineComponent({
   app: 'CurrentStatusView',
+  props: {
+    indexcamera: Number
+  },
   data () {
     return {
       testdata: true,
-      Urlcurrentimg: 'https://localhost:7166/SouerceStaticFiles/HxVmosaic.jpg',
-      indicecamara: props.camearaindice.index,
+      Urlcurrentimg: 'https://192.168.10.85:4040/SouerceStaticFiles/HxVmosaic.jpg',
       status2: ''
     }
   },
@@ -87,7 +82,8 @@ export default {
         if (!(connectionsreamall.state.toString() === 'Connected')) {
           await connectionsreamall.start().catch((err) => this.errorhappen(err.toString()))
         }
-        await connectionsreamall.stream('Imgupdate', 2)
+        console.log(this.indexcamera)
+        await connectionsreamall.stream('Imgupdate', this.indexcamera)
           .subscribe({
             next: (item) => {
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -116,7 +112,7 @@ export default {
       }
     }
   }
-}
+})
 </script>
 
 <style scoped>

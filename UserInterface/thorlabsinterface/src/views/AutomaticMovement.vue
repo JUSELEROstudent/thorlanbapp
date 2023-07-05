@@ -25,7 +25,7 @@
             required
             ></v-select>
 
-            <current-status-view @addcarrousel="addimgtostack" @hearerrors="startalert"  :IndexCamera="4"></current-status-view>
+            <current-status-view @addcarrousel="addimgtostack" @hearerrors="startalert"  :indexcamera ="currentcamera"></current-status-view>
             <img id="imagen-descarga" src="https://localhost:7166/SouerceStaticFiles/HxVmosaic.jpg" alt="Imagen de ejemplo" style="display: none;">
             <a :href=carousel[0] download="imgtest">
               descargar
@@ -72,7 +72,7 @@ export default {
       status1: '',
       status2: 'error',
       alerttype: 'error',
-      carousel: ['https://192.168.126.172:4040/SouerceStaticFiles/HxVmosaic.jpg'],
+      carousel: ['https://192.168.10.85:4040/SouerceStaticFiles/HxVmosaic.jpg'],
       currentmode: 'picsmovemodule',
       textalert: 'zvczvzc',
       boolalert: false,
@@ -120,7 +120,7 @@ export default {
         redirect: 'follow'
       }
       this.status1 = 'ha sido enviado Mapping'
-      fetch('https://localhost:7166/automotion/mapping', requestOptions)
+      fetch('https://192.168.10.85:4040/automotion/mapping', requestOptions)
         .then(response => response.text())
         .then(result => console.log('EXITO metodo Mapping' + result)).then(() => { this.$store.dispatch('showAlert', { message: 'El mappeado finalizo exitosamente', type: 'success', tittle: 'mapping a fallado' }) })
         .catch(error => this.$store.dispatch('showAlert', { message: error.toString, type: 'error', title: 'Ha fallado el mapeado' }))
@@ -131,7 +131,7 @@ export default {
         redirect: 'follow'
       }
       this.status2 = 'ha sido enviado Calibrate'
-      fetch('https://localhost:7166/automotion/calibrate', requestOptions)
+      fetch('https://192.168.10.85:4040/automotion/calibrate', requestOptions)
         .then(response => response.text())
         .then(result => console.log('EXITO metodo Calibrate' + result)).then(() => { this.status2 = 'ha terminado la peticion CALIBRATE' })
         .catch(error => console.log('error de el metodo Calibrate', error))

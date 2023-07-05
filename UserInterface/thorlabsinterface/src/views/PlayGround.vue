@@ -88,7 +88,7 @@ export default {
         body: raw
       }
 
-      fetch('https://192.168.126.172:4040/movedevice', requestOptions)
+      fetch('https://192.168.10.85:4040/movedevice', requestOptions)
         .then(response => response.json())
         .then(data => console.log(data))
         .then(this.onrequest = true).then(() => { this.$store.dispatch('showAlert', { message: 'Se desplazo exitosamente', type: 'success', tittle: 'Correcto' }) })
@@ -110,11 +110,10 @@ export default {
       headers: myHeaders
       // , redirect: 'follow'
     }
-
-    fetch('https://192.168.126.172:4040/home/devices', requestOptions)
+    fetch('https://192.168.10.85:4040/home/devices', requestOptions)
       .then(response => response.json())
       .then(data => this.listdeviceson(data))
-      .catch(error => { this.$store.dispatch('showAlert', { message: error, type: 'error', tittle: 'Fallo el mover de manera manual' }) })
+      .catch(error => { this.$store.dispatch('showAlert', { message: error, type: 'error', tittle: 'Fallo al buscar dispositivos conectados' }) })
   }
 }
 </script>
