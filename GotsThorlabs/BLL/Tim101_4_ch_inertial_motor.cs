@@ -124,23 +124,32 @@ namespace GotsThorlabs.BLL
         ///<summary>
         ///Metodo encargado de devolver paso a paso la creacion del mosaico 
         ///</summary>
+        ///<param name="indexCam">
+        ///indice de camara que se desea usar en el mapeado
+        ///</param>
+        ///<param name="dimMove">
+        ///tipo de movimiento que se desea ejecutar sea 1D, 2D, 3D  se usa para validarse que la cantidad de motores permita el tipo de recorrido deseado
+        ///</param>
         ///<remarks>
         ///devuelve la url de la ubicacion en el servidor de la imagen actual del mapeo
         ///</remarks>
-        public async IAsyncEnumerable<dynamic> Createmosaicstepbystep(int indexCam)
+        public async IAsyncEnumerable<dynamic> Createmosaicstepbystep(int indexCam, int dimMove, string kimDeviceId)
         {
             var developerurl = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
             var listado = deviceslist();
             string path = Directory.GetCurrentDirectory();
             if (listado == null) { yield return false; }
+            if (!listado.Contains(kimDeviceId)) { yield return false; }
             var developerurl2 = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
             var urlslocals = developerurl2.Split(";");
             //KCubeInertialMotor deviceconnect = await Getobjdevicekim(listado[0]);
-            KCubeInertialMotor deviceconnect = KCubeInertialMotor.CreateKCubeInertialMotor(listado[0]);
+            //List<KCubeInertialMotor> inertialdevicesconnections = new List<KCubeInertialMotor>();
+
+            KCubeInertialMotor deviceconnect = KCubeInertialMotor.CreateKCubeInertialMotor(kimDeviceId);
             try
             {
-                // Open a connection to the device.
-                deviceconnect.Connect(listado[0]);
+                // Open a connection to  devices.
+                deviceconnect.Connect(kimDeviceId);
             }
             catch (Exception)
             {
@@ -150,7 +159,7 @@ namespace GotsThorlabs.BLL
             {
                 try
                 {
-                    deviceconnect.WaitForSettingsInitialized(1000);
+                    deviceconnect.WaitForSettingsInitialized(500);
                 }
                 catch (Exception)
                 {
@@ -161,7 +170,7 @@ namespace GotsThorlabs.BLL
             deviceconnect.EnableDevice();
             Thread.Sleep(500);
 
-            InertialMotorConfiguration InertialMotorConfiguration = deviceconnect.GetInertialMotorConfiguration(listado[0]);
+            InertialMotorConfiguration InertialMotorConfiguration = deviceconnect.GetInertialMotorConfiguration(listado[i]);
             ThorlabsInertialMotorSettings currentDeviceSettings = ThorlabsInertialMotorSettings.GetSettings(InertialMotorConfiguration);
 
             // Set the 'Step' paramaters for the Inertia Motor and download to device
@@ -185,13 +194,22 @@ namespace GotsThorlabs.BLL
             Mat[] image = new Mat[rowshmosaic];
             Mat[] finalimg = new Mat[columnmosaic];
             var rand = new Random();
-            for (int j = 0; j < finalimg.Length; j++)
+            for (int j = 0; j < finalimg.Length; j++)// all of the FOR statment is one of the dimensions of the movement
             {
+                bool estatusMovementA = Move_Method1(deviceconnect, chanelsDevice[1], j * 100);
+                if (!estatusMovementA)
+                {
+                    deviceconnect.StopPolling();
+                    deviceconnect.Disconnect(true);
+                    yield return false;
+                }
+
                 for (int i = 0; i < image.Length; i++)
                 {
+
                     Mat frame = new Mat();
 
-                    bool estatusMovement = Move_Method1(deviceconnect, chanelsDevice[1], i * 100);
+                    bool estatusMovement = Move_Method1(deviceconnect, chanelsDevice[2], i * 100);
                     if (!estatusMovement)
                     {
                         deviceconnect.StopPolling();
@@ -412,7 +430,7 @@ namespace GotsThorlabs.BLL
             if (device.GetPosition(channel) == position) { return true; }
             try
             {
-                device.MoveTo(channel, position, 60000);
+                device.MoveTo(channel, position, 6000);
             }
             catch (Exception)
             {
