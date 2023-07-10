@@ -236,7 +236,7 @@ namespace GotsThorlabs.BLL
                     var splitpathdir = pathsave.Split("\\");
                     int dimpath = splitpathdir.Length;
                     var namephotounits = splitpathdir[dimpath - 1];
-                    var urlunitpi = "https://192.168.10.85:4040" + "/SouerceStaticFiles/" + namephotounits + "?ranmd=" + rand.Next().ToString();
+                    var urlunitpi = "https://192.168.10.119:4040" + "/SouerceStaticFiles/" + namephotounits + "?ranmd=" + rand.Next().ToString();
                     yield return urlunitpi;
                     //var imgretonr = image.ToBytes(); COMENTADA PORQUE NO SE NECESITA COMBERTIR A FRAMES
                 }

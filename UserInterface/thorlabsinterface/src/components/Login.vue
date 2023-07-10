@@ -52,7 +52,7 @@ export default {
       if (response.ok) {
         localStorage.setItem('stringjwt', data) // Guardado del token generado en la peticion para la autenticacion.
         console.log(data + 'ahora se hace DIFERENTE LA PETICION')
-        window.location.href = 'http://192.168.10.85:4040/playground'
+        window.location.href = 'http://192.168.10.119:4040/playground'
       } else {
         console.log('ocurrio un error haciendo la peticion')
         // document.getElementById('displayerrormsg')[0].innerHTML = 'nombre de usuario o contrasean incorrecta'

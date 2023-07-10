@@ -15,6 +15,7 @@
           "Microsoft.AspNetCore.SignalR.Common": "7.0.1",
           "Microsoft.Data.SqlClient.SNI.runtime": "5.0.1",
           "Microsoft.IdentityModel.Tokens": "6.25.1",
+          "MySqlConnector": "2.2.6",
           "OpenCvSharp4": "4.6.0.20220608",
           "OpenCvSharp4.runtime.win": "4.6.0.20220608",
           "Swashbuckle.AspNetCore": "6.4.0",
@@ -299,6 +300,14 @@
             "assetType": "runtime",
             "assemblyVersion": "7.0.0.0",
             "fileVersion": "7.0.22.51805"
+          }
+        }
+      },
+      "MySqlConnector/2.2.6": {
+        "runtime": {
+          "lib/net6.0/MySqlConnector.dll": {
+            "assemblyVersion": "2.0.0.0",
+            "fileVersion": "2.2.6.0"
           }
         }
       },
@@ -803,6 +812,13 @@
       "sha512": "sha512-2nXPrhdAyAzir0gLl8Yy8S5Mnm/uBSQQA7jEsILOS1MTyS7DbmV1NgViMtvV1sfCD1ebITpNwb1NIinKeJgUVQ==",
       "path": "microsoft.win32.systemevents/7.0.0",
       "hashPath": "microsoft.win32.systemevents.7.0.0.nupkg.sha512"
+    },
+    "MySqlConnector/2.2.6": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-oYHl9TNhJXBEqfuiaEsOdBPkdULOcCCbqZJzYhy0rtREnMVoluG73GM8+gwBCMb1vbjv9K1ehQnhe0cxdxfOCA==",
+      "path": "mysqlconnector/2.2.6",
+      "hashPath": "mysqlconnector.2.2.6.nupkg.sha512"
     },
     "OpenCvSharp4/4.6.0.20220608": {
       "type": "package",

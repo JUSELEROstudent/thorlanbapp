@@ -470,6 +470,19 @@
           }
         }
       },
+      "MySqlConnector/2.2.6": {
+        "type": "package",
+        "compile": {
+          "lib/net6.0/MySqlConnector.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net6.0/MySqlConnector.dll": {
+            "related": ".xml"
+          }
+        }
+      },
       "OpenCvSharp4/4.6.0.20220608": {
         "type": "package",
         "dependencies": {
@@ -1705,6 +1718,33 @@
         "useSharedDesignerContext.txt"
       ]
     },
+    "MySqlConnector/2.2.6": {
+      "sha512": "oYHl9TNhJXBEqfuiaEsOdBPkdULOcCCbqZJzYhy0rtREnMVoluG73GM8+gwBCMb1vbjv9K1ehQnhe0cxdxfOCA==",
+      "type": "package",
+      "path": "mysqlconnector/2.2.6",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.md",
+        "lib/net461/MySqlConnector.dll",
+        "lib/net461/MySqlConnector.xml",
+        "lib/net471/MySqlConnector.dll",
+        "lib/net471/MySqlConnector.xml",
+        "lib/net6.0/MySqlConnector.dll",
+        "lib/net6.0/MySqlConnector.xml",
+        "lib/net7.0/MySqlConnector.dll",
+        "lib/net7.0/MySqlConnector.xml",
+        "lib/netcoreapp3.1/MySqlConnector.dll",
+        "lib/netcoreapp3.1/MySqlConnector.xml",
+        "lib/netstandard2.0/MySqlConnector.dll",
+        "lib/netstandard2.0/MySqlConnector.xml",
+        "lib/netstandard2.1/MySqlConnector.dll",
+        "lib/netstandard2.1/MySqlConnector.xml",
+        "logo.png",
+        "mysqlconnector.2.2.6.nupkg.sha512",
+        "mysqlconnector.nuspec"
+      ]
+    },
     "OpenCvSharp4/4.6.0.20220608": {
       "sha512": "+/EMZE0DodSRFHFniAMNRDYKr5cTBxUu0QABRcGT6duqopHZyeXX/siqbCorflkks2fpDHPB4Om/JoGzE3tHkA==",
       "type": "package",
@@ -2543,6 +2583,7 @@
       "Microsoft.AspNetCore.SignalR.Common >= 7.0.1",
       "Microsoft.Data.SqlClient.SNI.runtime >= 5.0.1",
       "Microsoft.IdentityModel.Tokens >= 6.25.1",
+      "MySqlConnector >= 2.2.6",
       "OpenCvSharp4 >= 4.6.0.20220608",
       "OpenCvSharp4.runtime.win >= 4.6.0.20220608",
       "Swashbuckle.AspNetCore >= 6.4.0",
@@ -2558,11 +2599,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\GotsThorlabs.csproj",
+      "projectUniqueName": "C:\\Users\\cocuy\\Desktop\\thorlabs\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj",
       "projectName": "GotsThorlabs",
-      "projectPath": "C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\GotsThorlabs.csproj",
+      "projectPath": "C:\\Users\\cocuy\\Desktop\\thorlabs\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj",
       "packagesPath": "C:\\Users\\cocuy\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\obj\\",
+      "outputPath": "C:\\Users\\cocuy\\Desktop\\thorlabs\\thorlanbapp\\GotsThorlabs\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -2577,6 +2618,7 @@
       ],
       "sources": {
         "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "C:\\Program Files\\dotnet\\library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -2623,6 +2665,10 @@
             "target": "Package",
             "version": "[6.25.1, )"
           },
+          "MySqlConnector": {
+            "target": "Package",
+            "version": "[2.2.6, )"
+          },
           "OpenCvSharp4": {
             "target": "Package",
             "version": "[4.6.0.20220608, )"
@@ -2667,7 +2713,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.200\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.102\\RuntimeIdentifierGraph.json"
       }
     }
   },
