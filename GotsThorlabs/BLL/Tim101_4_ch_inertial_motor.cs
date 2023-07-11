@@ -170,7 +170,7 @@ namespace GotsThorlabs.BLL
             deviceconnect.EnableDevice();
             Thread.Sleep(500);
 
-            InertialMotorConfiguration InertialMotorConfiguration = deviceconnect.GetInertialMotorConfiguration(listado[i]);
+            InertialMotorConfiguration InertialMotorConfiguration = deviceconnect.GetInertialMotorConfiguration(kimDeviceId);
             ThorlabsInertialMotorSettings currentDeviceSettings = ThorlabsInertialMotorSettings.GetSettings(InertialMotorConfiguration);
 
             // Set the 'Step' paramaters for the Inertia Motor and download to device
@@ -194,6 +194,13 @@ namespace GotsThorlabs.BLL
             Mat[] image = new Mat[rowshmosaic];
             Mat[] finalimg = new Mat[columnmosaic];
             var rand = new Random();
+
+            // Creacion de carpeta y nombre de archivo CSV con la clase encargada de gestionar el archivo
+            string namefile = Utilities.getTimeInString();
+            string namefolder = currentPath + "\\StaticFiles\\" + namefile;
+            bool createfolder = Utilities.createFolder(namefolder);
+            CollageGestor recordTrackCollage = new CollageGestor(namefile, namefolder);
+
             for (int j = 0; j < finalimg.Length; j++)// all of the FOR statment is one of the dimensions of the movement
             {
                 bool estatusMovementA = Move_Method1(deviceconnect, chanelsDevice[1], j * 100);
@@ -216,6 +223,8 @@ namespace GotsThorlabs.BLL
                         deviceconnect.Disconnect(true);
                         yield return false;
                     }
+
+                    recordTrackCollage.saveStepDeviceInCsv((j * 100).ToString(), (i * 100).ToString());
 
                     if (!capture.IsOpened())
                     {
@@ -254,7 +263,7 @@ namespace GotsThorlabs.BLL
                     var splitpathdir = pathsave.Split("\\");
                     int dimpath = splitpathdir.Length;
                     var namephotounits = splitpathdir[dimpath - 1];
-                    var urlunitpi = "https://192.168.10.119:4040" + "/SouerceStaticFiles/" + namephotounits + "?ranmd=" + rand.Next().ToString();
+                    var urlunitpi = "https://192.168.1.37:4040" + "/SouerceStaticFiles/" + namephotounits + "?ranmd=" + rand.Next().ToString();
                     yield return urlunitpi;
                     //var imgretonr = image.ToBytes(); COMENTADA PORQUE NO SE NECESITA COMBERTIR A FRAMES
                 }

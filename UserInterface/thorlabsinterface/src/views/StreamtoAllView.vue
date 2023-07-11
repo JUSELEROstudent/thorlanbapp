@@ -17,7 +17,7 @@
 <script  lang="ts">
 import { defineComponent } from 'vue'
 import * as signalR from '@microsoft/signalr'
-const connectionsreamall = new signalR.HubConnectionBuilder().withUrl('https://192.168.10.119:4040/StreamingHub', {
+const connectionsreamall = new signalR.HubConnectionBuilder().withUrl('https://192.168.1.37:4040/StreamingHub', {
   skipNegotiation: true,
   transport: signalR.HttpTransportType.WebSockets
 }).build()

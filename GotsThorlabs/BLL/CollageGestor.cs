@@ -9,28 +9,41 @@
         //};
         private List<string> ejeX;
         private List<string> ejeY;
-        private string nombreCsv;
+        private string pathNameCsv;
+        private int currentStep;
 
-        public CollageGestor(string nombreCsvdoc) {
-            nombreCsv = nombreCsvdoc;
-        }
-        public bool saveTrackDeviceInCsv(string ejeX, string ejeY) {
-            string rutaArchivo = "datos.csv";
+        /// <summary>
+        /// Clase usada para crear los registro csv del recorrido de la platina 
+        /// </summary>
+        public CollageGestor(string nombreCsvdoc, string path) {
 
-            using (StreamWriter writer = new StreamWriter(rutaArchivo))
-            {
+            string[] encabezados = { "Numero", "EjeX", "EjeZ" };
+            string pathsavedoc = path + "\\" + nombreCsvdoc;
+            using (StreamWriter writer = new StreamWriter(pathsavedoc)) {
                 // Escribir los encabezados
                 writer.WriteLine(string.Join(",", encabezados));
+            }
+            
+            pathNameCsv = pathsavedoc;
+        }
+        public bool saveStepDeviceInCsv(string ejeX, string ejeY) {
+            currentStep  =  currentStep + 1;
+            using (StreamWriter writer = new StreamWriter(pathNameCsv, true))
+            {
 
                 // Escribir los datos
-                foreach (string[] fila in datos)
-                {
-                    writer.WriteLine(string.Join(",", fila));
-                }
+                string[] fila = { currentStep.ToString(), ejeX, ejeY };
+                writer.WriteLine(string.Join(",", fila));
+
             }
 
-            Console.WriteLine("Archivo CSV creado exitosamente.");
+            //Console.WriteLine("Archivo CSV creado exitosamente.");
             return true;
+        }
+
+        public bool endRecordtrackInCsv() {
+
+            return false;
         }
 
     }

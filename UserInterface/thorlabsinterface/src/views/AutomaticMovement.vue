@@ -72,7 +72,7 @@ export default {
       status1: '',
       status2: 'error',
       alerttype: 'error',
-      carousel: ['https://192.168.10.119:4040/SouerceStaticFiles/HxVmosaic.jpg'],
+      carousel: ['https://192.168.1.37:4040/SouerceStaticFiles/HxVmosaic.jpg'],
       currentmode: 'picsmovemodule',
       textalert: 'zvczvzc',
       boolalert: false,
@@ -120,7 +120,7 @@ export default {
         redirect: 'follow'
       }
       this.status1 = 'ha sido enviado Mapping'
-      fetch('https://192.168.10.119:4040/automotion/mapping', requestOptions)
+      fetch('https://192.168.1.37:4040/automotion/mapping', requestOptions)
         .then(response => response.text())
         .then(result => console.log('EXITO metodo Mapping' + result)).then(() => { this.$store.dispatch('showAlert', { message: 'El mappeado finalizo exitosamente', type: 'success', tittle: 'mapping a fallado' }) })
         .catch(error => this.$store.dispatch('showAlert', { message: error.toString, type: 'error', title: 'Ha fallado el mapeado' }))
@@ -131,7 +131,7 @@ export default {
         redirect: 'follow'
       }
       this.status2 = 'ha sido enviado Calibrate'
-      fetch('https://192.168.10.119:4040/automotion/calibrate', requestOptions)
+      fetch('https://192.168.1.37:4040/automotion/calibrate', requestOptions)
         .then(response => response.text())
         .then(result => console.log('EXITO metodo Calibrate' + result)).then(() => { this.status2 = 'ha terminado la peticion CALIBRATE' })
         .catch(error => console.log('error de el metodo Calibrate', error))
