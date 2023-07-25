@@ -1,5 +1,8 @@
 ﻿using OpenCvSharp;
+using OpenCvSharp.Internal.Vectors;
 using System.Collections;
+//using System.Drawing;
+using System.Drawing.Imaging;
 using System.Threading;
 using Thorlabs.MotionControl.DeviceManagerCLI;
 using Thorlabs.MotionControl.KCube.InertialMotorCLI;
@@ -296,6 +299,28 @@ namespace GotsThorlabs.BLL
             var urlstaticfiles = urlslocals[0] + "/SouerceStaticFiles/" + namepicstream + "?ranmd=" + rand.Next().ToString();
             yield return urlstaticfiles;
 
+        }
+        public  bool CreatesticherOpencv()
+        {
+            var stitching = new emgu();
+
+            CreatesticherOpencv2();
+            return stitching.getstitcher(); 
+
+        }
+        public bool CreatesticherOpencv2()
+        {
+            var output = new Mat();
+            var img1 = new Mat("C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles\\stitchy1.png");
+            //var img1 = new Mat("C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles\\stitche1.jpg", OpenCvSharp.ImreadModes.Color);
+            var img2 = new Mat("C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles\\stitchy2.png");
+            var img3 = new Mat("C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles\\stitchy3.png");
+            Mat[] arraisMat = new Mat[] { img1, img2, img3 };
+            var mode = OpenCvSharp.Stitcher.Mode.Scans;
+            var stitched = Stitcher.Create(mode);
+            stitched.Stitch(arraisMat, output);
+            output.SaveImage("C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles\\openNative.png");
+            return true;
         }
         ///<summary>
         ///Inicia la conexion con el dispositivo connectado 

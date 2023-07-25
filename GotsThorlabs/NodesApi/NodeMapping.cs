@@ -32,6 +32,14 @@ namespace GotsThorlabs.NodesApi
 
                 return Results.Ok(status);
             });
+
+            App.MapGet("/automotion/stitcher", () =>
+            {
+                var inertialmotorkim = new Tim101_4_ch_inertial_motor();
+                var status = inertialmotorkim.CreatesticherOpencv();
+
+                return Results.Ok(status);
+            });
         }
     }
 }

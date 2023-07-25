@@ -86,7 +86,23 @@ namespace GotsThorlabs.Hubs
             //SE PUEDE MEJORAR EL CODIGO METIENDO TODO EN LA CLASE 101_4 .... Y USANDO YIELD EN EL WHILE
         }
     }
-
+    //public class stitcher : Hub
+    //{
+    //    public async IAsyncEnumerable<dynamic> Imgupdate(
+    //      int indexcam,
+    //     [EnumeratorCancellation]
+    //    CancellationToken cancellationToken)
+    //    {
+    //        var controlmotor = new Tim101_4_ch_inertial_motor();
+    //        var processimgs = controlmotor.CreatesticherOpencv(indexcam, 2, "97000001");
+    //        await foreach (var url in processimgs)
+    //        {
+    //            yield return url;
+    //        }
+    //        //creacion del metodo que se encarga de actualizar el estado del mapeo por imagenes en la app
+    //        //SE PUEDE MEJORAR EL CODIGO METIENDO TODO EN LA CLASE 101_4 .... Y USANDO YIELD EN EL WHILE
+    //    }
+    //}
     public class resourcesignal { 
         public string Name { get; set; }
         // public CancellationToken cancelacion { get; set; }
