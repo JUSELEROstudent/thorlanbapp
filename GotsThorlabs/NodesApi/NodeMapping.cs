@@ -33,10 +33,10 @@ namespace GotsThorlabs.NodesApi
                 return Results.Ok(status);
             });
 
-            App.MapGet("/automotion/stitcher", () =>
+            App.MapGet("/automotion/stitcher", (int mode) =>
             {
                 var inertialmotorkim = new Tim101_4_ch_inertial_motor();
-                var status = inertialmotorkim.CreatesticherOpencv();
+                var status = inertialmotorkim.CreatesticherOpencv(mode);
 
                 return Results.Ok(status);
             });

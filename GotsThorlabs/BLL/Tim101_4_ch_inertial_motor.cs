@@ -300,26 +300,34 @@ namespace GotsThorlabs.BLL
             yield return urlstaticfiles;
 
         }
-        public  bool CreatesticherOpencv()
+        public  bool CreatesticherOpencv(int mode)
         {
             var stitching = new emgu();
 
-            CreatesticherOpencv2();
-            return stitching.getstitcher(); 
+            CreatesticherOpencv2(mode);
+            stitching.getstitcher(mode); 
+            return true; 
 
         }
-        public bool CreatesticherOpencv2()
+        public bool CreatesticherOpencv2(int modes)
         {
+            var carpetaPath = "C:\\Users\\cocuy\\Desktop\\thorlabs\\thorlanbapp\\GotsThorlabs\\StaticFiles\\datasetstitched";
+            string[] archivos = Directory.GetFiles(carpetaPath, "*.jpg");
+            Mat[] arraisMat= new Mat[archivos.Length];
+
             var output = new Mat();
-            var img1 = new Mat("C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles\\stitchy1.png");
-            //var img1 = new Mat("C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles\\stitche1.jpg", OpenCvSharp.ImreadModes.Color);
-            var img2 = new Mat("C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles\\stitchy2.png");
-            var img3 = new Mat("C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles\\stitchy3.png");
-            Mat[] arraisMat = new Mat[] { img1, img2, img3 };
-            var mode = OpenCvSharp.Stitcher.Mode.Scans;
+            int indexinter = 0;
+            foreach (var archivo in archivos)
+            {
+                var img = new Mat(archivo.ToString());
+                arraisMat[indexinter] = img;
+                indexinter++;
+            }
+
+            var mode = modes == 0 ? OpenCvSharp.Stitcher.Mode.Scans : OpenCvSharp.Stitcher.Mode.Panorama ;
             var stitched = Stitcher.Create(mode);
-            stitched.Stitch(arraisMat, output);
-            output.SaveImage("C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles\\openNative.png");
+            var solucion = stitched.Stitch(arraisMat, output);
+            output.SaveImage("C:\\Users\\cocuy\\Desktop\\thorlabs\\thorlanbapp\\GotsThorlabs\\StaticFiles\\openNative.png");
             return true;
         }
         ///<summary>

@@ -16,25 +16,38 @@ namespace GotsThorlabs.BLL
     {
         //public emgu() { }
 
-        public bool getstitcher() 
+        public bool getstitcher(int modes) 
         {
-            //var stitcher = OpenCvSharp.Stitcher.Mode.Scans;
+            var carpetaPath = "C:\\Users\\cocuy\\Desktop\\thorlabs\\thorlanbapp\\GotsThorlabs\\StaticFiles\\datasetstitched";
+            string[] archivos = Directory.GetFiles(carpetaPath, "*.jpg");
+            Mat[] arraisMat = new Mat[archivos.Length];
+
             var output = new Mat();
-            var img1 = new Mat("C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles\\stitchy1.png");
-            //var img1 = new Mat("C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles\\stitche1.jpg", OpenCvSharp.ImreadModes.Color);
-            var img2 = new Mat("C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles\\stitchy2.png");
-            var img3 = new Mat("C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles\\stitchy3.png");
+            int indexinter = 0;
+            foreach (var archivo in archivos)
+            {
+                var img = new Mat(archivo.ToString());
+                arraisMat[indexinter] = img;
+                indexinter++;
+            }
+            //var stitcher = OpenCvSharp.Stitcher.Mode.Scans;
+            //var img1 = new Mat("C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles\\stitchy1.png");
+            ////var img1 = new Mat("C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles\\stitche1.jpg", OpenCvSharp.ImreadModes.Color);
+            //var img2 = new Mat("C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles\\stitchy2.png");
+            //var img3 = new Mat("C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles\\stitchy3.png");
             //var img4 = new Mat("C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles\\stitche4.jpg" );
 
 
             
-            Mat[] restulstitch3 = { img1, img2,img3 };
-            VectorOfMat restulstitch = new VectorOfMat(restulstitch3);
+            //Mat[] restulstitch3 = { img1, img2,img3 };
+            VectorOfMat restulstitch = new VectorOfMat(arraisMat);
             //var resultstitcher = OpenCvSharp.Stitcher.Create(stitcher);
             Brisk detector = new Brisk();
 
             Stitcher stitcher = new Stitcher();
-            WarperCreator warper = new PlaneWarper();
+            WarperCreator warper1 = new PlaneWarper();
+            WarperCreator warper2 = new  Emgu.CV.Stitching.CylindricalWarper();
+            var warper = modes == 0 ? warper1 : warper2;
             stitcher.SetFeaturesFinder(detector);
             stitcher.SetWarper(warper);
 
@@ -44,20 +57,13 @@ namespace GotsThorlabs.BLL
 
             var resultado = status == Stitcher.Status.Ok ? true : false;
             //var resultado2 = status == Stitcher.Status.Ok ? output.Save("C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles\\stitch.jpg") : "";
-            output.Save("C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles\\stitch.jpg");
+            output.Save("C:\\Users\\cocuy\\Desktop\\thorlabs\\thorlanbapp\\GotsThorlabs\\StaticFiles\\stitchemgu.jpg");
             //InputArray vectormat = InputArray.Create(restulstitch);
             //var respuesta = vectormat.IsMatVector();
             //var resultadostitched = resultstitcher.Stitch(vectormat, consolidado);
 
 
             //consolidado.SaveImage("C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles\\stitch.jpg");
-
-
-
-            img1.Dispose();
-            img2.Dispose();
-            img3.Dispose();
-            //img4.Dispose();
             return resultado;
         }
     }
