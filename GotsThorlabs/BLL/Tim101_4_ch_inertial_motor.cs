@@ -323,7 +323,11 @@ namespace GotsThorlabs.BLL
             var carpetaPath = currentpath + "\\StaticFiles\\datasetstitched";
             string[] archivos = Directory.GetFiles(carpetaPath, "*.jpg");
             Mat[] arraisMat= new Mat[archivos.Length];
-            var output = new Mat();            
+            var output = new Mat();
+            var outputcvt = new Mat();
+            var outputcopy = new Mat();
+            var outputarray1 = new Mat();
+            var treshimg = new Mat();
             int indexinter = 0;
             foreach (var archivo in archivos)
             {
@@ -331,7 +335,8 @@ namespace GotsThorlabs.BLL
                 arraisMat[indexinter] = img;
                 indexinter++;
             }
-            //var InputArrTest = OpenCvSharp.InputArray.Create(arraisMat);
+            var InputArrTest = OpenCvSharp.InputArray.Create(arraisMat);
+            var InputArrTest2 = OpenCvSharp.InputArray.Create(outputarray1);
             var mode = modes == 0 ? OpenCvSharp.Stitcher.Mode.Scans : OpenCvSharp.Stitcher.Mode.Panorama ;
             var stitched = Stitcher.Create(mode);
             var nuevo1 = new BestOf2NearestMatcher();
@@ -341,6 +346,15 @@ namespace GotsThorlabs.BLL
             output.SaveImage( currentpath + "\\StaticFiles\\openNative.jpg");
             //Cv2.DetailEnhance(InputArrTest, output, (float)3.0002, (float)0.0001);
             //output.SaveImage(currentpath + "\\StaticFiles\\openNative2.png");
+
+
+            Cv2.CopyMakeBorder(output, outputcopy, 10, 10, 10, 10, BorderTypes.Constant, null);
+            Cv2.ImWrite(currentpath + "\\StaticFiles\\copymaker.jpg", outputcopy);
+            Cv2.CvtColor(outputcopy, outputcvt, ColorConversionCodes.BGR2GRAY, 0);
+            Cv2.Threshold(outputcvt, treshimg, (double)1.5, (double)20.1, ThresholdTypes.Binary);
+            Cv2.ImWrite(currentpath + "\\StaticFiles\\threshhold.jpg", treshimg);
+
+
             return estado;
         }
         ///<summary>

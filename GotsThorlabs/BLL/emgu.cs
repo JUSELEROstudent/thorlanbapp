@@ -10,6 +10,7 @@ using Emgu.CV;
 using Emgu.CV.Util;
 using Emgu.CV.Features2D;
 using Emgu.Util;
+
 namespace GotsThorlabs.BLL
 {
     public class emgu
@@ -29,6 +30,7 @@ namespace GotsThorlabs.BLL
             Mat[] arraisMat = new Mat[archivos.Length];
 
             var output = new Mat();
+
             int indexinter = 0;
             foreach (var archivo in archivos)
             {
@@ -37,7 +39,7 @@ namespace GotsThorlabs.BLL
                 indexinter++;
             }
             VectorOfMat restulstitch = new VectorOfMat(arraisMat);
-            Brisk detector = new Brisk();
+            SIFT detector = new SIFT();
 
             Stitcher stitcher = new Stitcher();
             WarperCreator warper1 = new PlaneWarper();
@@ -50,6 +52,8 @@ namespace GotsThorlabs.BLL
 
             var resultado = status == Stitcher.Status.Ok ? true : false;
             output.Save(currentpath + "\\StaticFiles\\stitchemgu.jpg");
+
+
 
             return resultado;
         }

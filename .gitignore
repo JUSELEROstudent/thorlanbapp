@@ -5,3 +5,5 @@ GotsThorlabs/obj/
 
 .vs
 GotsThorlabs/StaticFiles/
+
+GotsThorlabs/Properties/launchSettings.json
