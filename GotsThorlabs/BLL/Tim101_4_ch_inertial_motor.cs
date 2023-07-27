@@ -1,4 +1,5 @@
 ﻿using OpenCvSharp;
+using OpenCvSharp.Detail;
 using OpenCvSharp.Internal.Vectors;
 using System.Collections;
 //using System.Drawing;
@@ -304,18 +305,25 @@ namespace GotsThorlabs.BLL
         {
             var stitching = new emgu();
 
-            CreatesticherOpencv2(mode);
-            stitching.getstitcher(mode); 
-            return true; 
+            var r1 = CreatesticherOpencv2(mode);
+            var r2 = stitching.getstitcher(mode); 
+            bool resultado = r1 == r2 && r1 == true ;
+            return resultado; 
 
         }
+        ///<summary>
+        ///Funcion de stitch encargada de procesar la imagenes definidas. 
+        ///</summary>
+        ///<return>
+        ///bool return, on OK return true 
+        ///</return>
         public bool CreatesticherOpencv2(int modes)
         {
-            var carpetaPath = "C:\\Users\\cocuy\\Desktop\\thorlabs\\thorlanbapp\\GotsThorlabs\\StaticFiles\\datasetstitched";
+            var currentpath = Directory.GetCurrentDirectory();
+            var carpetaPath = currentpath + "\\StaticFiles\\datasetstitched";
             string[] archivos = Directory.GetFiles(carpetaPath, "*.jpg");
             Mat[] arraisMat= new Mat[archivos.Length];
-
-            var output = new Mat();
+            var output = new Mat();            
             int indexinter = 0;
             foreach (var archivo in archivos)
             {
@@ -323,12 +331,17 @@ namespace GotsThorlabs.BLL
                 arraisMat[indexinter] = img;
                 indexinter++;
             }
-
+            //var InputArrTest = OpenCvSharp.InputArray.Create(arraisMat);
             var mode = modes == 0 ? OpenCvSharp.Stitcher.Mode.Scans : OpenCvSharp.Stitcher.Mode.Panorama ;
             var stitched = Stitcher.Create(mode);
+            var nuevo1 = new BestOf2NearestMatcher();
+
             var solucion = stitched.Stitch(arraisMat, output);
-            output.SaveImage("C:\\Users\\cocuy\\Desktop\\thorlabs\\thorlanbapp\\GotsThorlabs\\StaticFiles\\openNative.png");
-            return true;
+            var estado = solucion == Stitcher.Status.OK ? true : false;
+            output.SaveImage( currentpath + "\\StaticFiles\\openNative.jpg");
+            //Cv2.DetailEnhance(InputArrTest, output, (float)3.0002, (float)0.0001);
+            //output.SaveImage(currentpath + "\\StaticFiles\\openNative2.png");
+            return estado;
         }
         ///<summary>
         ///Inicia la conexion con el dispositivo connectado 

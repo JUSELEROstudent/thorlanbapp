@@ -14,11 +14,17 @@ namespace GotsThorlabs.BLL
 {
     public class emgu
     {
-        //public emgu() { }
+        ///<summary>
+        ///Funcion de stitch encargada de procesar la imagenes definidas. usando la libreria emgucv qeu es externa 
+        ///</summary>
+        ///<return>
+        ///bool return, on OK return true 
+        ///</return>
 
         public bool getstitcher(int modes) 
         {
-            var carpetaPath = "C:\\Users\\cocuy\\Desktop\\thorlabs\\thorlanbapp\\GotsThorlabs\\StaticFiles\\datasetstitched";
+            var currentpath = Directory.GetCurrentDirectory();
+            var carpetaPath = currentpath + "\\StaticFiles\\datasetstitched";
             string[] archivos = Directory.GetFiles(carpetaPath, "*.jpg");
             Mat[] arraisMat = new Mat[archivos.Length];
 
@@ -30,18 +36,7 @@ namespace GotsThorlabs.BLL
                 arraisMat[indexinter] = img;
                 indexinter++;
             }
-            //var stitcher = OpenCvSharp.Stitcher.Mode.Scans;
-            //var img1 = new Mat("C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles\\stitchy1.png");
-            ////var img1 = new Mat("C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles\\stitche1.jpg", OpenCvSharp.ImreadModes.Color);
-            //var img2 = new Mat("C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles\\stitchy2.png");
-            //var img3 = new Mat("C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles\\stitchy3.png");
-            //var img4 = new Mat("C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles\\stitche4.jpg" );
-
-
-            
-            //Mat[] restulstitch3 = { img1, img2,img3 };
             VectorOfMat restulstitch = new VectorOfMat(arraisMat);
-            //var resultstitcher = OpenCvSharp.Stitcher.Create(stitcher);
             Brisk detector = new Brisk();
 
             Stitcher stitcher = new Stitcher();
@@ -52,18 +47,10 @@ namespace GotsThorlabs.BLL
             stitcher.SetWarper(warper);
 
             var status = stitcher.Stitch(restulstitch, output);
-            //var test1234 = InputArray.Create(restulstitch);
-            //var resultadostitched = resultstitcher.Stitch(inputarrayINPUT, consolidado);
 
             var resultado = status == Stitcher.Status.Ok ? true : false;
-            //var resultado2 = status == Stitcher.Status.Ok ? output.Save("C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles\\stitch.jpg") : "";
-            output.Save("C:\\Users\\cocuy\\Desktop\\thorlabs\\thorlanbapp\\GotsThorlabs\\StaticFiles\\stitchemgu.jpg");
-            //InputArray vectormat = InputArray.Create(restulstitch);
-            //var respuesta = vectormat.IsMatVector();
-            //var resultadostitched = resultstitcher.Stitch(vectormat, consolidado);
+            output.Save(currentpath + "\\StaticFiles\\stitchemgu.jpg");
 
-
-            //consolidado.SaveImage("C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\StaticFiles\\stitch.jpg");
             return resultado;
         }
     }
