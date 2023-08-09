@@ -323,7 +323,11 @@ namespace GotsThorlabs.BLL
             var carpetaPath = currentpath + "\\StaticFiles\\datasetstitched";
             string[] archivos = Directory.GetFiles(carpetaPath, "*.jpg");
             Mat[] arraisMat= new Mat[archivos.Length];
-            var output = new Mat();            
+            var output = new Mat();
+            //var outputcvt = new Mat();
+            //var outputcopy = new Mat();
+            //var treshimg = new Mat();
+            var outputarray1 = new Mat();
             int indexinter = 0;
             foreach (var archivo in archivos)
             {
@@ -331,7 +335,10 @@ namespace GotsThorlabs.BLL
                 arraisMat[indexinter] = img;
                 indexinter++;
             }
+
+            // Descomentar en otro moemento toca seguir avanzndo luego encontraremos modelos que permitan solucionarlo
             //var InputArrTest = OpenCvSharp.InputArray.Create(arraisMat);
+            //var InputArrTest2 = OpenCvSharp.InputArray.Create(outputarray1);
             var mode = modes == 0 ? OpenCvSharp.Stitcher.Mode.Scans : OpenCvSharp.Stitcher.Mode.Panorama ;
             var stitched = Stitcher.Create(mode);
             var nuevo1 = new BestOf2NearestMatcher();
@@ -341,6 +348,32 @@ namespace GotsThorlabs.BLL
             output.SaveImage( currentpath + "\\StaticFiles\\openNative.jpg");
             //Cv2.DetailEnhance(InputArrTest, output, (float)3.0002, (float)0.0001);
             //output.SaveImage(currentpath + "\\StaticFiles\\openNative2.png");
+
+
+            //Cv2.CopyMakeBorder(output, outputcopy, 0, 0, 0, 0, BorderTypes.Constant, null);
+            //Cv2.ImWrite(currentpath + "\\StaticFiles\\copymaker.jpg", outputcopy);
+            //Cv2.CvtColor(outputcopy, outputcvt, ColorConversionCodes.BGR2GRAY, 0);
+            //Cv2.Threshold(outputcvt, treshimg, (double)0, (double)255, ThresholdTypes.Binary);
+            //Cv2.ImWrite(currentpath + "\\StaticFiles\\threshhold.jpg", treshimg);
+            //var copytrehimg = treshimg.Clone();
+            //var contornuot = new Mat();
+            //var contousout = new Mat[4];
+            //var findcontorneout = new Mat();
+            //Cv2.FindContours(copytrehimg,out contousout, findcontorneout, RetrievalModes.External,ContourApproximationModes.ApproxSimple);
+
+            //Cv2.ImWrite(currentpath + "\\StaticFiles\\findcontours.jpg", findcontorneout);
+            //var contornofinalbound = new Mat();
+
+            //copytrehimg.
+
+            //var grabcontour = new Mat();
+            //var puntosdeelemento = Cv2.BoundingRect(contousout[0]);
+            //Cv2.Rectangle(copytrehimg, puntosdeelemento, Scalar.Gold);
+            //Cv2.ImWrite(currentpath + "\\StaticFiles\\rectanglegold.jpg", copytrehimg);
+
+            //var croppImage  = output[puntosdeelemento];
+            //croppImage.SaveImage(currentpath + "\\StaticFiles\\croopp.jpg");
+
             return estado;
         }
         ///<summary>
