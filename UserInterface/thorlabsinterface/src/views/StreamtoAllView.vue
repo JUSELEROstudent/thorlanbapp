@@ -3,14 +3,22 @@
       <img
       v-show="!streamstate" v-bind:src="'data:image/png;base64,' + imagen"
       >
-      <div class="panelbutton">
+      <div class="videomanageframe" >
+        <div class="playelement" v-show="streamstate" @click="sourceOpen">
+          <span class="mdi mdi-48px mdi-play" title="Play"></span>
+        </div>
+        <div class="stopelement" v-show="!streamstate" @click="endstreams">
+          <span class="mdi mdi-48px mdi-stop" title="Stop"></span>
+        </div>
+      </div>
+      <!-- <div class="panelbutton">
         <button v-show="streamstate" @click="sourceOpen">
           Iniciar
         </button>
         <button v-show="!streamstate" @click="endstreams">
           Terminar Transmision
         </button>
-      </div>
+      </div> -->
   </div>
 </template>
 
@@ -88,6 +96,8 @@ export default defineComponent({
 
 <style scoped>
 .streamcontainer{
+  min-width: 400px;
+  min-height: 400px;
   width:50%;
   margin:auto;
   background: rgb(192, 255, 239);
@@ -97,6 +107,22 @@ export default defineComponent({
   box-shadow: 0px 0px 20px 0px;
   border-radius: 5px;
   flex-direction: column;
+}
+.videomanageframe{
+  min-height: 400px;
+  min-width: 400px;
+  display: flex;
+  /* align-items: center; */
+}
+.playelement{
+  width: auto;
+  margin: auto;
+  cursor: pointer;
+  align-self: center;
+}
+.stopelement{
+  cursor: pointer;
+  align-self: flex-end;
 }
 img {height: 50%;}
 .panelbutton{

@@ -3,13 +3,21 @@
       <img
       v-show="!streamstate" v-bind:src="'data:image/png;base64,' + imagen"
       >
-      <div class="panelbutton">
+      <!-- <div class="panelbutton">
         <button v-show="streamstate" @click="sourceOpen">
           Iniciar
         </button>
         <button v-show="!streamstate" @click="endstream">
           Terminar Transmision
         </button>
+      </div> -->
+      <div class="videomanageframe" >
+        <div class="playelement" v-show="streamstate" @click="sourceOpen">
+          <span class="mdi mdi-48px mdi-play" title="Play"></span>
+        </div>
+        <div class="stopelement" v-show="!streamstate" @click="endstream">
+          <span class="mdi mdi-48px mdi-stop" title="Stop"></span>
+        </div>
       </div>
       <div v-if="errors.errorstate">
         <v-divider  inset
@@ -153,6 +161,22 @@ export default ({
 .panelbutton{
   display: block;
   align-content: center;
+}
+.videomanageframe{
+  min-height: 400px;
+  min-width: 400px;
+  display: flex;
+  /* align-items: center; */
+}
+.playelement{
+  width: auto;
+  margin: auto;
+  cursor: pointer;
+  align-self: center;
+}
+.stopelement{
+  cursor: pointer;
+  align-self: flex-end;
 }
 button {
   border: 1px solid #000000;
