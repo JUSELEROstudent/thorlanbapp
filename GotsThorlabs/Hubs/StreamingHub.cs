@@ -19,7 +19,7 @@ namespace GotsThorlabs.Hubs
             var idconection = Context.ConnectionAborted;
             Console.WriteLine(idconection);
             var acptationvalue = true;
-            using var capture = new VideoCapture(2, VideoCaptureAPIs.DSHOW);
+            using var capture = new VideoCapture(1, VideoCaptureAPIs.DSHOW);
 
             int maxCameraIndex = 10; // Puedes ajustar esto según tus necesidades
 
@@ -53,8 +53,9 @@ namespace GotsThorlabs.Hubs
                 var image = new Mat();
 
                 capture.Read(image);
-                string pathsave = string.Format("{0}\\camtaked.jpg", AppDomain.CurrentDomain.BaseDirectory);
-                image.SaveImage(pathsave);
+                //El proceso de guardado queda deshabilitado por el momento
+                //string pathsave = string.Format("{0}\\camtaked.jpg", AppDomain.CurrentDomain.BaseDirectory);
+                //image.SaveImage(pathsave);
                 var imgretonr =image.ToBytes();
 
                     // Hace falta agregar una capa de seguridad de acuerdo a los roles para poder ejecutar esta linea

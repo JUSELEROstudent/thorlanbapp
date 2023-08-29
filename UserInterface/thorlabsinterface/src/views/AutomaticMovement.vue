@@ -151,7 +151,7 @@ export default {
       headers: myHeaders
       // , redirect: 'follow'
     }
-    fetch('https://localhost:7166/Home/cameras', requestOptions)
+    fetch('https://192.168.1.37:4040/Home/cameras', requestOptions)
       .then(response => response.json())
       .then(data => this.pushcameras(data))
       .catch(error => console.log('Error al cargar las camaras', error))

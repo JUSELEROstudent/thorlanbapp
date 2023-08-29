@@ -41,8 +41,9 @@ export default ({
 
     const requestOptions = {
       method: 'GET',
-      headers: myHeaders,
-      redirect: 'follow'
+      headers: myHeaders
+      // ,
+      // redirect: 'follow'
     }
 
     fetch('https://192.168.1.37:4040/home/devices', requestOptions)

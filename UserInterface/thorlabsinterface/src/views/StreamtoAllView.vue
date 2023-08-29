@@ -4,6 +4,9 @@
       v-show="!streamstate" v-bind:src="'data:image/png;base64,' + imagen"
       >
       <div class="videomanageframe" >
+        <select>
+          <option v-for="camara in enablecameras" :key="camara.cameraId" :value="camara.cameraName">
+        </select>>
         <div class="playelement" v-show="streamstate" @click="sourceOpen">
           <span class="mdi mdi-48px mdi-play" title="Play"></span>
         </div>
@@ -25,6 +28,12 @@
 <script  lang="ts">
 import { defineComponent } from 'vue'
 import * as signalR from '@microsoft/signalr'
+
+type camaras = {
+  cameraId: number,
+  cameraName: string
+}
+
 const connectionsreamall = new signalR.HubConnectionBuilder().withUrl('https://192.168.1.37:4040/StreamingHub', {
   skipNegotiation: true,
   transport: signalR.HttpTransportType.WebSockets
@@ -38,7 +47,8 @@ export default defineComponent({
   data () {
     return {
       streamstate: true,
-      imagen: ''
+      imagen: '',
+      enablecameras: [{ cameraId: 1, cameraName: 'hola' }]
     }
   },
   methods: {
@@ -77,7 +87,7 @@ export default defineComponent({
               console.log(connectionsreamall.state)
             },
             complete: () => {
-              const li = document.createElement('li')
+              // const li = document.createElement('li')
             },
             error: (err) => {
             // no se hace nada en estos casos mas que mensajes de consola
@@ -89,9 +99,32 @@ export default defineComponent({
       } catch (error) {
         // console.log(error)
       }
+    },
+    Getenablecameras: function () {
+      const myHeaders = new Headers()
+      myHeaders.append('Authorization', 'Bearer ' + localStorage.getItem('stringjwt'))
+
+      const requestOptions = {
+        method: 'GET',
+        headers: myHeaders
+      // ,
+      // redirect: 'follow'
+      }
+
+      fetch('https://192.168.1.37:4040/home/cameras', requestOptions)
+        .then(response => response.json())
+        .then(data => this.setenablecameras(data))
+        .catch(error => console.log('errror', error))
+      console.log(this.enablecameras)
+    },
+    setenablecameras: function<type> (response: type[]) {
+      response.forEach(element => {
+        this.enablecameras.push(<camaras>element)
+    })
     }
   }
 })
+
 </script>
 
 <style scoped>
