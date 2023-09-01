@@ -4,9 +4,10 @@
       v-show="!streamstate" v-bind:src="'data:image/png;base64,' + imagen"
       >
       <div class="videomanageframe" >
-        <select>
-          <option v-for="camara in enablecameras" :key="camara.cameraId" :value="camara.cameraName">
-        </select>>
+        <select name="cars" id="cars">
+          <option v-for="camara in enablecamerasvar" :key="camara.cameraId" :value="camara.cameraId">{{camara.cameraName}}</option>
+          <!-- <option value="2">dasdf</option> -->
+        </select>
         <div class="playelement" v-show="streamstate" @click="sourceOpen">
           <span class="mdi mdi-48px mdi-play" title="Play"></span>
         </div>
@@ -26,63 +27,56 @@
 </template>
 
 <script  lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent, ref, onMounted } from 'vue'
 import * as signalR from '@microsoft/signalr'
+import store from '@/store'
 
-type camaras = {
+interface camaras {
   cameraId: number,
   cameraName: string
 }
+// const enablecameras: camaras = reactive([{ cameraId: 100, cameraName: 'cargando..' }])
+// let enablecamerasvar: camaras[] = [{ cameraId: 100, cameraName: 'cargando..' }]
 
 const connectionsreamall = new signalR.HubConnectionBuilder().withUrl('https://192.168.1.37:4040/StreamingHub', {
   skipNegotiation: true,
   transport: signalR.HttpTransportType.WebSockets
 }).build()
-export default defineComponent({
+
+export default {
   name: 'StreamToAll',
-  emits: ['hearerrors'],
-  // props: {
-  //   indexcamera: [Number, Boolean]
-  // },
-  data () {
-    return {
-      streamstate: true,
-      imagen: '',
-      enablecameras: [{ cameraId: 1, cameraName: 'hola' }]
+  setup () {
+    const enablecamerasvar = ref([{ cameraId: 100, cameraName: 'cargando..' }])
+    const streamstate = ref(true)
+    const imagen = ref('')
+
+    onMounted(() => {
+      Getenablecameras()
+    })
+
+    function endstreams () {
+      streamstate.value = !streamstate.value
     }
-  },
-  methods: {
-    endstreams: function () {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      this.streamstate = !this.streamstate
-    },
-    errorhappen: function (errors: string) {
+    function errorhappen (errors: string) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       this.$emit('hearerrors', errors)
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      this.streamstate = false
-    },
-    sourceOpen: async function (evt: Event) {
+      streamstate.value = false
+    }
+    async function sourceOpen (evt: Event) {
       try {
         // await connectionsream.start().catch((err) => document.write(err))
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-        this.streamstate = !this.streamstate
+        streamstate.value = !streamstate.value
         if (!(connectionsreamall.state.toString() === 'Connected')) {
-          await connectionsreamall.start().catch((err) => this.errorhappen(err.toString()))
+          await connectionsreamall.start().catch((err) => errorhappen(err.toString()))
         }
         await connectionsreamall.stream('Counter', 10, 10)
           .subscribe({
             next: (item) => {
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-              this.imagen = ''
-              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-              // @ts-ignore
-              this.imagen = item
+              imagen.value = ''
+              imagen.value = item
               console.log('SE SUSCRIBE')
               console.log(connectionsreamall.state)
             },
@@ -93,14 +87,15 @@ export default defineComponent({
             // no se hace nada en estos casos mas que mensajes de consola
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
-              this.$store.dispatch('showAlert', { message: err, type: 'error', tittle: 'ha sucedido un error' })
+              console.log('asdfasd KAJHDKLJHFASKDLJf' + err)
+              store.dispatch('showAlert', { message: err, type: 'error', tittle: 'ha sucedido un error en la coneccion' })
             }
           })
       } catch (error) {
         // console.log(error)
       }
-    },
-    Getenablecameras: function () {
+    }
+    function Getenablecameras () {
       const myHeaders = new Headers()
       myHeaders.append('Authorization', 'Bearer ' + localStorage.getItem('stringjwt'))
 
@@ -113,17 +108,101 @@ export default defineComponent({
 
       fetch('https://192.168.1.37:4040/home/cameras', requestOptions)
         .then(response => response.json())
-        .then(data => this.setenablecameras(data))
+        .then(data => setenablecameras(data))
         .catch(error => console.log('errror', error))
-      console.log(this.enablecameras)
-    },
-    setenablecameras: function<type> (response: type[]) {
-      response.forEach(element => {
-        this.enablecameras.push(<camaras>element)
-    })
+      // console.log(this.enablecameras[1])
     }
-  }
-})
+    function setenablecameras (response: camaras[]) {
+      enablecamerasvar.value = response as camaras[]
+    }
+
+    return { enablecamerasvar, imagen, streamstate, endstreams, sourceOpen }
+  },
+  emits: ['hearerrors']
+  // props: {
+  //   indexcamera: [Number, Boolean]
+  // },
+  // data () {
+  //   return {
+  //     streamstate: true,
+  //     imagen: ''
+  //     // enablecameras: enablecamerasvar // chimbada de solucion
+  //   }
+  // },
+  // methods: {
+  //   endstreams: function () {
+  //     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  //     // @ts-ignore
+  //     this.streamstate = !this.streamstate
+  //   },
+  //   errorhappen: function (errors: string) {
+  //     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  //     // @ts-ignore
+  //     this.$emit('hearerrors', errors)
+  //     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  //     // @ts-ignore
+  //     this.streamstate = false
+  //   },
+  //   sourceOpen: async function (evt: Event) {
+  //     try {
+  //       // await connectionsream.start().catch((err) => document.write(err))
+  //     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  //     // @ts-ignore
+  //       this.streamstate = !this.streamstate
+  //       if (!(connectionsreamall.state.toString() === 'Connected')) {
+  //         await connectionsreamall.start().catch((err) => this.errorhappen(err.toString()))
+  //       }
+  //       await connectionsreamall.stream('Counter', 10, 10)
+  //         .subscribe({
+  //           next: (item) => {
+  //           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  //           // @ts-ignore
+  //             this.imagen = ''
+  //             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  //             // @ts-ignore
+  //             this.imagen = item
+  //             console.log('SE SUSCRIBE')
+  //             console.log(connectionsreamall.state)
+  //           },
+  //           complete: () => {
+  //             // const li = document.createElement('li')
+  //           },
+  //           error: (err) => {
+  //           // no se hace nada en estos casos mas que mensajes de consola
+  //           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  //           // @ts-ignore
+  //             this.$store.dispatch('showAlert', { message: err, type: 'error', tittle: 'ha sucedido un error' })
+  //           }
+  //         })
+  //     } catch (error) {
+  //       // console.log(error)
+  //     }
+  //   },
+  //   Getenablecameras: function () {
+  //     const myHeaders = new Headers()
+  //     myHeaders.append('Authorization', 'Bearer ' + localStorage.getItem('stringjwt'))
+
+  //     const requestOptions = {
+  //       method: 'GET',
+  //       headers: myHeaders
+  //     // ,
+  //     // redirect: 'follow'
+  //     }
+
+  //     fetch('https://192.168.1.37:4040/home/cameras', requestOptions)
+  //       .then(response => response.json())
+  //       .then(data => this.setenablecameras(data))
+  //       .catch(error => console.log('errror', error))
+  //     // console.log(this.enablecameras[1])
+  //   },
+  //   setenablecameras: function (response: camaras[]) {
+  //     enablecamerasvar = response as camaras[]
+  //   }
+  // },
+  // mounted () {
+  //   this.Getenablecameras()
+  // }
+}
 
 </script>
 
