@@ -4,8 +4,10 @@
       v-show="!streamstate" v-bind:src="'data:image/png;base64,' + imagen"
       >
       <div class="videomanageframe" >
-        <select name="cars" id="cars">
-          <option v-for="camara in enablecamerasvar" :key="camara.cameraId" :value="camara.cameraId">{{camara.cameraName}}</option>
+        <span class="mdi mdi-20px mdi-camera-flip-outline"  v-show="streamstate" title="Select Camera"></span>
+        <select id="selectcamera" v-model="currentcamera">
+          <option v-for="camara in enablecamerasvar" :key="camara.cameraId" :value="camara">{{camara.cameraName}}</option>
+          <i class="mdi mdi-20px mdi-camera-flip-outline" title="Select Camera"></i>
           <!-- <option value="2">dasdf</option> -->
         </select>
         <div class="playelement" v-show="streamstate" @click="sourceOpen">
@@ -15,14 +17,6 @@
           <span class="mdi mdi-48px mdi-stop" title="Stop"></span>
         </div>
       </div>
-      <!-- <div class="panelbutton">
-        <button v-show="streamstate" @click="sourceOpen">
-          Iniciar
-        </button>
-        <button v-show="!streamstate" @click="endstreams">
-          Terminar Transmision
-        </button>
-      </div> -->
   </div>
 </template>
 
@@ -35,8 +29,6 @@ interface camaras {
   cameraId: number,
   cameraName: string
 }
-// const enablecameras: camaras = reactive([{ cameraId: 100, cameraName: 'cargando..' }])
-// let enablecamerasvar: camaras[] = [{ cameraId: 100, cameraName: 'cargando..' }]
 
 const connectionsreamall = new signalR.HubConnectionBuilder().withUrl('https://192.168.1.37:4040/StreamingHub', {
   skipNegotiation: true,
@@ -49,6 +41,7 @@ export default {
     const enablecamerasvar = ref([{ cameraId: 100, cameraName: 'cargando..' }])
     const streamstate = ref(true)
     const imagen = ref('')
+    const currentcamera = ref({ cameraId: 100, cameraName: 'cargando..' })
 
     onMounted(() => {
       Getenablecameras()
@@ -65,14 +58,17 @@ export default {
     }
     async function sourceOpen (evt: Event) {
       try {
+        if (currentcamera.value.cameraId === 100) {
+          store.dispatch('showAlert', { message: 'Favor elegir una camara ', type: 'error', tittle: 'es necesario seleccionar una camara para esta tarea.' })
+        }
         // await connectionsream.start().catch((err) => document.write(err))
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
         streamstate.value = !streamstate.value
         if (!(connectionsreamall.state.toString() === 'Connected')) {
           await connectionsreamall.start().catch((err) => errorhappen(err.toString()))
         }
-        await connectionsreamall.stream('Counter', 10, 10)
+        await connectionsreamall.stream('Counter', currentcamera.value.cameraId, 10)
           .subscribe({
             next: (item) => {
               imagen.value = ''
@@ -84,9 +80,6 @@ export default {
               // const li = document.createElement('li')
             },
             error: (err) => {
-            // no se hace nada en estos casos mas que mensajes de consola
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
               console.log('asdfasd KAJHDKLJHFASKDLJf' + err)
               store.dispatch('showAlert', { message: err, type: 'error', tittle: 'ha sucedido un error en la coneccion' })
             }
@@ -102,8 +95,8 @@ export default {
       const requestOptions = {
         method: 'GET',
         headers: myHeaders
-      // ,
-      // redirect: 'follow'
+        // ,
+        // redirect: 'follow'
       }
 
       fetch('https://192.168.1.37:4040/home/cameras', requestOptions)
@@ -116,92 +109,9 @@ export default {
       enablecamerasvar.value = response as camaras[]
     }
 
-    return { enablecamerasvar, imagen, streamstate, endstreams, sourceOpen }
+    return { enablecamerasvar, imagen, streamstate, currentcamera, endstreams, sourceOpen }
   },
   emits: ['hearerrors']
-  // props: {
-  //   indexcamera: [Number, Boolean]
-  // },
-  // data () {
-  //   return {
-  //     streamstate: true,
-  //     imagen: ''
-  //     // enablecameras: enablecamerasvar // chimbada de solucion
-  //   }
-  // },
-  // methods: {
-  //   endstreams: function () {
-  //     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  //     // @ts-ignore
-  //     this.streamstate = !this.streamstate
-  //   },
-  //   errorhappen: function (errors: string) {
-  //     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  //     // @ts-ignore
-  //     this.$emit('hearerrors', errors)
-  //     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  //     // @ts-ignore
-  //     this.streamstate = false
-  //   },
-  //   sourceOpen: async function (evt: Event) {
-  //     try {
-  //       // await connectionsream.start().catch((err) => document.write(err))
-  //     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  //     // @ts-ignore
-  //       this.streamstate = !this.streamstate
-  //       if (!(connectionsreamall.state.toString() === 'Connected')) {
-  //         await connectionsreamall.start().catch((err) => this.errorhappen(err.toString()))
-  //       }
-  //       await connectionsreamall.stream('Counter', 10, 10)
-  //         .subscribe({
-  //           next: (item) => {
-  //           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  //           // @ts-ignore
-  //             this.imagen = ''
-  //             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  //             // @ts-ignore
-  //             this.imagen = item
-  //             console.log('SE SUSCRIBE')
-  //             console.log(connectionsreamall.state)
-  //           },
-  //           complete: () => {
-  //             // const li = document.createElement('li')
-  //           },
-  //           error: (err) => {
-  //           // no se hace nada en estos casos mas que mensajes de consola
-  //           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  //           // @ts-ignore
-  //             this.$store.dispatch('showAlert', { message: err, type: 'error', tittle: 'ha sucedido un error' })
-  //           }
-  //         })
-  //     } catch (error) {
-  //       // console.log(error)
-  //     }
-  //   },
-  //   Getenablecameras: function () {
-  //     const myHeaders = new Headers()
-  //     myHeaders.append('Authorization', 'Bearer ' + localStorage.getItem('stringjwt'))
-
-  //     const requestOptions = {
-  //       method: 'GET',
-  //       headers: myHeaders
-  //     // ,
-  //     // redirect: 'follow'
-  //     }
-
-  //     fetch('https://192.168.1.37:4040/home/cameras', requestOptions)
-  //       .then(response => response.json())
-  //       .then(data => this.setenablecameras(data))
-  //       .catch(error => console.log('errror', error))
-  //     // console.log(this.enablecameras[1])
-  //   },
-  //   setenablecameras: function (response: camaras[]) {
-  //     enablecamerasvar = response as camaras[]
-  //   }
-  // },
-  // mounted () {
-  //   this.Getenablecameras()
-  // }
 }
 
 </script>
@@ -249,4 +159,14 @@ button {
   height: auto;
   width: auto;
 }
+#selectcamera {
+  max-height: 50px;
+}
+.videomanageframe input,
+.videomanageframe select{
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
 </style>

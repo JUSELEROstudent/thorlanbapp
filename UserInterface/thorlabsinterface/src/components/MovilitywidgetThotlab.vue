@@ -3,15 +3,13 @@
       <img
       v-show="!streamstate" v-bind:src="'data:image/png;base64,' + imagen"
       >
-      <!-- <div class="panelbutton">
-        <button v-show="streamstate" @click="sourceOpen">
-          Iniciar
-        </button>
-        <button v-show="!streamstate" @click="endstream">
-          Terminar Transmision
-        </button>
-      </div> -->
       <div class="videomanageframe" >
+        <span class="mdi mdi-20px mdi-camera-flip-outline"  v-show="streamstate" title="Select Camera"></span>
+        <select id="selectcamera" v-model="currentcamera">
+          <option v-for="camara in enablecamerasvar" :key="camara.cameraId" :value="camara">{{camara.cameraName}}</option>
+          <i class="mdi mdi-20px mdi-camera-flip-outline" title="Select Camera"></i>
+          <!-- <option value="2">dasdf</option> -->
+        </select>
         <div class="playelement" v-show="streamstate" @click="sourceOpen">
           <span class="mdi mdi-48px mdi-play" title="Play"></span>
         </div>
@@ -23,18 +21,13 @@
         <v-divider  inset
           >
         </v-divider>
-        <!-- <v-alert
-          outlined
-          type="warning"
-          prominent
-        >
-      {{errors.errorsmsj}}
-    </v-alert> -->
       </div>
   </div>
 </template>
 
 <script  lang="ts">
+import { defineComponent, ref, onMounted } from 'vue'
+import store from '@/store'
 import * as signalR from '@microsoft/signalr'
 const connection = new signalR.HubConnectionBuilder().withUrl('https://192.168.1.37:4040/chatHub', {
   skipNegotiation: true,
@@ -49,19 +42,28 @@ const connectionsream = new signalR.HubConnectionBuilder().withUrl('https://192.
 // @ts-ignore
 // let vidElement: Element = document.querySelector('video')
 // const vidElement = document.querySelector('video')
-export default ({
+
+interface camaras {
+  cameraId: number,
+  cameraName: string
+}
+
+export default {
   name: 'movilityWidget',
-  data () {
-    return {
-      nombremio: 'Juan Sebastian Leon Rodriguez',
-      listastreamin: [],
-      imagen: '',
-      streamstate: true,
-      errors: { errorsmsj: 'Verificar que la aplicacin .net esta en ejecucion.', errorstate: false }
-    }
-  },
-  methods: {
-    coneccionhub: function () {
+  setup () {
+    const nombremio = ref('Juan Sebastian Leon Rodriguez')
+    // const listastreamin = ref([{}])
+    const imagen = ref('')
+    const streamstate = ref(true)
+    const errors = ref({ errorsmsj: 'Verificar que la aplicacin .net esta en ejecucion.', errorstate: false })
+    const enablecamerasvar = ref([{ cameraId: 100, cameraName: 'cargando..' }])
+    const currentcamera = ref({ cameraId: 100, cameraName: 'cargando..' })
+
+    onMounted(() => {
+      Getenablecameras()
+    })
+
+    function coneccionhub () {
       console.log('funcion para la coneccion de hub')
       connection.start().catch((err) => document.write(err))
       console.log(connection.state)
@@ -70,80 +72,191 @@ export default ({
       })
 
       // Disable the send button until connection is established.
-    },
-    respuest: function () {
+    }
+    function respuest () {
       connection.send('SendMessage', 'Mensaje predeterminado', 'segundo valor !"#"')
       console.log(connection.state)
-    },
-    actionbutton: function () {
+    }
+    function actionbutton () {
       console.log('el boton se preciono')
-    },
-    endstream: function () {
+    }
+    function endstream () {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-      this.streamstate = !this.streamstate
+      streamstate.value = !streamstate.value
       connectionsream.stop()
-    },
-    errorhappen: function (errors: string) {
+    }
+    function errorhappen (errors: string) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       // this.streamstate = true
-      this.errors.errorstate = true
+      errors.value.errorstate = true
       console.log(errors)
-    },
-    sourceOpen: async function (evt: Event) {
+    }
+    async function sourceOpen (evt: Event) {
       try {
-        await connectionsream.start().catch((err) => this.errorhappen(err.toString()))
+        await connectionsream.start().catch((err) => errorhappen(err.toString()))
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        this.streamstate = !this.streamstate
+        streamstate.value = !streamstate.value
         if (!(connectionsream.state.toString() === 'Connected')) {
           await connectionsream.start().catch((err) => console.log(err + '{}{}{ EL ERROR}'))
         }
         // const sourceBuffer = mediaSource.addSourceBuffer(mime)
-        await connectionsream.stream('Counter', 10, 10)
+        await connectionsream.stream('Counter', currentcamera.value.cameraId, 10)
           .subscribe({
             next: (item) => {
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
-              this.imagen = ''
+              imagen.value = ''
               // eslint-disable-next-line @typescript-eslint/ban-ts-comment
               // @ts-ignore
-              this.imagen = item
+              imagen.value = item
               console.log('SE SUSCRIBE')
               console.log(connection.state)
             },
             complete: () => {
-              const li = document.createElement('li')
-              li.textContent = 'Stream completed'
-              console.log('coneccion TERMINADA')
+              // const li = document.createElement('li')
+              // li.textContent = 'Stream completed'
+              // console.log('coneccion TERMINADA')
             },
             error: (err) => {
               // eslint-disable-next-line @typescript-eslint/ban-ts-comment
               // @ts-ignore
-              this.$store.dispatch('showAlert', { message: err, type: 'error', tittle: 'ha sucedido unerror' })
+              store.dispatch('showAlert', { message: err, type: 'error', tittle: 'ha sucedido unerror' })
             }
           })
       } catch (error) {
         console.log(error)
       }
-    },
-    coneccionstream: function () {
+    }
+    function coneccionstream () {
       const vidElement = document.querySelector('video')
       console.log('EL ESTADO ES ' + connectionsream.state)
       console.log(vidElement + 'ESTE ESTADO')
       const mediaSource = new MediaSource()
       // vidElement.src = URL?.createObjectURL(mediaSource)
-      mediaSource.addEventListener('sourceopen', this.sourceOpen)
+      mediaSource.addEventListener('sourceopen', sourceOpen)
     }
-  },
-  mounted () {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    // this.coneccionhub()    ESTA LINIA INICIA LA CONEXION PARA SIGNALr DE STREAM STRING
-    // connectionsream.start().catch((err) => document.write(err))
+    function Getenablecameras () {
+      const myHeaders = new Headers()
+      myHeaders.append('Authorization', 'Bearer ' + localStorage.getItem('stringjwt'))
+
+      const requestOptions = {
+        method: 'GET',
+        headers: myHeaders
+        // ,
+        // redirect: 'follow'
+      }
+
+      fetch('https://192.168.1.37:4040/home/cameras', requestOptions)
+        .then(response => response.json())
+        .then(data => setenablecameras(data))
+        .catch(error => console.log('errror', error))
+      // console.log(this.enablecameras[1])
+    }
+    function setenablecameras (response: camaras[]) {
+      enablecamerasvar.value = response as camaras[]
+    }
+    return { coneccionstream, errors, enablecamerasvar, sourceOpen, endstream, streamstate, imagen, currentcamera }
   }
-})
+}
+
+// export default ({
+//   // name: 'movilityWidget',
+//   // data () {
+//   //   return {
+//   //     // nombremio: 'Juan Sebastian Leon Rodriguez',
+//   //     // listastreamin: [],
+//   //     // imagen: '',
+//   //     // streamstate: true,
+//   //     // errors: { errorsmsj: 'Verificar que la aplicacin .net esta en ejecucion.', errorstate: false }
+//   //   }
+//   // },
+//   methods: {
+//     coneccionhub: function () {
+//       console.log('funcion para la coneccion de hub')
+//       connection.start().catch((err) => document.write(err))
+//       console.log(connection.state)
+//       connection.on('ReceiveMessage', (username: string, message: string) => {
+//         console.log('se llamo de otro lado' + username + ' ' + message)
+//       })
+
+//       // Disable the send button until connection is established.
+//     },
+//     respuest: function () {
+//       connection.send('SendMessage', 'Mensaje predeterminado', 'segundo valor !"#"')
+//       console.log(connection.state)
+//     },
+//     actionbutton: function () {
+//       console.log('el boton se preciono')
+//     },
+//     endstream: function () {
+//       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+//     // @ts-ignore
+//       this.streamstate = !this.streamstate
+//       connectionsream.stop()
+//     },
+//     errorhappen: function (errors: string) {
+//       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+//       // @ts-ignore
+//       // this.streamstate = true
+//       this.errors.errorstate = true
+//       console.log(errors)
+//     },
+//     sourceOpen: async function (evt: Event) {
+//       try {
+//         await connectionsream.start().catch((err) => this.errorhappen(err.toString()))
+//         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+//         // @ts-ignore
+//         this.streamstate = !this.streamstate
+//         if (!(connectionsream.state.toString() === 'Connected')) {
+//           await connectionsream.start().catch((err) => console.log(err + '{}{}{ EL ERROR}'))
+//         }
+//         // const sourceBuffer = mediaSource.addSourceBuffer(mime)
+//         await connectionsream.stream('Counter', 10, 10)
+//           .subscribe({
+//             next: (item) => {
+//             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+//             // @ts-ignore
+//               this.imagen = ''
+//               // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+//               // @ts-ignore
+//               this.imagen = item
+//               console.log('SE SUSCRIBE')
+//               console.log(connection.state)
+//             },
+//             complete: () => {
+//               const li = document.createElement('li')
+//               li.textContent = 'Stream completed'
+//               console.log('coneccion TERMINADA')
+//             },
+//             error: (err) => {
+//               // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+//               // @ts-ignore
+//               this.$store.dispatch('showAlert', { message: err, type: 'error', tittle: 'ha sucedido unerror' })
+//             }
+//           })
+//       } catch (error) {
+//         console.log(error)
+//       }
+//     },
+//     coneccionstream: function () {
+//       const vidElement = document.querySelector('video')
+//       console.log('EL ESTADO ES ' + connectionsream.state)
+//       console.log(vidElement + 'ESTE ESTADO')
+//       const mediaSource = new MediaSource()
+//       // vidElement.src = URL?.createObjectURL(mediaSource)
+//       mediaSource.addEventListener('sourceopen', this.sourceOpen)
+//     }
+//   },
+//   mounted () {
+//     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+//     // @ts-ignore
+//     // this.coneccionhub()    ESTA LINIA INICIA LA CONEXION PARA SIGNALr DE STREAM STRING
+//     // connectionsream.start().catch((err) => document.write(err))
+//   }
+// })
 </script>
 
 <style scoped>
@@ -185,5 +298,14 @@ button {
   padding: 5px;
   height: auto;
   width: auto;
+}
+#selectcamera {
+  max-height: 50px;
+}
+.videomanageframe input,
+.videomanageframe select{
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
 }
 </style>

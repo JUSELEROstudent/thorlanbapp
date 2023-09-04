@@ -11,7 +11,7 @@ namespace GotsThorlabs.Hubs
     public class StreamingHub : Hub
     {
         public async IAsyncEnumerable<byte[]> Counter(
-         int count,
+         int camera,
          int delay,
          [EnumeratorCancellation]
         CancellationToken cancellationToken)
@@ -19,23 +19,23 @@ namespace GotsThorlabs.Hubs
             var idconection = Context.ConnectionAborted;
             Console.WriteLine(idconection);
             var acptationvalue = true;
-            using var capture = new VideoCapture(1, VideoCaptureAPIs.DSHOW);
+            using var capture = new VideoCapture(camera, VideoCaptureAPIs.DSHOW);
 
             int maxCameraIndex = 10; // Puedes ajustar esto según tus necesidades
-
-            for (int i = 0; i < maxCameraIndex; i++)
-            {
-                using (VideoCapture capture2 = new VideoCapture(i))
-                {
-                    // Intentar abrir el dispositivo de captura
-                    if (capture2.IsOpened())
-                    {
-                        string cameraName = capture2.GetBackendName().ToString(); //GetCaptureProperty(Emgu.CV.CvEnum.CapProp.FriendlyName).ToString();
-                        Console.WriteLine($"Cámara {i}: {cameraName}");
-                    }
+            // cancelado porque lo que se hace a continuacion se hace en camaras directamente
+            //for (int i = 0; i < maxCameraIndex; i++)
+            //{
+            //    using (VideoCapture capture2 = new VideoCapture(i))
+            //    {
+            //        // Intentar abrir el dispositivo de captura
+            //        if (capture2.IsOpened())
+            //        {
+            //            string cameraName = capture2.GetBackendName().ToString(); //GetCaptureProperty(Emgu.CV.CvEnum.CapProp.FriendlyName).ToString();
+            //            Console.WriteLine($"Cámara {i}: {cameraName}");
+            //        }
                     
-                }
-            }
+            //    }
+            //}
             //for (var i = 0; i < count; i++)
             while (acptationvalue)
             {
