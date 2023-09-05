@@ -3,13 +3,15 @@
       <img
       v-show="!streamstate" v-bind:src="'data:image/png;base64,' + imagen"
       >
-      <div class="videomanageframe" >
-        <span class="mdi mdi-20px mdi-camera-flip-outline"  v-show="streamstate" title="Select Camera"></span>
+      <div :class="{videomanageframeON: !streamstate, videomanageframe: streamstate }">
+        <div id="elementselectclick" :class="{comboselectcamera: streamstate}" @click="onclickselect" v-show="streamstate">
+        <span class="mdi mdi-20px mdi-camera-flip-outline"  title="Select Camera"></span>
         <select id="selectcamera" v-model="currentcamera">
           <option v-for="camara in enablecamerasvar" :key="camara.cameraId" :value="camara">{{camara.cameraName}}</option>
           <i class="mdi mdi-20px mdi-camera-flip-outline" title="Select Camera"></i>
           <!-- <option value="2">dasdf</option> -->
         </select>
+        </div>
         <div class="playelement" v-show="streamstate" @click="sourceOpen">
           <span class="mdi mdi-48px mdi-play" title="Play"></span>
         </div>
@@ -26,7 +28,7 @@
 </template>
 
 <script  lang="ts">
-import { defineComponent, ref, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import store from '@/store'
 import * as signalR from '@microsoft/signalr'
 const connection = new signalR.HubConnectionBuilder().withUrl('https://192.168.1.37:4040/chatHub', {
@@ -62,6 +64,10 @@ export default {
     onMounted(() => {
       Getenablecameras()
     })
+
+    function onclickselect () {
+      const elemnetselect = document.getElementById('selectcamera')
+    }
 
     function coneccionhub () {
       console.log('funcion para la coneccion de hub')
@@ -158,7 +164,7 @@ export default {
     function setenablecameras (response: camaras[]) {
       enablecamerasvar.value = response as camaras[]
     }
-    return { coneccionstream, errors, enablecamerasvar, sourceOpen, endstream, streamstate, imagen, currentcamera }
+    return { coneccionstream, sourceOpen, endstream, onclickselect, errors, enablecamerasvar, streamstate, imagen, currentcamera }
   }
 }
 
@@ -281,6 +287,11 @@ export default {
   display: flex;
   /* align-items: center; */
 }
+.videomanageframeON{
+  min-height: 0px;
+  min-width: 0px;
+  /* align-items: center; */
+}
 .playelement{
   width: auto;
   margin: auto;
@@ -301,6 +312,9 @@ button {
 }
 #selectcamera {
   max-height: 50px;
+}
+.comboselectcamera {
+  position: absolute;
 }
 .videomanageframe input,
 .videomanageframe select{
