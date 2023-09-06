@@ -106,7 +106,7 @@ export default {
         // @ts-ignore
         streamstate.value = !streamstate.value
         if (!(connectionsream.state.toString() === 'Connected')) {
-          await connectionsream.start().catch((err) => console.log(err + '{}{}{ EL ERROR}'))
+          await connectionsream.start().catch((err) => store.dispatch('showAlert', { message: err.toString(), type: 'error', tittle: 'ha sucedido un error en la coneccion' }))
         }
         // const sourceBuffer = mediaSource.addSourceBuffer(mime)
         await connectionsream.stream('Counter', currentcamera.value.cameraId, 10)
@@ -129,7 +129,7 @@ export default {
             error: (err) => {
               // eslint-disable-next-line @typescript-eslint/ban-ts-comment
               // @ts-ignore
-              store.dispatch('showAlert', { message: err, type: 'error', tittle: 'ha sucedido unerror' })
+              store.dispatch('showAlert', { message: err.toString(), type: 'error', tittle: 'ha sucedido unerror' })
             }
           })
       } catch (error) {
@@ -158,11 +158,16 @@ export default {
       fetch('https://192.168.1.37:4040/home/cameras', requestOptions)
         .then(response => response.json())
         .then(data => setenablecameras(data))
-        .catch(error => console.log('errror', error))
+        .catch(error => store.dispatch('showAlert', { message: error.toString(), type: 'error', tittle: 'Revisar la conexion al servidor' }))
       // console.log(this.enablecameras[1])
     }
     function setenablecameras (response: camaras[]) {
       enablecamerasvar.value = response as camaras[]
+      if (enablecamerasvar.value.length < 1) {
+        store.dispatch('showAlert', { message: 'No se reconocen camaras en el dispositivo', type: 'error', tittle: 'por favor verifique que se encuentra conectada' })
+        return
+      }
+      currentcamera.value = enablecamerasvar.value[1]
     }
     return { coneccionstream, sourceOpen, endstream, onclickselect, errors, enablecamerasvar, streamstate, imagen, currentcamera }
   }

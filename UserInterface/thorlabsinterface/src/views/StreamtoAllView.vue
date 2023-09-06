@@ -3,13 +3,15 @@
       <img
       v-show="!streamstate" v-bind:src="'data:image/png;base64,' + imagen"
       >
-      <div class="videomanageframe" >
-        <span class="mdi mdi-20px mdi-camera-flip-outline"  v-show="streamstate" title="Select Camera"></span>
-        <select id="selectcamera" v-model="currentcamera">
-          <option v-for="camara in enablecamerasvar" :key="camara.cameraId" :value="camara">{{camara.cameraName}}</option>
-          <i class="mdi mdi-20px mdi-camera-flip-outline" title="Select Camera"></i>
-          <!-- <option value="2">dasdf</option> -->
-        </select>
+      <div :class="{videomanageframeON: !streamstate, videomanageframe: streamstate }">
+      <div id="elementselectclick" :class="{comboselectcamera: streamstate}" @click="onclickselect" v-show="streamstate">
+          <span class="mdi mdi-20px mdi-camera-flip-outline"  v-show="streamstate" title="Select Camera"></span>
+          <select id="selectcamera" v-model="currentcamera">
+            <option v-for="camara in enablecamerasvar" :key="camara.cameraId" :value="camara">{{camara.cameraName}}</option>
+            <i class="mdi mdi-20px mdi-camera-flip-outline" title="Select Camera"></i>
+            <!-- <option value="2">dasdf</option> -->
+          </select>
+      </div>
         <div class="playelement" v-show="streamstate" @click="sourceOpen">
           <span class="mdi mdi-48px mdi-play" title="Play"></span>
         </div>
@@ -38,15 +40,17 @@ const connectionsreamall = new signalR.HubConnectionBuilder().withUrl('https://1
 export default {
   name: 'StreamToAll',
   setup () {
-    const enablecamerasvar = ref([{ cameraId: 100, cameraName: 'cargando..' }])
+    const enablecamerasvar = ref([{ cameraId: 1000, cameraName: 'cargando..' }]) // se ponen las camaras por defecto asumiendo que siempre existira una camara
     const streamstate = ref(true)
     const imagen = ref('')
-    const currentcamera = ref({ cameraId: 100, cameraName: 'cargando..' })
+    const currentcamera = ref({ cameraId: 1000, cameraName: 'cargando..' })
 
     onMounted(() => {
       Getenablecameras()
     })
-
+    function onclickselect () {
+      const elemnetselect = document.getElementById('selectcamera')
+    }
     function endstreams () {
       streamstate.value = !streamstate.value
     }
@@ -66,7 +70,7 @@ export default {
         // @ts-ignore
         streamstate.value = !streamstate.value
         if (!(connectionsreamall.state.toString() === 'Connected')) {
-          await connectionsreamall.start().catch((err) => errorhappen(err.toString()))
+          await connectionsreamall.start().catch((err) => store.dispatch('showAlert', { message: err.toString(), type: 'error', tittle: 'ha sucedido un error en la coneccion' }))
         }
         await connectionsreamall.stream('Counter', currentcamera.value.cameraId, 10)
           .subscribe({
@@ -81,7 +85,7 @@ export default {
             },
             error: (err) => {
               console.log('asdfasd KAJHDKLJHFASKDLJf' + err)
-              store.dispatch('showAlert', { message: err, type: 'error', tittle: 'ha sucedido un error en la coneccion' })
+              store.dispatch('showAlert', { message: err.toString(), type: 'error', tittle: 'ha sucedido un error en la coneccion' })
             }
           })
       } catch (error) {
@@ -102,14 +106,19 @@ export default {
       fetch('https://192.168.1.37:4040/home/cameras', requestOptions)
         .then(response => response.json())
         .then(data => setenablecameras(data))
-        .catch(error => console.log('errror', error))
+        .catch(error => store.dispatch('showAlert', { message: error.toString(), type: 'error', tittle: 'Revisar la conexion al servidor' }))
       // console.log(this.enablecameras[1])
     }
     function setenablecameras (response: camaras[]) {
       enablecamerasvar.value = response as camaras[]
+      if (enablecamerasvar.value.length < 1) {
+        store.dispatch('showAlert', { message: 'No se reconocen camaras en el dispositivo', type: 'error', tittle: 'por favor verifique que se encuentra conectada' })
+        return
+      }
+      currentcamera.value = enablecamerasvar.value[1]
     }
 
-    return { enablecamerasvar, imagen, streamstate, currentcamera, endstreams, sourceOpen }
+    return { enablecamerasvar, imagen, streamstate, currentcamera, endstreams, sourceOpen, onclickselect }
   },
   emits: ['hearerrors']
 }
@@ -134,6 +143,11 @@ export default {
   min-height: 400px;
   min-width: 400px;
   display: flex;
+  /* align-items: center; */
+}
+.videomanageframeON{
+  min-height: 0px;
+  min-width: 0px;
   /* align-items: center; */
 }
 .playelement{
@@ -161,6 +175,9 @@ button {
 }
 #selectcamera {
   max-height: 50px;
+}
+.comboselectcamera {
+  position: absolute;
 }
 .videomanageframe input,
 .videomanageframe select{
