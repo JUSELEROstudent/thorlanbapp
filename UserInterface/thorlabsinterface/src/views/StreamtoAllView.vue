@@ -32,7 +32,7 @@ interface camaras {
   cameraName: string
 }
 
-const connectionsreamall = new signalR.HubConnectionBuilder().withUrl('https://192.168.1.37:4040/StreamingHub', {
+const connectionsreamall = new signalR.HubConnectionBuilder().withUrl('https://192.168.10.116:4040/StreamingHub', {
   skipNegotiation: true,
   transport: signalR.HttpTransportType.WebSockets
 }).build()
@@ -103,7 +103,7 @@ export default {
         // redirect: 'follow'
       }
 
-      fetch('https://192.168.1.37:4040/home/cameras', requestOptions)
+      fetch('https://192.168.10.116:4040/home/cameras', requestOptions)
         .then(response => response.json())
         .then(data => setenablecameras(data))
         .catch(error => store.dispatch('showAlert', { message: error.toString(), type: 'error', tittle: 'Revisar la conexion al servidor' }))

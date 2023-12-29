@@ -14,7 +14,7 @@
 <script  lang="ts">
 import { defineComponent } from 'vue'
 import * as signalR from '@microsoft/signalr'
-const connectionsreamall = new signalR.HubConnectionBuilder().withUrl('https://192.168.1.37:4040/UpdateStatus', {
+const connectionsreamall = new signalR.HubConnectionBuilder().withUrl('https://192.168.10.116:4040/UpdateStatus', {
   skipNegotiation: true,
   transport: signalR.HttpTransportType.WebSockets
 }).build()
@@ -26,7 +26,7 @@ export default defineComponent({
   data () {
     return {
       testdata: true,
-      Urlcurrentimg: 'https://192.168.1.37:4040/SouerceStaticFiles/HxVmosaic.jpg',
+      Urlcurrentimg: 'https://192.168.10.116:4040/SouerceStaticFiles/HxVmosaic.jpg',
       status2: ''
     }
   },

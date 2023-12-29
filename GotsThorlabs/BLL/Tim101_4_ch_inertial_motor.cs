@@ -141,7 +141,7 @@ namespace GotsThorlabs.BLL
         {
             var developerurl = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
             var listado = deviceslist();
-            string path = Directory.GetCurrentDirectory();
+            string path = Environment.CurrentDirectory;
             if (listado == null) { yield return false; }
             if (!listado.Contains(kimDeviceId)) { yield return false; }
             var developerurl2 = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
@@ -201,7 +201,7 @@ namespace GotsThorlabs.BLL
 
             // Creacion de carpeta y nombre de archivo CSV con la clase encargada de gestionar el archivo
             string namefile = Utilities.getTimeInString();
-            string namefolder = currentPath + "\\StaticFiles\\" + namefile;
+            string namefolder = Path.Combine( currentPath , "StaticFiles" + namefile);
             bool createfolder = Utilities.createFolder(namefolder);
             CollageGestor recordTrackCollage = new CollageGestor(namefile, namefolder);
 
@@ -303,10 +303,10 @@ namespace GotsThorlabs.BLL
         }
         public  bool CreatesticherOpencv(int mode)
         {
-            var stitching = new emgu();
+            //var stitching = new emgu();
 
             var r1 = CreatesticherOpencv2(mode);
-            var r2 = stitching.getstitcher(mode); 
+            var r2 = emgu.getstitcher(mode); 
             bool resultado = r1 == r2 && r1 == true ;
             return resultado; 
 
@@ -319,8 +319,7 @@ namespace GotsThorlabs.BLL
         ///</return>
         public bool CreatesticherOpencv2(int modes)
         {
-            var currentpath = Directory.GetCurrentDirectory();
-            var carpetaPath = currentpath + "\\StaticFiles\\datasetstitched";
+            var carpetaPath = Path.Combine(Environment.CurrentDirectory, "StaticFiles", "datasetstitched");
             string[] archivos = Directory.GetFiles(carpetaPath, "*.jpg");
             Mat[] arraisMat= new Mat[archivos.Length];
             var output = new Mat();
@@ -345,7 +344,7 @@ namespace GotsThorlabs.BLL
 
             var solucion = stitched.Stitch(arraisMat, output);
             var estado = solucion == Stitcher.Status.OK ? true : false;
-            output.SaveImage( currentpath + "\\StaticFiles\\openNative.jpg");
+            output.SaveImage(Path.Combine(Environment.CurrentDirectory, "StaticFiles", "openNative.jpg"));
             //Cv2.DetailEnhance(InputArrTest, output, (float)3.0002, (float)0.0001);
             //output.SaveImage(currentpath + "\\StaticFiles\\openNative2.png");
 

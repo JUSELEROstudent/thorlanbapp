@@ -21,18 +21,17 @@ namespace GotsThorlabs.BLL
         ///bool return, on OK return true 
         ///</return>
 
-        public bool getstitcher(int modes) 
+        public static bool getstitcher(int modes) 
         {
-            var currentpath = Directory.GetCurrentDirectory();
-            var carpetaPath = currentpath + "\\StaticFiles\\datasetstitched";
-            string[] archivos = Directory.GetFiles(carpetaPath, "*.jpg");
-            Mat[] arraisMat = new Mat[archivos.Length];
+            var folderDatasetStitched = Path.Combine(Environment.CurrentDirectory, "StaticFiles", "datasetstitched");
+            string[] filesIntoFolderDatasetStitched = Directory.GetFiles(folderDatasetStitched, "*.jpg");
+            Mat[] arraisMat = new Mat[filesIntoFolderDatasetStitched.Length];
 
             var output = new Mat();
             int indexinter = 0;
-            foreach (var archivo in archivos)
+            foreach (var fileImgStitched in filesIntoFolderDatasetStitched)
             {
-                var img = new Mat(archivo.ToString());
+                var img = new Mat(fileImgStitched.ToString());
                 arraisMat[indexinter] = img;
                 indexinter++;
             }
@@ -49,7 +48,7 @@ namespace GotsThorlabs.BLL
             var status = stitcher.Stitch(restulstitch, output);
 
             var resultado = status == Stitcher.Status.Ok ? true : false;
-            output.Save(currentpath + "\\StaticFiles\\stitchemgu.jpg");
+            output.Save(Path.Combine(Environment.CurrentDirectory, "StaticFiles", "stitchemgu.jpg"));
 
             return resultado;
         }

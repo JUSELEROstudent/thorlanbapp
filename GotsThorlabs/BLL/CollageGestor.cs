@@ -18,7 +18,7 @@
         public CollageGestor(string nombreCsvdoc, string path) {
 
             string[] encabezados = { "Numero", "EjeX", "EjeZ" };
-            string pathsavedoc = path + "\\" + nombreCsvdoc;
+            string pathsavedoc = Path.Combine( path , nombreCsvdoc);
             using (StreamWriter writer = new StreamWriter(pathsavedoc)) {
                 // Escribir los encabezados
                 writer.WriteLine(string.Join(",", encabezados));

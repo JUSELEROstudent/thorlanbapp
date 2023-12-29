@@ -46,7 +46,7 @@ export default ({
       // redirect: 'follow'
     }
 
-    fetch('https://192.168.1.37:4040/home/devices', requestOptions)
+    fetch('https://192.168.10.116:4040/home/devices', requestOptions)
       .then(response => response.json())
       .then(data => this.listdeviceson(data))
       .catch(error => console.log('errror', error))

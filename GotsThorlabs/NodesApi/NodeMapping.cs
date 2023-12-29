@@ -17,10 +17,7 @@ namespace GotsThorlabs.NodesApi
             {
                 var inertialmotorkim = new Tim101_4_ch_inertial_motor();
                 bool status = inertialmotorkim.Createimagemosaic();
-                //var listado = inertialmotorkim.deviceslist();
-                // if (listado == null) { return Results.BadRequest("Verifique el estado de la conexion a los dispositivos THORLABS"); }
-                //var deviceconnect = inertialmotorkim.Getobjdevicekim(listado[0]);
-                // FUNCION CONECCION Y MOVER AHORA IMPLEMENTAR LA TOMA DE IMAGENES EN LA CLASE PARA CONTINUAR
+                //FUNCON QUE NO FUNCIONA MUCHO QUE SE DIGA DESPLIEGA LAS IMAGENES A UNA CARPETA CON DIRECCION FIJA
 
                 return Results.Ok(status);
             });
