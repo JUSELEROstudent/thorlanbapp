@@ -30,6 +30,7 @@
 import { defineComponent } from 'vue'
 import store from './store/index'
 import AlertNew from './components/AlertsNew.vue'
+import EnviromentApp from '../src/store/enviroment'
 
 export default defineComponent({
   name: 'App',
@@ -51,6 +52,7 @@ export default defineComponent({
   },
   store,
   mounted: function () {
+    console.log(EnviromentApp)
     console.log(window.location.href)
     const currentpath = window.location.href
     const longurl = currentpath.split('/')

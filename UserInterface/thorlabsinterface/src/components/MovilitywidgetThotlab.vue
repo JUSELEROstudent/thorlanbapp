@@ -112,11 +112,7 @@ export default {
         await connectionsream.stream('Counter', currentcamera.value.cameraId, 10)
           .subscribe({
             next: (item) => {
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
               imagen.value = ''
-              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-              // @ts-ignore
               imagen.value = item
               console.log('SE SUSCRIBE')
               console.log(connection.state)
@@ -316,7 +312,8 @@ button {
   width: auto;
 }
 #selectcamera {
-  max-height: 50px;
+  max-height: 25px;
+  display: none;
 }
 .comboselectcamera {
   position: absolute;

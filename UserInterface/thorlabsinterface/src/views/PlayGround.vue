@@ -54,6 +54,7 @@
     <div   v-if="!onrequest" ><v-btn disabled>Move whit configuration</v-btn></div>
   </div>
   </v-card>
+  <h1>{{ testVarenviroment }}JUAN SEBatian</h1>
   <!-- <v-alert v-if="boolalert==true" class="alert1"
         closable
         density="compact"
@@ -64,11 +65,13 @@
 </template>
 
 <script>
+import EnviromentApp from '../store/enviroment'
 export default {
   app: 'playground',
   data () {
     return {
       onrequest: true,
+      testVarenviroment: 'edit',
       listdevices: [],
       boolalert: true,
       textalert: 'alerta desde el componente mover',
@@ -102,6 +105,7 @@ export default {
     }
   },
   beforeCreate () {
+    console.log(EnviromentApp.URLSource)
     const myHeaders = new Headers()
     myHeaders.append('Authorization', 'Bearer ' + localStorage.getItem('stringjwt'))
 

@@ -1,4 +1,4 @@
-﻿using Emgu.CV.Stitching;
+using Emgu.CV.Stitching;
 using Emgu.CV;
 //using Emgu.CV;
 //using Emgu.CV.Flann;
@@ -10,12 +10,13 @@ using Emgu.CV;
 using Emgu.CV.Util;
 using Emgu.CV.Features2D;
 using Emgu.Util;
+using System;
 namespace GotsThorlabs.BLL
 {
     public class emgu
     {
         ///<summary>
-        ///Funcion de stitch encargada de procesar la imagenes definidas. usando la libreria emgucv qeu es externa 
+        ///Funcion de stitch encargada de procesar la imagenes definidas. usando la libreria emgucv que es externa 
         ///</summary>
         ///<return>
         ///bool return, on OK return true 

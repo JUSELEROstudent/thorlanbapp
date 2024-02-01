@@ -174,7 +174,8 @@ button {
   width: auto;
 }
 #selectcamera {
-  max-height: 50px;
+  display: none;
+  max-height: 25px;
 }
 .comboselectcamera {
   position: absolute;
