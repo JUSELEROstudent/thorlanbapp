@@ -1,10 +1,9 @@
-<script setup lang="ts">
-</script>
 <template>
-    <div class=" flex flex-row bg-lightgray ">
-    <div class="bg-greenuis w-16 h-screen  shadow-2xl flex flex-col content-between  gap-4 ">
+    <div class=" flex flex-row bg-lightgray " >
+    <div class="bg-greenuis w-16 h-screen  shadow-2xl flex flex-col content-between  gap-4" :class="{ 'w-40 bg-midnight' : statusbar}">
         <div class=" h-full  flex flex-col justify-items-center gap-4 my-4 ">
-        <div class="flex justify-center"><NuxtLink href="/"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24"><path fill="black" d="M8.025 22L6.25 20.225L14.475 12L6.25 3.775L8.025 2l10 10z"/></svg></NuxtLink></div>
+        <div class="flex justify-center" :class="{ 'w-48 justify-start' : statusbar}" v-on:click="changestatusvar()"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24"><path fill="black" d="M8.025 22L6.25 20.225L14.475 12L6.25 3.775L8.025 2l10 10z"/></svg>
+          <span v-show="statusbar" class="self-center" >test 1 </span></div>
         <div class="flex justify-center"><NuxtLink href="/"><svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24"><path fill="white" d="M10.77 19H6.807q-.344 0-.576-.232Q6 18.536 6 18.192V11h-.392q-.273 0-.36-.248q-.086-.248.114-.413l6.098-5.508q.22-.218.542-.218q.321 0 .538.218l3.306 3V5.942q0-.161.121-.282q.121-.122.283-.122h.808q.161 0 .282.122t.122.282v3.32l1.178 1.075q.198.186.112.425q-.087.238-.36.238H18v7.192q0 .344-.232.576q-.232.232-.576.232h-3.961v-5.23h-2.462zM7 18h2.77v-5.23h4.46V18H17v-7.8l-5-4.5l-5 4.5zm2.77-5.23h4.46zm.422-2.764h3.616q0-.704-.543-1.159q-.542-.455-1.265-.455q-.723 0-1.265.453q-.543.453-.543 1.16"/></svg></NuxtLink></div>
         <div class="flex justify-center"><NuxtLink href="/signalrtest"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><g fill="white"><path d="M23.5 16.866a1 1 0 0 0 0-1.732l-12-6.928a1 1 0 0 0-1.5.866v13.856a1 1 0 0 0 1.5.866z"/><path d="M6 1a5 5 0 0 0-5 5v20a5 5 0 0 0 5 5h20a5 5 0 0 0 5-5V6a5 5 0 0 0-5-5zM3 6a3 3 0 0 1 3-3h20a3 3 0 0 1 3 3v20a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z"/></g></svg></NuxtLink></div>
         <div class="flex justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 20 20"><path fill="white" d="M12 14a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1zM5 9v3.5A2.5 2.5 0 0 0 7.5 15H11v-1H9.707l1.66-1.66c.235-.402.571-.738.973-.973L14 9.707V11h1V7.5A2.5 2.5 0 0 0 12.5 5H9v1h1.293l-1.66 1.66c-.235.402-.57.738-.973.973L6 10.293V9zm6.707-3h.793c.232 0 .45.052.647.146l-7 7A1.494 1.494 0 0 1 6 12.5v-.793zM7.5 14c-.232 0-.45-.053-.647-.146l7-7c.095.195.147.414.147.646v.794L8.293 14zM1 3a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1z"/></svg></div>
@@ -22,3 +21,12 @@
     <slot></slot>
     </div>
 </template>
+<script setup lang="ts">
+const statusbar = ref<boolean>(true);
+
+function changestatusvar() {
+  statusbar.value = !statusbar.value; 
+}
+
+
+</script>
