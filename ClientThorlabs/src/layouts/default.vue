@@ -30,7 +30,7 @@
     </div>
 </template>
 <script setup lang="ts">
-const statusbar = ref<boolean>(true);
+const statusbar = ref<boolean>(false);
 
 function changestatusvar() {
   statusbar.value = !statusbar.value; 
