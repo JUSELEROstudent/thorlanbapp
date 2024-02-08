@@ -48,6 +48,7 @@
             <div class="w-full align-middle">
                 <span class="m-4 text-black">Movimiento por teclado</span>
                 <input type="checkbox" class="checkbox align-middle "  id="test2"  v-model="modeselect" value="keyboard" >
+                <button class="btn btn-success" @click="MoveDevice()">TEST</button>
                 
             </div>
         </div>
@@ -61,7 +62,8 @@
 </template>
 
 <script setup lang="ts">
-//import  {ref , onMounted } from 'Vue'
+const config = useRuntimeConfig()
+
 interface InfoToManageDevice {
     deviceId: null | number,
     steprate: number,
@@ -70,7 +72,7 @@ interface InfoToManageDevice {
     chaneltomove: number
 }
 const modeselect = ref(["manual"]);
-const listdevices = ref([1,2,3]);
+const listdevices = ref([]);
 const configdeviceselect = ref<InfoToManageDevice>({
     deviceId:0,
     steprate: 100,
@@ -86,7 +88,7 @@ watch(modeselect, async (newSelect, oldSelect) => {
     {
         if (modeselect.value.length > 1 )
         {
-            //any time you check a box in the view the value is set at the end of array this delete the first valuea and persist the most resent selection
+            //Whenever you check a box in the view, its value is added to the end of an array. This action deletes the first value in the array, ensuring that only the most recent selection persists.
             modeselect.value.shift()
         }else if(newSelect.length == 0 )
         {
@@ -95,8 +97,42 @@ watch(modeselect, async (newSelect, oldSelect) => {
     }
 })
 
-// function onMounted( () => {
-//     console.log("adfasdfasdf")
-// })
+async function getDevices() {
+  const myHeaders = new Headers();
+  myHeaders.append('Content-Type', 'application/json')
+  myHeaders.append('Authorization', 'Bearer ' + localStorage.getItem('stringjwt'))
+  const requestOptions = {
+    method: 'GET',
+    headers: myHeaders,
+  }
+  const petition = await fetch( `${config.public.apiUrl}/home/devices`, requestOptions)
+  const data = await petition.json()
+  listdevices.value = data
+  console.log(data)
+}
+async function MoveDevice() {
+      const myHeaders = new Headers()
+      myHeaders.append('Content-Type', 'application/json')
+      myHeaders.append('Authorization', 'Bearer ' + localStorage.getItem('stringjwt'))
+      if(configdeviceselect.value.deviceId!=null && typeof(configdeviceselect.value.deviceId) == 'string'){
+      const raw = JSON.stringify(configdeviceselect.value)
+      const requestOptions = {
+        method: 'POST',
+        headers: myHeaders,
+        body: raw
+      }
+      const petition = await fetch( `${config.public.apiUrl}/movedevice`, requestOptions)
+      const data = await petition.json()
+      console.log(data)
+      }
+      else{
+        console.log("error en movedevice")
+      }
+
+}
+
+onMounted( async () => { 
+  getDevices();
+});
 
 </script>
