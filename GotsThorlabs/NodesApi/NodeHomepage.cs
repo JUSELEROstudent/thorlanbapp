@@ -112,9 +112,9 @@ namespace GotsThorlabs.NodesApi
                 currentDeviceSettings.Drive.Channel(chanelsDevice[movestosite.chaneltomove]).StepAcceleration = movestosite.stepaceleration;
                 device.SetSettings(currentDeviceSettings, true, true);
 
-                positionchanel = device.GetPosition(InertialMotorStatus.MotorChannels.Channel1);
+                positionchanel = device.GetPosition(chanelsDevice[movestosite.chaneltomove]);
                 int position = movestosite.moveto;
-                // position = positionchanel == position ? position + 100 : 100;
+                position = positionchanel == position ? (int)positionchanel + position : 100;
 
                 bool estatusMovement = Move_Method1(device, chanelsDevice[movestosite.chaneltomove], position);
                 if (!estatusMovement)
