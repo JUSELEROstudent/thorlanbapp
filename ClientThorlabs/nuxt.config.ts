@@ -8,5 +8,5 @@ export default defineNuxtConfig({
     }
   },
   srcDir: 'src',
-  modules: ['nuxt-icon', '@nuxtjs/tailwindcss']
+  modules: ['nuxt-icon', '@nuxtjs/tailwindcss','@pinia/nuxt']
 })

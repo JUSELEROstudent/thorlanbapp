@@ -75,13 +75,16 @@
 
         <div  class="bg-lightgray w-full m-2 rounded">
             MOVER
+            <button class="btn" @click="GetAlert()">CLICK ALERT</button>
+            {{ alertStore.listAelerts }}
         </div>
 
     </div>
 </template>
 
 <script setup lang="ts">
-
+import { alertsClient } from './../stores/alerts'
+const alertStore = alertsClient()
 const config = useRuntimeConfig()
 interface InfoToManageDevice {
     deviceId: null | number,
@@ -156,12 +159,15 @@ async function MoveDevice(valuestomoved:InfoToManageDevice) {
       }
       const petition = await fetch( `${config.public.apiUrl}/movedevice`, requestOptions)
       const data = await petition.json()
-      console.log(" SE MOVIO")
+      alertStore.NewAlert({type: 'OK',data:'Se movio con exito el dispositivo', tittle:'Moviemiento Exitoso'})
       }
       else{
-        console.log("error en movedevice")
+        alertStore.NewAlert({type: 'error',data:'No se ha podido mover el dispositivo', tittle:'Revisar conexiones '})
       }
 
+}
+function GetAlert() {
+  alertStore.NewAlert({type: 'OK',data:'estado de prueba ', tittle:'TITULO'})
 }
 
 function OnEventListenerExecute(evento:any) {

@@ -27,10 +27,22 @@
     </div>
 
     <slot></slot>
+
+    <div class="absolute w-96 right-0 bottom-0 overflow-auto" >
+      <div role="alert" class="alert mt-1" :class="{'alert-error':(item.type==`error`),'alert-success':(item.type==`OK`),'alert-warning':(item.type==`warning`)}"  v-for="item, index in listadolog" :key="index">
+        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        <span>{{item.data}}</span>
+      </div>      
+    </div>
     </div>
 </template>
 <script setup lang="ts">
+import {alertsClient, type ErrorItemAlert} from './../stores/alerts'
 const statusbar = ref<boolean>(false);
+
+const alertList = alertsClient()
+const listadolog: ErrorItemAlert = alertList.listAelerts
+
 
 function changestatusvar() {
   statusbar.value = !statusbar.value; 
