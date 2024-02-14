@@ -58,7 +58,7 @@ namespace GotsThorlabs.NodesApi
 
                 // SimulationManager.Instance.InitializeSimulations();
                 if (!builddeviceslist()) return new List<string> { "No se ha podido iniciar la lista de dispositivos" };
-                List<string>  serialNumbers = DeviceManagerCLI.GetDeviceList(KCubeInertialMotor.DevicePrefix_KIM101);
+                List<string> serialNumbers = DeviceManagerCLI.GetDeviceList(KCubeInertialMotor.DevicePrefix_KIM101);
 
                 KCubeInertialMotor device = KCubeInertialMotor.CreateKCubeInertialMotor(movestosite.deviceId);// nunca misrar esta varable linea 
                 if (device == null)
@@ -75,6 +75,7 @@ namespace GotsThorlabs.NodesApi
                 catch (Exception)
                 {
                     // Connection failed
+                    throw new InvalidOperationException("Error al abrir dispositivo Kim");
                     serialNumbers.Add("Failed to open device " + movestosite.deviceId);
                     return serialNumbers;
                 }
@@ -112,30 +113,51 @@ namespace GotsThorlabs.NodesApi
                 currentDeviceSettings.Drive.Channel(chanelsDevice[movestosite.chaneltomove]).StepAcceleration = movestosite.stepaceleration;
                 device.SetSettings(currentDeviceSettings, true, true);
 
-                positionchanel = device.GetPosition(chanelsDevice[movestosite.chaneltomove]);
-                int position = movestosite.moveto;
-                position = positionchanel == position ? (int)positionchanel + position : 100;
+                positionchanel = device.GetPosition(chanelsDevice[movestosite.chaneltomove]);//100
+                int position = movestosite.moveto;//400
+                //changet to use .moveto like a step movementerate no like a target point
+                //position = ((int)positionchanel + position) == position ? (int)positionchanel + position : 100;
+                position = (int)positionchanel + position;
+
 
                 bool estatusMovement = Move_Method1(device, chanelsDevice[movestosite.chaneltomove], position);
                 if (!estatusMovement)
                 {
                     device.StopPolling();
                     device.Disconnect(true);
-                    return new List<string> { "Ocurrio un erro al mover el dispositvo" };
+                    //return new List<string> { "Ocurrio un erro al mover el dispositvo" };
+                    throw new InvalidOperationException("Error en coneccion a dispositivo Kim");
                 }
                 // or
                 // Move_Method2(device, InertialMotorStatus.MotorChannels.Channel1, position);
 
                 Decimal newPos = device.GetPosition(InertialMotorStatus.MotorChannels.Channel1);
                 Console.WriteLine("Device Moved to {0}", newPos);
+                ///////////// 1 uan funcion aparte 
+                var responseKimStatus = new KimFourChanelsThorlabs();
+                responseKimStatus.deviceId = movestosite.deviceId;
 
+                foreach (var deviceinfo in chanelsDevice)
+                {
+                    var testdeviceinfo = device.GetJogParameters(chanelsDevice[deviceinfo.Key]);//lasa key inician en 1
+                    var testdeviceinfo2 = device.GetPosition(chanelsDevice[deviceinfo.Key]);
+
+                    var singlechannel = new KimSingleChanel();
+                    singlechannel.rate = testdeviceinfo.JogRate;
+                    singlechannel.aceleration = testdeviceinfo.JogAcceleration;
+                    singlechannel.position = testdeviceinfo2;
+
+                    responseKimStatus.UpdateKimArray(singlechannel, deviceinfo.Key - 1);
+
+                }
+                //////////////////// 1
                 // Tidy up and exit
                 device.StopPolling();
                 device.Disconnect(true);
 
+                return new List<string> { "Ok" };////falta definir la respuesta
 
-
-                return new List<string> { "Ok" };
+                //return Results.Json;
             });
 
             App.MapGet("/home/devices", async () =>
@@ -197,4 +219,29 @@ public class ObjCameras
 {
     public int cameraId { get; set; }
     public string cameraName { get; set; }
+}
+
+public class KimFourChanelsThorlabs
+{ 
+    public string deviceId { get; set; } 
+
+    public KimSingleChanel[] channelsInfo { get; set; }
+
+    public KimFourChanelsThorlabs() { 
+    
+        channelsInfo = new KimSingleChanel[4];
+    }
+
+    public void UpdateKimArray(KimSingleChanel newitem,int channel)
+    {
+        channelsInfo[channel] = newitem;
+    }
+}
+
+public class KimSingleChanel 
+{ 
+    public int position { get; set; }
+    public int rate { get; set; }
+    public int aceleration { get; set; }
+    //public int size { get; set; }
 }

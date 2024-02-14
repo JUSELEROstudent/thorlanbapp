@@ -8,13 +8,15 @@ export interface ErrorItemAlert {
 
 export const alertsClient = defineStore( 'listAlertsStore', () =>
   {
-    const listAelerts = ref<ErrorItemAlert>([]);
+    const listAelerts = ref<ErrorItemAlert[]>([]);
 
     function NewAlert(newAlert: ErrorItemAlert) {
       listAelerts.value.push(newAlert)
 
       setTimeout(() => {
-          listAelerts.value.pop()
+          // listAelerts.value.pop()
+          listAelerts.value.splice(0,1)
+
       }, 2000);
     }
 
