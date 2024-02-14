@@ -11,6 +11,7 @@ using Thorlabs.MotionControl.Tools.Common;
 using Thorlabs.MotionControl.Tools.Logging;
 using Microsoft.AspNetCore.Mvc;
 using static Thorlabs.MotionControl.KCube.InertialMotorCLI.InertialMotorStatus;
+using Microsoft.AspNetCore.Builder;
 
 namespace GotsThorlabs.NodesApi
 {
@@ -57,7 +58,7 @@ namespace GotsThorlabs.NodesApi
             {
 
                 // SimulationManager.Instance.InitializeSimulations();
-                if (!builddeviceslist()) return new List<string> { "No se ha podido iniciar la lista de dispositivos" };
+                if (!builddeviceslist()) throw new InvalidOperationException("Error en coneccion a dispositivo Kim");
                 List<string> serialNumbers = DeviceManagerCLI.GetDeviceList(KCubeInertialMotor.DevicePrefix_KIM101);
 
                 KCubeInertialMotor device = KCubeInertialMotor.CreateKCubeInertialMotor(movestosite.deviceId);// nunca misrar esta varable linea 
@@ -75,9 +76,7 @@ namespace GotsThorlabs.NodesApi
                 catch (Exception)
                 {
                     // Connection failed
-                    throw new InvalidOperationException("Error al abrir dispositivo Kim");
-                    serialNumbers.Add("Failed to open device " + movestosite.deviceId);
-                    return serialNumbers;
+                    throw new InvalidOperationException("Error al abrir dispositivo Kim " + movestosite.deviceId);
                 }
                 if (!device.IsSettingsInitialized())
                 {
@@ -155,9 +154,14 @@ namespace GotsThorlabs.NodesApi
                 device.StopPolling();
                 device.Disconnect(true);
 
-                return new List<string> { "Ok" };////falta definir la respuesta
+                //return new List<string> { "Ok" };////falta definir la respuesta
+                //if(responseKimStatus != null)
+                //{
+                //return new ActionResult<KimFourChanelsThorlabs>(responseKimStatus)
+                return Results.Ok(responseKimStatus);
+                //}
+                //return new List<string> { "Ok" };
 
-                //return Results.Json;
             });
 
             App.MapGet("/home/devices", async () =>
