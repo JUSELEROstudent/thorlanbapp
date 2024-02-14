@@ -74,9 +74,32 @@
 
 
         <div  class="bg-lightgray w-full m-2 rounded">
-            MOVER
-            <button class="btn" @click="GetAlert()">CLICK ALERT</button>
-            {{ alertStore.listAelerts }}
+            <h3 class="text-black">Estado del dispositivo : {{ infoKimFourchannel.deviceId }}</h3>
+                    
+            <div class="overflow-x-auto text-black">
+            <table class="table bg-white ">
+                <!-- head -->
+                <thead>
+                <tr class="text-black">
+                    <th >Channel</th>
+                    <th>Position</th>
+                    <th>Acelertion</th>
+                    <th>Steps</th>
+                </tr>
+                </thead>
+                <tbody>
+                <!-- row 1 -->
+                <tr v-for="(channel,keys) in infoKimFourchannel.channelsInfo">
+                    <th>{{keys +1}}</th>
+                    <td>{{channel.position}}</td>
+                    <td>{{channel.aceleration}}</td>
+                    <td>{{channel.rate}}</td>
+                </tr>
+                <!-- row 2 -->
+                </tbody>
+            </table>
+            </div>
+            <!-- {{ infoKimFourchannel }} -->
         </div>
 
     </div>
@@ -94,9 +117,22 @@ interface InfoToManageDevice {
     chaneltomove: number
 }
 
+// interface InfoKimFourChannels {
+//     deviceId:string,
+//     channelsInfo: InfoSingleChannel[]
+
+// }
+
+// interface InfoSingleChannel{
+//     position: number,
+//     rate: number,
+//     aceleration: number
+// }
+
 const modeselect = ref(["manual"]);
-const isKeyboardmode = ref<boolean>(false)
+const isKeyboardmode = ref<boolean>(false);
 const listdevices = ref([]);
+const infoKimFourchannel = ref([]);
 const devicechanels =ref([1,2,3,4])
 const configdeviceselect = ref<InfoToManageDevice>({
     deviceId:0,
@@ -143,7 +179,7 @@ async function getDevices() {
   console.log(data)
 }
 function MoveDeviceRemote(){
-    debugger
+    // debugger
     MoveDevice(configdeviceselect.value);
 }
 async function MoveDevice(valuestomoved:InfoToManageDevice) {
@@ -159,6 +195,7 @@ async function MoveDevice(valuestomoved:InfoToManageDevice) {
       }
       const petition = await fetch( `${config.public.apiUrl}/movedevice`, requestOptions)
       const data = await petition.json()
+      infoKimFourchannel.value =data;
       alertStore.NewAlert({type: 'OK',data:'Se movio con exito el dispositivo', tittle:'Moviemiento Exitoso'})
       }
       else{
