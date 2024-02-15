@@ -116,7 +116,8 @@ namespace GotsThorlabs.NodesApi
                 int position = movestosite.moveto;//400
                 //changet to use .moveto like a step movementerate no like a target point
                 //position = ((int)positionchanel + position) == position ? (int)positionchanel + position : 100;
-                position = (int)positionchanel + position;
+                // know have var kindMovemente that define what movement type is used can be relative or absolute
+                position = movestosite.kindMovement == "relative" ? (int)positionchanel + movestosite.relativemoveto: position;
 
 
                 bool estatusMovement = Move_Method1(device, chanelsDevice[movestosite.chaneltomove], position);
@@ -217,6 +218,8 @@ public class ObjMovement
    public int moveto { get; set; }
    public int steprate { get; set; }
    public int stepaceleration { get; set;  }
+   public string kindMovement { get; set; }
+   public int relativemoveto { get; set; }
 }
 
 public class ObjCameras
