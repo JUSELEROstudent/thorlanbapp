@@ -1,5 +1,7 @@
 ﻿using apitest.Services;
 using Dapper;
+using GotsThorlabs.Services;
+using GotsThorlabs.Services.GotsThorlabs.I;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
@@ -50,7 +52,8 @@ namespace apitest.Controllers
             var tokenS = jsonToken as JwtSecurityToken;
             var GetToUser = tokenS.Payload["unique_name"];
             string token="sepudo verificar ";
-            var conectionable = new ConnectionSql();
+            //var conectionable = new ConnectionSql();
+            var conectionable = new ConnectionSqlite();
             using (var queryable = conectionable.CreateConnection())
             {
                 queryable.Open();

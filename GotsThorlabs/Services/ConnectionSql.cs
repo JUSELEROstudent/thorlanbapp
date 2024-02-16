@@ -2,10 +2,11 @@
 using System.Data;
 using System.Data.SqlClient;
 using MySqlConnector;
+using GotsThorlabs.Interfaces;
 
 namespace apitest.Services
 {
-    public class ConnectionSql : Controller
+    public class ConnectionSql : IConnectionSql
     {
         public IDbConnection CreateConnection()
         {
