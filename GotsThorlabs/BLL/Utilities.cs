@@ -2,6 +2,10 @@
 {
     public class Utilities
     {
+        /// <summary>
+        /// Metodo usado para traer la fecha en string sin slash o backslash que pueden generar problemas en linux
+        /// </summary>
+        /// <returns></returns>
         public static string getTimeInString() {
             DateTime fechaHoraActual = DateTime.Now;
             string fecha = fechaHoraActual.ToString();

@@ -2,30 +2,35 @@
 using System.Data;
 using Microsoft.Data.Sqlite;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
+using System.ComponentModel;
+using apitest.Controllers;
+using System.Linq;
+using apitest.Controllers;
+using Dapper;
+using System.Collections;
 
 namespace GotsThorlabs.Services
 
 {
     public class ConnectionSqlite/* : IConnectionSql*/
     {
-        public async static CreateConnection()
+        public  static SqliteConnection CreateConnection()
         {
-            //await ApplicationData.Current.LocalFolder.CreateFileAsync("sqliteSample.db", CreationCollisionOption.OpenIfExists);
-            //string dbpath = Path.Combine(ApplicationData.Current.LocalFolder.Path, "sqliteSample.db");
-            //using (SqliteConnection db =
-            //   new SqliteConnection($"Filename={dbpath}"))
-            //{
-            //    db.Open();
+            var directorio = Directory.GetCurrentDirectory();
 
-            //    String tableCommand = "CREATE TABLE IF NOT " +
-            //        "EXISTS MyTable (Primary_Key INTEGER PRIMARY KEY, " +
-            //        "Text_Entry NVARCHAR(2048) NULL)";
-
-            //    SqliteCommand createTable = new SqliteCommand(tableCommand, db);
-
-            //    createTable.ExecuteReader();
-            //}
-            throw new NotImplementedException();
+            string nameDbFile = Path.Combine(Directory.GetCurrentDirectory(), $"Database{Path.DirectorySeparatorChar}database{Path.DirectorySeparatorChar}ThorlabsSql.db");
+            var connection = new SqliteConnection($"Data Source={nameDbFile}");
+            return connection;
+            
         }
+
+        // async public IAsyncEnumerable<User> IsCorrectLogin(login sesionuser)
+        //{
+        //    var queryable =  CreateConnection();
+        //    string loginString = "SELECT IdUser FROM user WHERE (nombre = @User OR correo =  @user) AND password =  @Password";
+        //    //var rowsAffected = await queryable.QueryAsync<User>(loginString, sesionuser);
+        //    yield return queryable.QueryAsync<User>(loginString, sesionuser);
+        //}
     }
 }

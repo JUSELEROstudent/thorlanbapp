@@ -1,9 +1,10 @@
 ﻿using apitest.Services;
 using Dapper;
 using GotsThorlabs.Services;
-using GotsThorlabs.Services.GotsThorlabs.I;
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.Sqlite;
 using System.IdentityModel.Tokens.Jwt;
 
 namespace apitest.Controllers
@@ -21,19 +22,22 @@ namespace apitest.Controllers
         [HttpPost]
         public IActionResult Post(login sesionuser)
         {
+            var directorio = Directory.GetCurrentDirectory();
+
+            string nameDbFile = Path.Combine(Directory.GetCurrentDirectory(), $"Database{Path.DirectorySeparatorChar}database{Path.DirectorySeparatorChar}ThorlabsSql.db");
+            //var connection = new SqliteConnection($"Data Source={nameDbFile}");
             //var nuevovalor = otherData.ToString();
-            var respuesta = new List<dynamic>();
-            var conectionable = new ConnectionSql();
-            using (var queryable = conectionable.CreateConnection())
+            using (var queryable = ConnectionSqlite.CreateConnection())
             {
 
-                queryable.Open();
-                string loginString = "SELECT * FROM usertesting WHERE (name = @User OR email = @user) AND contrasena = @Password";
-                var rowsAffected = queryable.Query(loginString, sesionuser).ToList();
-                 respuesta = rowsAffected.Count() > 0 ? rowsAffected : respuesta.ToList();
-                if (respuesta.Count > 0)
+                ///queryable.Open();
+                //string loginString = "SELECT * FROM usertesting WHERE (name = @User OR email = @user) AND contrasena = @Password";
+                string loginString = "SELECT * FROM user WHERE (nickname = @User OR correo =  @User) AND password =  @Password";
+                var tableUsers =  queryable.Query<User>(loginString, sesionuser);
+
+                if (tableUsers.Count() > 0)
                 {
-                    var token = TokenGenerator.GenerateTokenJwt(rowsAffected[0].userId.ToString());
+                    var token = TokenGenerator.GenerateTokenJwt(tableUsers.FirstOrDefault().IdUser.ToString());
                     return Ok(token);
                 } else
                 {
@@ -52,17 +56,16 @@ namespace apitest.Controllers
             var tokenS = jsonToken as JwtSecurityToken;
             var GetToUser = tokenS.Payload["unique_name"];
             string token="sepudo verificar ";
-            //var conectionable = new ConnectionSql();
-            var conectionable = new ConnectionSqlite();
-            using (var queryable = conectionable.CreateConnection())
+            using (var queryable = ConnectionSqlite.CreateConnection())
             {
                 queryable.Open();
-                string loginString = "SELECT * FROM usertesting WHERE Userid = @userId";
+                string loginString = "SELECT * FROM user WHERE idUser = @userId";
                 var rowsAffected = queryable.Query(loginString, new { userId = GetToUser }).ToList();
                 //respuesta = rowsAffected.Count() > 0 ? rowsAffected : respuesta.ToList();
                 return Ok(rowsAffected);
                
             }
+            //return BadRequest(new errorresponse { Error = "Fallo en la validacion", Description = "intente de nuevo iniciar session" } );
         }
     }
 
@@ -72,6 +75,13 @@ namespace apitest.Controllers
         public string Password { get; set; }
     }
 
+    public class User
+    {
+
+        public int  IdUser { get; set; }
+        public string correo { get; set; }
+        public string nickname { get; set; }
+    }
     public class errorresponse { 
         public string Error { get; set; }
 

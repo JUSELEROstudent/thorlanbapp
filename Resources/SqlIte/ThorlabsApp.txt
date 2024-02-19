@@ -1,0 +1,67 @@
+CREATE TABLE user (
+  IdUser INTEGER PRIMARY KEY,
+  nombre TEXT,
+  apellido TEXT,
+  telefono INTEGER,
+  correo TEXT,
+  nickname TEXT,
+  password TEXT
+);
+
+CREATE TABLE tour (
+  IdTour INTEGER PRIMARY KEY,
+  date TEXT,
+  NumberX INTEGER,
+  NumberY INTEGER,
+  NumberZ INTEGER,
+  Camera TEXT,
+  endStatus TEXT,
+  IdStitching INTEGER,
+  IdUser INTEGER,
+  FOREIGN KEY (IdUser) REFERENCES user(IdUser)
+);
+
+CREATE TABLE stitching (
+  IdStitching INTEGER PRIMARY KEY,
+  path TEXT,
+  IdImgResult INTEGER,
+  typestitching TEXT,
+  status TEXT,
+  IdTour INTEGER,
+  FOREIGN KEY (IdTour) REFERENCES tour(IdTour)
+);
+
+CREATE TABLE image (
+  IdImage INTEGER PRIMARY KEY,
+  nombre TEXT,
+  GausianVal INTEGER,
+  path TEXT,
+  X INTEGER,
+  Y INTEGER,
+  Z INTEGER,
+  NumberQueue INTEGER,
+  IdTour INTEGER,
+  FOREIGN KEY (IdTour) REFERENCES tour(IdTour)
+);
+
+CREATE TABLE logcalibrate (
+  IdLog INTEGER PRIMARY KEY,
+  datetimer TEXT,
+  logCalibratedesc TEXT
+);
+
+////////////////////////////////////////////////////*COMENTADO 
+PRAGMA foreign_keys = ON;
+
+ALTER TABLE tour ADD FOREIGN KEY (IdUser) REFERENCES user(IdUser);
+ALTER TABLE stitching ADD FOREIGN KEY (IdTour) REFERENCES tour(IdTour);
+ALTER TABLE image ADD FOREIGN KEY (IdTour) REFERENCES tour(IdTour);
+/////////////////////////////////////////////////*
+
+
+
+INSERT INTO users (IdUser, nombre, apellido, telefono, correo, nickname, password)
+VALUES 
+(1, 'juan', 'leon', 3193897599, 'cocuyo5@live.com', 'juselero', 'AbCd1234'),
+(2, 'user', 'lastname', 123456789, 'user1@live.com', 'user1', 'contraseña2'),
+
