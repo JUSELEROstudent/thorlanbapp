@@ -24,9 +24,7 @@ namespace apitest.Controllers
         {
             var directorio = Directory.GetCurrentDirectory();
 
-            string nameDbFile = Path.Combine(Directory.GetCurrentDirectory(), $"Database{Path.DirectorySeparatorChar}database{Path.DirectorySeparatorChar}ThorlabsSql.db");
-            //var connection = new SqliteConnection($"Data Source={nameDbFile}");
-            //var nuevovalor = otherData.ToString();
+            
             using (var queryable = ConnectionSqlite.CreateConnection())
             {
 
