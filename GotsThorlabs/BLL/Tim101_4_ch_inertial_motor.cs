@@ -4,6 +4,7 @@ using OpenCvSharp.Internal.Vectors;
 using System.Collections;
 //using System.Drawing;
 using System.Drawing.Imaging;
+using System.Reflection.Metadata;
 using System.Threading;
 using Thorlabs.MotionControl.DeviceManagerCLI;
 using Thorlabs.MotionControl.KCube.InertialMotorCLI;
@@ -200,10 +201,10 @@ namespace GotsThorlabs.BLL
             var rand = new Random();
 
             // Creacion de carpeta y nombre de archivo CSV con la clase encargada de gestionar el archivo
-            string namefile = Utilities.getTimeInString();
-            string namefolder = Path.Combine( currentPath , "StaticFiles" + namefile);
-            bool createfolder = Utilities.createFolder(namefolder);
-            CollageGestor recordTrackCollage = new CollageGestor(namefile, namefolder);
+            string namefolder = Utilities.getTimeInString();
+            string fullnamefolder = Path.Combine( currentPath , $"StaticFiles{Path.DirectorySeparatorChar}" + namefolder);
+            bool createfolder = Utilities.createFolder(fullnamefolder);
+            CollageGestor recordTrackCollage = new CollageGestor(namefolder, fullnamefolder);
 
             for (int j = 0; j < finalimg.Length; j++)// all of the FOR statment is one of the dimensions of the movement
             {
@@ -228,7 +229,7 @@ namespace GotsThorlabs.BLL
                         yield return false;
                     }
 
-                    recordTrackCollage.saveStepDeviceInCsv((j * 100).ToString(), (i * 100).ToString());
+                    recordTrackCollage.saveStepDeviceInCsv((j * 100).ToString(), (i * 100).ToString());//vestigio de la idea de CSV ahora se usara la base de datos SQLite
 
                     if (!capture.IsOpened())
                     {
@@ -262,12 +263,13 @@ namespace GotsThorlabs.BLL
 
                     Rect region = new Rect(frame.Cols*j, frame.Rows * i, frame.Cols, frame.Rows);
                     frame.CopyTo(mosaic.SubMat(region));
-                    string pathsave = string.Format("{0}\\unitofpics{1}.jpg", currentPath + "\\StaticFiles", i);
+                    //string pathsave = string.Format("{0}\\unitofpics{1}.jpg", currentPath + "\\StaticFiles", i);// hace falta slash al final de StaticFiles
+                    string pathsave = Path.Combine(fullnamefolder, $"unitofpics{i}.jpg");
                     mosaic.SaveImage(pathsave);
-                    var splitpathdir = pathsave.Split("\\");
+                    var splitpathdir = pathsave.Split($"{Path.DirectorySeparatorChar}");
                     int dimpath = splitpathdir.Length;
                     var namephotounits = splitpathdir[dimpath - 1];
-                    var urlunitpi = "https://192.168.1.37:4040" + "/SouerceStaticFiles/" + namephotounits + "?ranmd=" + rand.Next().ToString();
+                    var urlunitpi = urlslocals[0] + $"/SouerceStaticFiles/{namefolder}/" + namephotounits + "?ranmd=" + rand.Next().ToString();
                     yield return urlunitpi;
                     //var imgretonr = image.ToBytes(); COMENTADA PORQUE NO SE NECESITA COMBERTIR A FRAMES
                 }

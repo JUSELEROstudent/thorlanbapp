@@ -163,7 +163,7 @@ namespace GotsThorlabs.NodesApi
                 //}
                 //return new List<string> { "Ok" };
 
-            });
+            }).RequireAuthorization();
 
             App.MapGet("/home/devices", async () =>
             {

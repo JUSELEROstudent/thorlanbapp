@@ -64,7 +64,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.MapGet("/security/getMessageSecure", () => "Hello World!"); //.RequireAuthorization("administrator"); esta parte es para agregar politicas no es necesario por ahora
+app.MapGet("/security/getMessageSecure", () => "Hello World!").RequireAuthorization(); //.RequireAuthorization("administrator"); esta parte es para agregar politicas no es necesario por ahora
 app.MapGet("/security/getMessage2", () => "Hello World!");
 app.UseHttpsRedirection();
  //SimulationManager.Instance.InitializeSimulations();
