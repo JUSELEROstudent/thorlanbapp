@@ -1,5 +1,5 @@
 <template>
-  <div class=" z-10 pt-96">
+  <div class=" z-10 pt-10 md:pt-1 sm:pt-96 2xl:pt-96">
     <div class="xl:w-3/12 md:w-6/12 bg-white rounded shadow m-auto p-10"
       style="box-shadow: rgba(255, 255, 255, 0.25) 10px 50px 100px 20px, rgba(0, 0, 0, 0.3) 0px 30px 60px -30px, rgba(255, 255, 255, 0.35) 0px -2px 6px 0px inset;">
       <h2 class="text-black">INICIAR SESION</h2>

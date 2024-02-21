@@ -135,10 +135,16 @@ namespace GotsThorlabs.BLL
         ///<param name="dimMove">
         ///tipo de movimiento que se desea ejecutar sea 1D, 2D, 3D  se usa para validarse que la cantidad de motores permita el tipo de recorrido deseado
         ///</param>
+        ///<param name="rows">
+        ///cantidad de filas que va a tener el mapeo
+        ///</param>
+        ///<param name="columns">
+        ///cantidad de columnas que va a tener el mapeo
+        ///</param>
         ///<remarks>
         ///devuelve la url de la ubicacion en el servidor de la imagen actual del mapeo
         ///</remarks>
-        public async IAsyncEnumerable<dynamic> Createmosaicstepbystep(int indexCam, int dimMove, string kimDeviceId)
+        public async IAsyncEnumerable<dynamic> Createmosaicstepbystep(int indexCam, int dimMove,int rows,int columns, string kimDeviceId)
         {
             var developerurl = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
             var listado = deviceslist();
@@ -189,8 +195,8 @@ namespace GotsThorlabs.BLL
             Decimal newPos = deviceconnect.GetPosition(InertialMotorStatus.MotorChannels.Channel1);
             // SECCION TOMA DE IMAGENES
             var currentPath = Directory.GetCurrentDirectory();
-            var rowshmosaic = 10;
-            var columnmosaic = 5;
+            var rowshmosaic = rows;
+            var columnmosaic = columns;
             var acptationvalue = true;
             using var capture = new VideoCapture(indexCam, VideoCaptureAPIs.DSHOW);
             var frameheight = capture.FrameHeight;
@@ -264,12 +270,12 @@ namespace GotsThorlabs.BLL
                     Rect region = new Rect(frame.Cols*j, frame.Rows * i, frame.Cols, frame.Rows);
                     frame.CopyTo(mosaic.SubMat(region));
                     //string pathsave = string.Format("{0}\\unitofpics{1}.jpg", currentPath + "\\StaticFiles", i);// hace falta slash al final de StaticFiles
-                    string pathsave = Path.Combine(fullnamefolder, $"unitofpics{i}.jpg");
+                    string pathsave = Path.Combine(fullnamefolder, $"unitofpics{j}_{i}.jpg");
                     mosaic.SaveImage(pathsave);
                     var splitpathdir = pathsave.Split($"{Path.DirectorySeparatorChar}");
                     int dimpath = splitpathdir.Length;
                     var namephotounits = splitpathdir[dimpath - 1];
-                    var urlunitpi = urlslocals[0] + $"/SouerceStaticFiles/{namefolder}/" + namephotounits + "?ranmd=" + rand.Next().ToString();
+                    var urlunitpi = urlslocals[2] + $"/SouerceStaticFiles/{namefolder}/" + namephotounits + "?ranmd=" + rand.Next().ToString();
                     yield return urlunitpi;
                     //var imgretonr = image.ToBytes(); COMENTADA PORQUE NO SE NECESITA COMBERTIR A FRAMES
                 }
@@ -280,26 +286,28 @@ namespace GotsThorlabs.BLL
                 Point pts2 = new Point(350,600);
                 Cv2.Rectangle(mosaicv, pts1, pts2,new Scalar(0, 0, 255), 10);
 
-                string mosaicpathv = string.Format("{0}\\camtakedV{1}.jpg", currentPath + "\\StaticFiles", j);
+                string mosaicpathv = Path.Combine(fullnamefolder, $"columnpic{j}.jpg"); 
+                //string mosaicpathv = string.Format("{0}\\camtakedV{1}.jpg", currentPath + "\\StaticFiles", j);
                 mosaicv.SaveImage(mosaicpathv);
-                var namephoto1 = mosaicpathv.Split("\\");
+                var namephoto1 = mosaicpathv.Split($"{Path.DirectorySeparatorChar}");
                 int lengtpicpath1 = namephoto1.Length;
                 var namepicstream1 = namephoto1[lengtpicpath1 - 1];
-                var urlstaticfiles1 = urlslocals[0] + "/SouerceStaticFiles/" + namepicstream1 + "?ranmd=" + rand.Next().ToString();
+                var urlstaticfiles1 = urlslocals[2] + $"/SouerceStaticFiles/{namefolder}/" + namepicstream1 + "?ranmd=" + rand.Next().ToString();
                 yield return urlstaticfiles1;
             }
 
             Cv2.HConcat(finalimg, mosaic);
-            string mosaicpath = string.Format("{0}\\HxV{1}.jpg", currentPath + "\\StaticFiles", "mosaic");
+            string mosaicpath = Path.Combine(fullnamefolder, $"HxV.jpg");
+            //string mosaicpath = string.Format("{0}\\HxV{1}.jpg", currentPath + "\\StaticFiles", "mosaic");
             mosaic.SaveImage(mosaicpath);
-            var namephoto = mosaicpath.Split("\\");
+            var namephoto = mosaicpath.Split($"{Path.DirectorySeparatorChar}");
             int lengtpicpath = namephoto.Length;
             var namepicstream = namephoto[lengtpicpath - 1];
 
             // Tidy up and exit
             deviceconnect.StopPolling();
             deviceconnect.Disconnect(true);
-            var urlstaticfiles = urlslocals[0] + "/SouerceStaticFiles/" + namepicstream + "?ranmd=" + rand.Next().ToString();
+            var urlstaticfiles = urlslocals[2] + $"/SouerceStaticFiles/{namefolder}/" + namepicstream + "?ranmd=" + rand.Next().ToString();
             yield return urlstaticfiles;
 
         }

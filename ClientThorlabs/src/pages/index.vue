@@ -7,34 +7,50 @@
                 <Icon   name="material-symbols:android-camera" ></Icon>
             </label>
 
-            <select id="cameraSelect" v-model="currentCamera" @change="handleCamera" class="select select-bordered w-full max-w-xs ">
+            <select id="cameraSelect" v-model="currentCamera" class="select select-bordered w-full max-w-xs ">
                 <option :value="lc.cameraId" v-for="lc in listCameras">
                     {{ lc.cameraName }}
                 </option>
             </select>
-             <div class="flex-1 " > 
-                <button @click="InitStreamImg()" class="btn btn-primary float-end " :class="{'btn-disabled': statusstreamimg }">
+            <span class="text-black pl-3" title="defina la tamaño en medida  de columnas y filas "> Grid X * Y</span>
+            <label>
+                <div class="flex items-center w-32">
+                <input type="number" v-model="rows" class="input input-bordered w-full ml-2" name="fname" placeholder="X" title="Numero de Filas" >
+                </div>
+            </label>
+            <label>
+                <div class="flex items-center w-32">
+                <input type="number" v-model="columns" class="input input-bordered w-full ml-2" name="fname" placeholder="Y" title="Numero de Columnas"  >
+                </div>
+            </label>
+            <div class="flex-1 " > 
+                <button @click="InitStreamImg()" class="btn btn-success bg-blue-900 float-end " :class="{'btn-disabled': statusstreamimg }">
                 Iniciar 
                  </button>
             </div> 
             
         </div>
-        <div>
-            <div v-show="isendrequest" class=" flex justify-center bg-black max-h-screen" >
-            <img  ref="imgRef">
+        <div class="flex justify-center bg-black">
+            <div v-show="isendrequest" class=" flex justify-center bg-black aspect-video max-h-[90vh]" >
+            <img  ref="imgRef" src="https://localhost:7166/SouerceStaticFiles/croopp.jpg">
         </div>    
         </div>
     </div>
 </template>
 <script setup lang="ts">
 import * as signalR from "@microsoft/signalr";
+import { alertsClient }  from './../stores/alerts'
 
 const config = useRuntimeConfig();
+const alertStore = alertsClient()
+
 const listCameras = ref<{ cameraId: number; cameraName: string }[]>([]);
 const currentCamera = ref<number>(0);
 const isendrequest = ref<boolean>(false);
 const imgRef = ref<HTMLImageElement | null>(null);
 const statusstreamimg = ref<boolean>(false);
+const rows = ref<number>(5);
+const columns = ref<number>(5);
 
 let hubConnection = await new signalR.HubConnectionBuilder()
     .withUrl(`${config.public.apiUrl}/UpdateStatus`, {
@@ -79,12 +95,12 @@ onMounted( async () => {
         // debugger;
         await hubConnection.stop();
         await hubConnection.start();
-        hubConnection.stream("Imgupdate", currentCamera.value).subscribe({
+        hubConnection.stream("Imgupdate", currentCamera.value,rows.value,columns.value).subscribe({
             next: (item: string) => {
                 if (imgRef.value) { imgRef.value.src = `${item}` }
             },
             complete: () => { console.log("Stream completed"); },
-            error: (err: Error) => { console.error(err); },
+            error: (err: Error) => { alertStore.NewAlert({type: 'error',data:'error al establecer la conexion ', tittle:'Revisar conexiones '}) },
         });
     } catch (err) { console.error(err); }
 }
