@@ -1,52 +1,52 @@
 CREATE TABLE user (
-  IdUser INTEGER PRIMARY KEY,
-  nombre TEXT,
-  apellido TEXT,
-  telefono INTEGER,
-  correo TEXT,
+  idUser INTEGER PRIMARY KEY,
+  name TEXT,
+  lastname TEXT,
+  telephon INTEGER,
+  eMail TEXT,
   nickname TEXT,
   password TEXT
 );
 
 CREATE TABLE tour (
-  IdTour INTEGER PRIMARY KEY,
+  idTour INTEGER PRIMARY KEY,
   date TEXT,
+  nameFolder TEXT,
   NumberX INTEGER,
   NumberY INTEGER,
   NumberZ INTEGER,
-  Camera TEXT,
+  camera TEXT,
   endStatus TEXT,
-  IdStitching INTEGER,
-  IdUser INTEGER,
-  FOREIGN KEY (IdUser) REFERENCES user(IdUser)
+  idStitching INTEGER,
+  idUser INTEGER,
+  FOREIGN KEY (idUser) REFERENCES user(idUser)
 );
 
 CREATE TABLE stitching (
-  IdStitching INTEGER PRIMARY KEY,
+  idStitching INTEGER PRIMARY KEY,
   path TEXT,
-  IdImgResult INTEGER,
+  idImgResult INTEGER,
   typestitching TEXT,
   status TEXT,
-  IdTour INTEGER,
+  idTour INTEGER,
   FOREIGN KEY (IdTour) REFERENCES tour(IdTour)
 );
 
 CREATE TABLE image (
-  IdImage INTEGER PRIMARY KEY,
-  nombre TEXT,
-  GausianVal INTEGER,
+  idImage INTEGER PRIMARY KEY,
+  name TEXT,
+  gausianVal INTEGER,
   path TEXT,
   X INTEGER,
   Y INTEGER,
   Z INTEGER,
-  NumberQueue INTEGER,
-  IdTour INTEGER,
-  FOREIGN KEY (IdTour) REFERENCES tour(IdTour)
+  idTour INTEGER,
+  FOREIGN KEY (idTour) REFERENCES tour(idTour)
 );
 
 CREATE TABLE logcalibrate (
-  IdLog INTEGER PRIMARY KEY,
-  datetimer TEXT,
+  idLog INTEGER PRIMARY KEY,
+  dateTimer TEXT,
   logCalibratedesc TEXT
 );
 
@@ -60,7 +60,7 @@ ALTER TABLE image ADD FOREIGN KEY (IdTour) REFERENCES tour(IdTour);
 
 
 
-INSERT INTO users (IdUser, nombre, apellido, telefono, correo, nickname, password)
+INSERT INTO user (idUser, name, lastname, telephon, eMail, nickname, password)
 VALUES 
 (1, 'juan', 'leon', 3193897599, 'cocuyo5@live.com', 'juselero', 'AbCd1234'),
 (2, 'user', 'lastname', 123456789, 'user1@live.com', 'user1', 'contraseña2'),

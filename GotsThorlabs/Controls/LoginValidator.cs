@@ -30,7 +30,7 @@ namespace apitest.Controllers
 
                 ///queryable.Open();
                 //string loginString = "SELECT * FROM usertesting WHERE (name = @User OR email = @user) AND contrasena = @Password";
-                string loginString = "SELECT * FROM user WHERE (nickname = @User OR correo =  @User) AND password =  @Password";
+                string loginString = "SELECT * FROM user WHERE (nickname = @User OR eMail =  @User) AND password =  @Password";
                 var tableUsers =  queryable.Query<User>(loginString, sesionuser);
 
                 if (tableUsers.Count() > 0)

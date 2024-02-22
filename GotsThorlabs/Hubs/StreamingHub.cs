@@ -79,8 +79,8 @@ namespace GotsThorlabs.Hubs
          [EnumeratorCancellation]
         CancellationToken cancellationToken)
         {
-            var controlmotor = new Tim101_4_ch_inertial_motor();
-            var processimgs = controlmotor.Createmosaicstepbystep(indexcam, 2,rows,columns, "97000001");
+            var controlmotor = new Tim101_4_ch_inertial_motor(rows, columns);
+            var processimgs = controlmotor.Createmosaicstepbystep(indexcam, 2, "97000001");
             await foreach (var url in processimgs)
             { 
                 yield return url;

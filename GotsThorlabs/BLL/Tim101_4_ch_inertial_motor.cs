@@ -1,10 +1,14 @@
-﻿using OpenCvSharp;
+﻿using Dapper;
+using GotsThorlabs.Interfaces;
+using GotsThorlabs.Services;
+using OpenCvSharp;
 using OpenCvSharp.Detail;
 using OpenCvSharp.Internal.Vectors;
 using System.Collections;
 //using System.Drawing;
 using System.Drawing.Imaging;
 using System.Reflection.Metadata;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using Thorlabs.MotionControl.DeviceManagerCLI;
 using Thorlabs.MotionControl.KCube.InertialMotorCLI;
@@ -13,13 +17,13 @@ using static System.Net.Mime.MediaTypeNames;
 namespace GotsThorlabs.BLL
 {
     ///<summary>
-    ///Clase de implementacion para el dispositivo Kim 101 de 4 canales
+    ///Clase de implementacion para el dispositivo Kim 101 de 4 canales y especificamente para el caso de un nuevo tour
     ///</summary>
     ///<remarks>
     ///crea un objeto con las utilidades para usar el dispositivo kim 101 4ch, ejecutar los metods de acuerdo al orden 
     /// 1. builddeviceslist() 2. deviceslist()
     ///</remarks>
-    public class Tim101_4_ch_inertial_motor
+    public class Tim101_4_ch_inertial_motor : ITakeTour
     {
         Dictionary<int, InertialMotorStatus.MotorChannels> chanelsDevice = new Dictionary<int, InertialMotorStatus.MotorChannels>()
                 {
@@ -28,6 +32,17 @@ namespace GotsThorlabs.BLL
                     {3, InertialMotorStatus.MotorChannels.Channel3},
                     {4, InertialMotorStatus.MotorChannels.Channel4}
                 };
+
+        public int rows;
+        public int columns;
+        public int indexCam;
+
+        public  Tim101_4_ch_inertial_motor(int IndexCam, int Rows,int Columns)
+        {
+           rows = Rows;
+           columns = Columns;
+           indexCam = IndexCam;
+        }
 
         public dynamic Createimagemosaic()
         {
@@ -144,7 +159,7 @@ namespace GotsThorlabs.BLL
         ///<remarks>
         ///devuelve la url de la ubicacion en el servidor de la imagen actual del mapeo
         ///</remarks>
-        public async IAsyncEnumerable<dynamic> Createmosaicstepbystep(int indexCam, int dimMove,int rows,int columns, string kimDeviceId)
+        public async IAsyncEnumerable<dynamic> Createmosaicstepbystep( int dimMove, string kimDeviceId)
         {
             var developerurl = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
             var listado = deviceslist();
@@ -210,7 +225,7 @@ namespace GotsThorlabs.BLL
             string namefolder = Utilities.getTimeInString();
             string fullnamefolder = Path.Combine( currentPath , $"StaticFiles{Path.DirectorySeparatorChar}" + namefolder);
             bool createfolder = Utilities.createFolder(fullnamefolder);
-            CollageGestor recordTrackCollage = new CollageGestor(namefolder, fullnamefolder);
+            //CollageGestor recordTrackCollage = new CollageGestor(namefolder, fullnamefolder);
 
             for (int j = 0; j < finalimg.Length; j++)// all of the FOR statment is one of the dimensions of the movement
             {
@@ -235,7 +250,7 @@ namespace GotsThorlabs.BLL
                         yield return false;
                     }
 
-                    recordTrackCollage.saveStepDeviceInCsv((j * 100).ToString(), (i * 100).ToString());//vestigio de la idea de CSV ahora se usara la base de datos SQLite
+                    //recordTrackCollage.saveStepDeviceInCsv((j * 100).ToString(), (i * 100).ToString());//vestigio de la idea de CSV ahora se usara la base de datos SQLite
 
                     if (!capture.IsOpened())
                     {
@@ -246,9 +261,6 @@ namespace GotsThorlabs.BLL
 
                         const int sleepTime = 10;
                     }
-                    // se van a hacer dos verciones de la imagen que se van a guardar en la carpeta de archivos estaticos uno se enviara todo el tiempo el otro se enviara a lfinalizar
-
-
 
                     capture.Read(frame);
                     image[i] = frame;
@@ -269,7 +281,6 @@ namespace GotsThorlabs.BLL
 
                     Rect region = new Rect(frame.Cols*j, frame.Rows * i, frame.Cols, frame.Rows);
                     frame.CopyTo(mosaic.SubMat(region));
-                    //string pathsave = string.Format("{0}\\unitofpics{1}.jpg", currentPath + "\\StaticFiles", i);// hace falta slash al final de StaticFiles
                     string pathsave = Path.Combine(fullnamefolder, $"unitofpics{j}_{i}.jpg");
                     mosaic.SaveImage(pathsave);
                     var splitpathdir = pathsave.Split($"{Path.DirectorySeparatorChar}");
@@ -287,6 +298,173 @@ namespace GotsThorlabs.BLL
                 Cv2.Rectangle(mosaicv, pts1, pts2,new Scalar(0, 0, 255), 10);
 
                 string mosaicpathv = Path.Combine(fullnamefolder, $"columnpic{j}.jpg"); 
+                //string mosaicpathv = string.Format("{0}\\camtakedV{1}.jpg", currentPath + "\\StaticFiles", j);
+                mosaicv.SaveImage(mosaicpathv);
+                var namephoto1 = mosaicpathv.Split($"{Path.DirectorySeparatorChar}");
+                int lengtpicpath1 = namephoto1.Length;
+                var namepicstream1 = namephoto1[lengtpicpath1 - 1];
+                var urlstaticfiles1 = urlslocals[2] + $"/SouerceStaticFiles/{namefolder}/" + namepicstream1 + "?ranmd=" + rand.Next().ToString();
+                yield return urlstaticfiles1;
+            }
+
+            Cv2.HConcat(finalimg, mosaic);
+            string mosaicpath = Path.Combine(fullnamefolder, $"HxV.jpg");
+            //string mosaicpath = string.Format("{0}\\HxV{1}.jpg", currentPath + "\\StaticFiles", "mosaic");
+            mosaic.SaveImage(mosaicpath);
+            var namephoto = mosaicpath.Split($"{Path.DirectorySeparatorChar}");
+            int lengtpicpath = namephoto.Length;
+            var namepicstream = namephoto[lengtpicpath - 1];
+
+            // Tidy up and exit
+            deviceconnect.StopPolling();
+            deviceconnect.Disconnect(true);
+            var urlstaticfiles = urlslocals[2] + $"/SouerceStaticFiles/{namefolder}/" + namepicstream + "?ranmd=" + rand.Next().ToString();
+            yield return urlstaticfiles;
+
+        }
+        public async IAsyncEnumerable<dynamic> Createmosaicstepbystep2(int dimMove, string kimDeviceId)
+        {
+            var developerurl = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
+            var listado = deviceslist();
+            string path = Environment.CurrentDirectory;
+            if (listado == null) { yield return false; }
+            if (!listado.Contains(kimDeviceId)) { yield return false; }
+            var developerurl2 = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
+            var urlslocals = developerurl2.Split(";");
+            //KCubeInertialMotor deviceconnect = await Getobjdevicekim(listado[0]);
+            //List<KCubeInertialMotor> inertialdevicesconnections = new List<KCubeInertialMotor>();
+
+            KCubeInertialMotor deviceconnect = KCubeInertialMotor.CreateKCubeInertialMotor(kimDeviceId);
+            try
+            {
+                // Open a connection to  devices.
+                deviceconnect.Connect(kimDeviceId);
+            }
+            catch (Exception)
+            {
+                deviceconnect.Disconnect();
+            }
+            if (!deviceconnect.IsSettingsInitialized())
+            {
+                try
+                {
+                    deviceconnect.WaitForSettingsInitialized(500);
+                }
+                catch (Exception)
+                {
+                }
+            }
+            deviceconnect.StartPolling(250);
+            Thread.Sleep(500);
+            deviceconnect.EnableDevice();
+            Thread.Sleep(500);
+
+            InertialMotorConfiguration InertialMotorConfiguration = deviceconnect.GetInertialMotorConfiguration(kimDeviceId);
+            ThorlabsInertialMotorSettings currentDeviceSettings = ThorlabsInertialMotorSettings.GetSettings(InertialMotorConfiguration);
+
+            // Set the 'Step' paramaters for the Inertia Motor and download to device
+            currentDeviceSettings.Drive.Channel(chanelsDevice[1]).StepRate = 200;
+            currentDeviceSettings.Drive.Channel(chanelsDevice[1]).StepAcceleration = 100;
+            deviceconnect.SetSettings(currentDeviceSettings, true, true);
+
+            // or
+            // Move_Method2(device, InertialMotorStatus.MotorChannels.Channel1, position);
+
+            Decimal newPos = deviceconnect.GetPosition(InertialMotorStatus.MotorChannels.Channel1);
+            // SECCION TOMA DE IMAGENES
+            //var currentPath = Directory.GetCurrentDirectory();
+            var rowshmosaic = rows;
+            var columnmosaic = columns;
+            var acptationvalue = true;
+            int frameheight;
+            int framewidth;
+            using (var capture = new VideoCapture(indexCam, VideoCaptureAPIs.DSHOW))
+            {
+                frameheight = capture.FrameHeight;
+                framewidth = capture.FrameWidth;
+            };
+            Mat mosaic = new Mat(rowshmosaic * frameheight, columnmosaic * framewidth, MatType.CV_8UC3);//mosaico final
+            Mat[] image = new Mat[rowshmosaic];// 
+            Mat[] finalimg = new Mat[columnmosaic];
+            var rand = new Random();
+
+            // Creacion de carpeta y nombre de archivo CSV con la clase encargada de gestionar el archivo
+            string namefolder = Utilities.getTimeInString();
+            string fullnamefolder = CreateTour();
+            //bool createfolder = Utilities.createFolder(fullnamefolder); //si se necesita el nombre del folder mejor consultar la tabla
+            //CollageGestor recordTrackCollage = new CollageGestor(namefolder, fullnamefolder);
+
+            for (int j = 0; j < columns; j++)// posiblemente son las columnas 
+            {
+                bool estatusMovementA = Move_Method1(deviceconnect, chanelsDevice[1], j * 100);
+                if (!estatusMovementA)
+                {
+                    deviceconnect.StopPolling();
+                    deviceconnect.Disconnect(true);
+                    yield return false;
+                }
+
+                for (int i = 0; i < rows; i++)
+                {
+
+                    Mat frame = new Mat();
+
+                    bool estatusMovement = Move_Method1(deviceconnect, chanelsDevice[2], i * 100);
+                    if (!estatusMovement)
+                    {
+                        deviceconnect.StopPolling();
+                        deviceconnect.Disconnect(true);
+                        yield return false;
+                    }
+
+                    //recordTrackCollage.saveStepDeviceInCsv((j * 100).ToString(), (i * 100).ToString());//vestigio de la idea de CSV ahora se usara la base de datos SQLite
+
+                    //if (!capture.IsOpened())
+                    //{
+                    //    acptationvalue = false;
+                    //    capture.FrameWidth = 1920;
+                    //    capture.FrameHeight = 1080;
+                    //    capture.AutoFocus = true;
+
+                    //    const int sleepTime = 10;
+                    //}
+
+                    /////capture.Read(frame);
+                    /////Mat copyofFrame = new Mat();
+                    image[i] = frame;///AQUI LLAMAR LA FUNCION
+                    /////copyofFrame = frame;
+                    // se hcae el calculo de la place para el estado del blur 
+                    /////Mat grayresult = new Mat();
+                    /////Mat shaperesult = new Mat();
+                    /////Cv2.CvtColor(copyofFrame, grayresult, ColorConversionCodes.BGR2GRAY);
+                    /////Cv2.Laplacian(grayresult, shaperesult, MatType.CV_64F);
+                    ///////Cv2.ImShow("Imagen", shaperesult);
+                    ///////Cv2.WaitKey(0);
+                    /////Cv2.MeanStdDev(copyofFrame, out var mean, out var stddev);
+                    /////var resultadolaplace = (stddev.Val0 * stddev.Val0).ToString();
+
+                    /////Cv2.PutText(frame, "laplacian :" + resultadolaplace, new Point(20, 30), HersheyFonts.Italic, 0.8, 1);
+
+
+                    /////Rect region = new Rect(frame.Cols * j, frame.Rows * i, frame.Cols, frame.Rows);
+                    frame.CopyTo(mosaic.SubMat(region));///cambiar frame.  POR IMAGE[i]
+                    string pathsave = Path.Combine(fullnamefolder, $"unitofpics{j}_{i}.jpg");
+                    mosaic.SaveImage(pathsave);
+                    var splitpathdir = pathsave.Split($"{Path.DirectorySeparatorChar}");
+                    int dimpath = splitpathdir.Length;
+                    var namephotounits = splitpathdir[dimpath - 1];
+                    var urlunitpi = urlslocals[2] + $"/SouerceStaticFiles/{namefolder}/" + namephotounits + "?ranmd=" + rand.Next().ToString();
+                    yield return urlunitpi;
+                    //var imgretonr = image.ToBytes(); COMENTADA PORQUE NO SE NECESITA COMBERTIR A FRAMES
+                }
+                Mat mosaicv = new Mat();
+                Cv2.VConcat(image, mosaicv);
+                finalimg[j] = mosaicv;
+                Point pts1 = new Point(100, 27);
+                Point pts2 = new Point(350, 600);
+                Cv2.Rectangle(mosaicv, pts1, pts2, new Scalar(0, 0, 255), 10);
+
+                string mosaicpathv = Path.Combine(fullnamefolder, $"columnpic{j}.jpg");
                 //string mosaicpathv = string.Format("{0}\\camtakedV{1}.jpg", currentPath + "\\StaticFiles", j);
                 mosaicv.SaveImage(mosaicpathv);
                 var namephoto1 = mosaicpathv.Split($"{Path.DirectorySeparatorChar}");
@@ -534,6 +712,74 @@ namespace GotsThorlabs.BLL
                 return false;
             }
             return true;
+        }
+        /// <summary>
+        /// funcion encargada de crear la carpeta y la persistencia para la tabla tour
+        /// </summary>
+        /// <returns>retorna el nombre completo de la carpeta donde se va a guardar las imagenes </returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public string CreateTour()
+        {
+            string namefolder = Utilities.getTimeInString();
+            var currentPath = Directory.GetCurrentDirectory();
+            string fullnamefolder = Path.Combine(currentPath, $"StaticFiles{Path.DirectorySeparatorChar}" + namefolder);
+            bool status = Utilities.createFolder(fullnamefolder);
+            using (var queryable = ConnectionSqlite.CreateConnection()) 
+            {
+                queryable.Open();
+                string createTour = @$"INSERT INTO tour ( date,nameFolder, NumberX, NumberY, NumberZ, Camera) VALUES 
+                                    ( '{DateTime.Now.ToString()}', '{namefolder}', '{columns}', '{rows}', '0', '{indexCam}')";
+                var rowsAffected = queryable.Query(createTour);
+            }
+
+         return fullnamefolder;
+            
+            //throw new NotImplementedException();
+        }
+
+        public void EndStatus(string statusOfTour)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Mat TakeAPic(string nameFile, string path,int x,int y,int z)
+        {
+            Mat frame = new Mat();
+
+            using (var capture = new VideoCapture(indexCam, VideoCaptureAPIs.DSHOW))///migrar a tomar imagen
+            {
+                var frameheight = capture.FrameHeight;
+                var framewidth = capture.FrameWidth;
+                Mat mosaic = new Mat(rows * frameheight, columns * framewidth, MatType.CV_8UC3);
+
+                if (!capture.IsOpened())
+                {
+                    
+                    capture.FrameWidth = 1920;
+                    capture.FrameHeight = 1080;
+                    capture.AutoFocus = true;
+
+                    const int sleepTime = 10;
+                }
+                capture.Read(frame);
+                var copyofFrame = frame;
+                // se hcae el calculo de la place para el estado del blur 
+                Mat grayresult = new Mat();
+                Mat shaperesult = new Mat();
+                Cv2.CvtColor(copyofFrame, grayresult, ColorConversionCodes.BGR2GRAY);
+                Cv2.Laplacian(grayresult, shaperesult, MatType.CV_64F);
+                Cv2.MeanStdDev(copyofFrame, out var mean, out var stddev);
+                var resultadolaplace = (stddev.Val0 * stddev.Val0).ToString();
+                Cv2.PutText(frame, "laplacian :" + resultadolaplace, new Point(20, 30), HersheyFonts.Italic, 0.8, 1);
+                Rect region = new Rect(frame.Cols * x, frame.Rows * y, frame.Cols, frame.Rows);
+                frame.CopyTo(mosaic.SubMat(region));
+                string pathsave = Path.Combine(path, $"unitofpics{x}_{y}.jpg");
+                mosaic.SaveImage(pathsave);
+
+
+            }
+
+            throw new NotImplementedException();
         }
     }
 }
