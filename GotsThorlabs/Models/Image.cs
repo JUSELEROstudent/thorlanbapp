@@ -23,7 +23,7 @@
 
             public override string ToString()
             {
-                return $"Image(IdImage={IdImage}, Nombre='{Nombre}', GausianVal={GausianVal}, Path='{Path}', X={X}, Y={Y}, Z={Z}, NumberQueue={NumberQueue}, IdTour={IdTour})";
+                return $"Image(IdImage={IdImage}, Nombre='{Nombre}', GausianVal={GausianVal}, Path='{Path}', X={X}, Y={Y}, Z={Z}, IdTour={IdTour})";
             }
         }
 }

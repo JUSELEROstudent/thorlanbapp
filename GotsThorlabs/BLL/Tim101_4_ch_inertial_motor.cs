@@ -33,15 +33,33 @@ namespace GotsThorlabs.BLL
                     {4, InertialMotorStatus.MotorChannels.Channel4}
                 };
 
-        public int rows;
-        public int columns;
+        public int rows; //= i
+        public int columns; // = j
         public int indexCam;
+        string namefolder;
+
+        public Mat[] image;
+        public Mat[] finalimg;
+        public Mat mosaic;// imagen general ya con el tamaño completo para la imagen fianal que laverga a todas las sub imagenes
 
         public  Tim101_4_ch_inertial_motor(int IndexCam, int Rows,int Columns)
         {
            rows = Rows;
            columns = Columns;
            indexCam = IndexCam;
+           namefolder = Utilities.getTimeInString();
+
+            int framewidth;
+           int frameheight;
+
+           using (var capture = new VideoCapture(indexCam, VideoCaptureAPIs.DSHOW))
+            {
+                frameheight = capture.FrameHeight;
+                framewidth = capture.FrameWidth;
+            };
+            mosaic = new Mat(rows * frameheight, columns * framewidth, MatType.CV_8UC3);//mosaico final
+            image = new Mat[rows];
+            finalimg = new Mat[columns];
         }
 
         public dynamic Createimagemosaic()
@@ -378,14 +396,14 @@ namespace GotsThorlabs.BLL
             var acptationvalue = true;
             int frameheight;
             int framewidth;
-            using (var capture = new VideoCapture(indexCam, VideoCaptureAPIs.DSHOW))
-            {
-                frameheight = capture.FrameHeight;
-                framewidth = capture.FrameWidth;
-            };
-            Mat mosaic = new Mat(rowshmosaic * frameheight, columnmosaic * framewidth, MatType.CV_8UC3);//mosaico final
-            Mat[] image = new Mat[rowshmosaic];// 
-            Mat[] finalimg = new Mat[columnmosaic];
+            //using (var capture = new VideoCapture(indexCam, VideoCaptureAPIs.DSHOW))
+            //{
+            //    frameheight = capture.FrameHeight;
+            //    framewidth = capture.FrameWidth;
+            //};
+            //Mat mosaic = new Mat(rowshmosaic * frameheight, columnmosaic * framewidth, MatType.CV_8UC3);//mosaico final
+            //Mat[] image = new Mat[rowshmosaic];// 
+            //Mat[] finalimg = new Mat[columnmosaic];
             var rand = new Random();
 
             // Creacion de carpeta y nombre de archivo CSV con la clase encargada de gestionar el archivo
@@ -431,7 +449,7 @@ namespace GotsThorlabs.BLL
 
                     /////capture.Read(frame);
                     /////Mat copyofFrame = new Mat();
-                    image[i] = frame;///AQUI LLAMAR LA FUNCION
+                    /////image[i] = frame;///AQUI LLAMAR LA FUNCION
                     /////copyofFrame = frame;
                     // se hcae el calculo de la place para el estado del blur 
                     /////Mat grayresult = new Mat();
@@ -447,9 +465,10 @@ namespace GotsThorlabs.BLL
 
 
                     /////Rect region = new Rect(frame.Cols * j, frame.Rows * i, frame.Cols, frame.Rows);
-                    frame.CopyTo(mosaic.SubMat(region));///cambiar frame.  POR IMAGE[i]
-                    string pathsave = Path.Combine(fullnamefolder, $"unitofpics{j}_{i}.jpg");
-                    mosaic.SaveImage(pathsave);
+                    /////frame.CopyTo(mosaic.SubMat(region));///cambiar frame.  POR IMAGE[i]
+                    //string pathsave = Path.Combine(fullnamefolder, $"unitofpics{j}_{i}.jpg");
+                    string pathsave = TakeAPic("unitofpics", fullnamefolder, j, i, 0);
+                    /////mosaic.SaveImage(pathsave);
                     var splitpathdir = pathsave.Split($"{Path.DirectorySeparatorChar}");
                     int dimpath = splitpathdir.Length;
                     var namephotounits = splitpathdir[dimpath - 1];
@@ -460,9 +479,9 @@ namespace GotsThorlabs.BLL
                 Mat mosaicv = new Mat();
                 Cv2.VConcat(image, mosaicv);
                 finalimg[j] = mosaicv;
-                Point pts1 = new Point(100, 27);
-                Point pts2 = new Point(350, 600);
-                Cv2.Rectangle(mosaicv, pts1, pts2, new Scalar(0, 0, 255), 10);
+                /////Point pts1 = new Point(100, 27);
+                /////Point pts2 = new Point(350, 600);
+                /////Cv2.Rectangle(mosaicv, pts1, pts2, new Scalar(0, 0, 255), 10);
 
                 string mosaicpathv = Path.Combine(fullnamefolder, $"columnpic{j}.jpg");
                 //string mosaicpathv = string.Format("{0}\\camtakedV{1}.jpg", currentPath + "\\StaticFiles", j);
@@ -720,7 +739,6 @@ namespace GotsThorlabs.BLL
         /// <exception cref="NotImplementedException"></exception>
         public string CreateTour()
         {
-            string namefolder = Utilities.getTimeInString();
             var currentPath = Directory.GetCurrentDirectory();
             string fullnamefolder = Path.Combine(currentPath, $"StaticFiles{Path.DirectorySeparatorChar}" + namefolder);
             bool status = Utilities.createFolder(fullnamefolder);
@@ -742,9 +760,12 @@ namespace GotsThorlabs.BLL
             throw new NotImplementedException();
         }
 
-        public Mat TakeAPic(string nameFile, string path,int x,int y,int z)
+        public string TakeAPic(string nameFile, string path,int x,int y,int z)
         {
             Mat frame = new Mat();
+            string pathsave;
+            string resultadolaplace;
+            string nameimage;
 
             using (var capture = new VideoCapture(indexCam, VideoCaptureAPIs.DSHOW))///migrar a tomar imagen
             {
@@ -763,23 +784,33 @@ namespace GotsThorlabs.BLL
                 }
                 capture.Read(frame);
                 var copyofFrame = frame;
+                image[y] = frame;
                 // se hcae el calculo de la place para el estado del blur 
                 Mat grayresult = new Mat();
                 Mat shaperesult = new Mat();
                 Cv2.CvtColor(copyofFrame, grayresult, ColorConversionCodes.BGR2GRAY);
                 Cv2.Laplacian(grayresult, shaperesult, MatType.CV_64F);
                 Cv2.MeanStdDev(copyofFrame, out var mean, out var stddev);
-                var resultadolaplace = (stddev.Val0 * stddev.Val0).ToString();
+                resultadolaplace = (stddev.Val0 * stddev.Val0).ToString();
                 Cv2.PutText(frame, "laplacian :" + resultadolaplace, new Point(20, 30), HersheyFonts.Italic, 0.8, 1);
                 Rect region = new Rect(frame.Cols * x, frame.Rows * y, frame.Cols, frame.Rows);
                 frame.CopyTo(mosaic.SubMat(region));
-                string pathsave = Path.Combine(path, $"unitofpics{x}_{y}.jpg");
-                mosaic.SaveImage(pathsave);
-
-
+                nameimage = $"{nameFile}{x}_{y}.jpg";
+                pathsave = Path.Combine(path, nameimage);
+                //mosaic.SaveImage(pathsave); /// OR
+                frame.SaveImage(pathsave);
             }
 
-            throw new NotImplementedException();
+            using (var queryable = ConnectionSqlite.CreateConnection())
+            {
+                queryable.Open();
+                string createTour = @$"INSERT INTO image ( name ,gausianVal, path, X, Y, Z,idTour)
+                                    SELECT '{nameimage}',{resultadolaplace}, '{namefolder}',{x},{y},0,idTour FROM tour WHERE nameFolder = '{namefolder}'";
+                var rowsAffected = queryable.Query(createTour);
+            }
+
+            return pathsave;
+            //throw new NotImplementedException();
         }
     }
 }

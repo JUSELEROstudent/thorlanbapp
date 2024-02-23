@@ -22,23 +22,23 @@ namespace GotsThorlabs.NodesApi
 
             //    return Results.Ok(status);
             //});
-            App.MapGet("/automotion/channelsstatus", (string channel) =>/// XXXXXno se tiene en cuenta el nombre de dispositivo kim     MEJOR CREAR UAN CLASE AUXILIAR PARA CONSULTAR LAS  COSAS
-            {
-                var inertialmotorkim = new Tim101_4_ch_inertial_motor();
-                var status = inertialmotorkim.GetStatusChannels(channel);
-                // METODO FUNCIONANDO = valorar la opcion de hacerlo por signalr tener en cuenta el polling que se hace al dispositivo . que es un llamado recurrente
+            //App.MapGet("/automotion/channelsstatus", (string channel) =>/// XXXXXno se tiene en cuenta el nombre de dispositivo kim     MEJOR CREAR UAN CLASE AUXILIAR PARA CONSULTAR LAS  COSAS
+            //{
+            //    var inertialmotorkim = new Tim101_4_ch_inertial_motor();
+            //    var status = inertialmotorkim.GetStatusChannels(channel);
+            //    // METODO FUNCIONANDO = valorar la opcion de hacerlo por signalr tener en cuenta el polling que se hace al dispositivo . que es un llamado recurrente
 
-                return Results.Ok(status);
-            });
+            //    return Results.Ok(status);
+            //});
 
-            App.MapGet("/automotion/stitcher", (int mode) =>
-            {
-                // 1. LLamar a la clase 2. traer los datos del recorrido y pasarlos al constructor // SECCION TAMBIEN DE beta-tester
-                var inertialmotorkim = new Tim101_4_ch_inertial_motor();
-                var status = inertialmotorkim.CreatesticherOpencv(mode);
+            //App.MapGet("/automotion/stitcher", (int mode) =>
+            //{
+            //    // 1. LLamar a la clase 2. traer los datos del recorrido y pasarlos al constructor // SECCION TAMBIEN DE beta-tester
+            //    var inertialmotorkim = new Tim101_4_ch_inertial_motor();
+            //    var status = inertialmotorkim.CreatesticherOpencv(mode);
 
-                return Results.Ok(status);
-            });
+            //    return Results.Ok(status);
+            //});
         }
     }
 }
