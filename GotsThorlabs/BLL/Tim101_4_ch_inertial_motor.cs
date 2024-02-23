@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using GotsThorlabs.Interfaces;
 using GotsThorlabs.Services;
+using Microsoft.AspNetCore.SignalR;
 using OpenCvSharp;
 using OpenCvSharp.Detail;
 using OpenCvSharp.Internal.Vectors;
@@ -346,7 +347,7 @@ namespace GotsThorlabs.BLL
             var listado = deviceslist();
             string path = Environment.CurrentDirectory;
             if (listado == null) { yield return false; }
-            if (!listado.Contains(kimDeviceId)) { yield return false; }
+            if (!listado.Contains(kimDeviceId)) { throw new HubException("Error al connectarse al dispositivo kim04 [ES]"); }
             var developerurl2 = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
             var urlslocals = developerurl2.Split(";");
             //KCubeInertialMotor deviceconnect = await Getobjdevicekim(listado[0]);
@@ -361,6 +362,7 @@ namespace GotsThorlabs.BLL
             catch (Exception)
             {
                 deviceconnect.Disconnect();
+                throw new HubException("Error al establecer al dispositivo kim04 [ES]");
             }
             if (!deviceconnect.IsSettingsInitialized())
             {
@@ -370,6 +372,7 @@ namespace GotsThorlabs.BLL
                 }
                 catch (Exception)
                 {
+                    //throw new HubException("Error Inicializar estado en dispositivo [ES]");
                 }
             }
             deviceconnect.StartPolling(250);
@@ -390,27 +393,14 @@ namespace GotsThorlabs.BLL
 
             Decimal newPos = deviceconnect.GetPosition(InertialMotorStatus.MotorChannels.Channel1);
             // SECCION TOMA DE IMAGENES
-            //var currentPath = Directory.GetCurrentDirectory();
-            var rowshmosaic = rows;
-            var columnmosaic = columns;
-            var acptationvalue = true;
             int frameheight;
             int framewidth;
-            //using (var capture = new VideoCapture(indexCam, VideoCaptureAPIs.DSHOW))
-            //{
-            //    frameheight = capture.FrameHeight;
-            //    framewidth = capture.FrameWidth;
-            //};
-            //Mat mosaic = new Mat(rowshmosaic * frameheight, columnmosaic * framewidth, MatType.CV_8UC3);//mosaico final
-            //Mat[] image = new Mat[rowshmosaic];// 
-            //Mat[] finalimg = new Mat[columnmosaic];
+
             var rand = new Random();
 
             // Creacion de carpeta y nombre de archivo CSV con la clase encargada de gestionar el archivo
             string namefolder = Utilities.getTimeInString();
             string fullnamefolder = CreateTour();
-            //bool createfolder = Utilities.createFolder(fullnamefolder); //si se necesita el nombre del folder mejor consultar la tabla
-            //CollageGestor recordTrackCollage = new CollageGestor(namefolder, fullnamefolder);
 
             for (int j = 0; j < columns; j++)// posiblemente son las columnas 
             {
@@ -419,7 +409,8 @@ namespace GotsThorlabs.BLL
                 {
                     deviceconnect.StopPolling();
                     deviceconnect.Disconnect(true);
-                    yield return false;
+                    throw new Exception("Error al mover el dispositivo, revisar la coneccion [ES]");   
+                    //yield return false;
                 }
 
                 for (int i = 0; i < rows; i++)
@@ -432,41 +423,9 @@ namespace GotsThorlabs.BLL
                     {
                         deviceconnect.StopPolling();
                         deviceconnect.Disconnect(true);
-                        yield return false;
+                        throw new Exception("Error al mover el dispositivo, revisar la coneccion [ES]");
+                        //yield return false;
                     }
-
-                    //recordTrackCollage.saveStepDeviceInCsv((j * 100).ToString(), (i * 100).ToString());//vestigio de la idea de CSV ahora se usara la base de datos SQLite
-
-                    //if (!capture.IsOpened())
-                    //{
-                    //    acptationvalue = false;
-                    //    capture.FrameWidth = 1920;
-                    //    capture.FrameHeight = 1080;
-                    //    capture.AutoFocus = true;
-
-                    //    const int sleepTime = 10;
-                    //}
-
-                    /////capture.Read(frame);
-                    /////Mat copyofFrame = new Mat();
-                    /////image[i] = frame;///AQUI LLAMAR LA FUNCION
-                    /////copyofFrame = frame;
-                    // se hcae el calculo de la place para el estado del blur 
-                    /////Mat grayresult = new Mat();
-                    /////Mat shaperesult = new Mat();
-                    /////Cv2.CvtColor(copyofFrame, grayresult, ColorConversionCodes.BGR2GRAY);
-                    /////Cv2.Laplacian(grayresult, shaperesult, MatType.CV_64F);
-                    ///////Cv2.ImShow("Imagen", shaperesult);
-                    ///////Cv2.WaitKey(0);
-                    /////Cv2.MeanStdDev(copyofFrame, out var mean, out var stddev);
-                    /////var resultadolaplace = (stddev.Val0 * stddev.Val0).ToString();
-
-                    /////Cv2.PutText(frame, "laplacian :" + resultadolaplace, new Point(20, 30), HersheyFonts.Italic, 0.8, 1);
-
-
-                    /////Rect region = new Rect(frame.Cols * j, frame.Rows * i, frame.Cols, frame.Rows);
-                    /////frame.CopyTo(mosaic.SubMat(region));///cambiar frame.  POR IMAGE[i]
-                    //string pathsave = Path.Combine(fullnamefolder, $"unitofpics{j}_{i}.jpg");
                     string pathsave = TakeAPic("unitofpics", fullnamefolder, j, i, 0);
                     /////mosaic.SaveImage(pathsave);
                     var splitpathdir = pathsave.Split($"{Path.DirectorySeparatorChar}");
@@ -484,7 +443,7 @@ namespace GotsThorlabs.BLL
                 /////Cv2.Rectangle(mosaicv, pts1, pts2, new Scalar(0, 0, 255), 10);
 
                 string mosaicpathv = Path.Combine(fullnamefolder, $"columnpic{j}.jpg");
-                //string mosaicpathv = string.Format("{0}\\camtakedV{1}.jpg", currentPath + "\\StaticFiles", j);
+
                 mosaicv.SaveImage(mosaicpathv);
                 var namephoto1 = mosaicpathv.Split($"{Path.DirectorySeparatorChar}");
                 int lengtpicpath1 = namephoto1.Length;
@@ -495,7 +454,6 @@ namespace GotsThorlabs.BLL
 
             Cv2.HConcat(finalimg, mosaic);
             string mosaicpath = Path.Combine(fullnamefolder, $"HxV.jpg");
-            //string mosaicpath = string.Format("{0}\\HxV{1}.jpg", currentPath + "\\StaticFiles", "mosaic");
             mosaic.SaveImage(mosaicpath);
             var namephoto = mosaicpath.Split($"{Path.DirectorySeparatorChar}");
             int lengtpicpath = namephoto.Length;
@@ -518,6 +476,8 @@ namespace GotsThorlabs.BLL
             return resultado; 
 
         }
+        
+        
         ///<summary>
         ///Funcion de stitch encargada de procesar la imagenes definidas. 
         ///</summary>
@@ -530,9 +490,6 @@ namespace GotsThorlabs.BLL
             string[] archivos = Directory.GetFiles(carpetaPath, "*.jpg");
             Mat[] arraisMat= new Mat[archivos.Length];
             var output = new Mat();
-            //var outputcvt = new Mat();
-            //var outputcopy = new Mat();
-            //var treshimg = new Mat();
             var outputarray1 = new Mat();
             int indexinter = 0;
             foreach (var archivo in archivos)
@@ -541,10 +498,6 @@ namespace GotsThorlabs.BLL
                 arraisMat[indexinter] = img;
                 indexinter++;
             }
-
-            // Descomentar en otro moemento toca seguir avanzndo luego encontraremos modelos que permitan solucionarlo
-            //var InputArrTest = OpenCvSharp.InputArray.Create(arraisMat);
-            //var InputArrTest2 = OpenCvSharp.InputArray.Create(outputarray1);
             var mode = modes == 0 ? OpenCvSharp.Stitcher.Mode.Scans : OpenCvSharp.Stitcher.Mode.Panorama ;
             var stitched = Stitcher.Create(mode);
             var nuevo1 = new BestOf2NearestMatcher();
@@ -552,33 +505,6 @@ namespace GotsThorlabs.BLL
             var solucion = stitched.Stitch(arraisMat, output);
             var estado = solucion == Stitcher.Status.OK ? true : false;
             output.SaveImage(Path.Combine(Environment.CurrentDirectory, "StaticFiles", "openNative.jpg"));
-            //Cv2.DetailEnhance(InputArrTest, output, (float)3.0002, (float)0.0001);
-            //output.SaveImage(currentpath + "\\StaticFiles\\openNative2.png");
-
-
-            //Cv2.CopyMakeBorder(output, outputcopy, 0, 0, 0, 0, BorderTypes.Constant, null);
-            //Cv2.ImWrite(currentpath + "\\StaticFiles\\copymaker.jpg", outputcopy);
-            //Cv2.CvtColor(outputcopy, outputcvt, ColorConversionCodes.BGR2GRAY, 0);
-            //Cv2.Threshold(outputcvt, treshimg, (double)0, (double)255, ThresholdTypes.Binary);
-            //Cv2.ImWrite(currentpath + "\\StaticFiles\\threshhold.jpg", treshimg);
-            //var copytrehimg = treshimg.Clone();
-            //var contornuot = new Mat();
-            //var contousout = new Mat[4];
-            //var findcontorneout = new Mat();
-            //Cv2.FindContours(copytrehimg,out contousout, findcontorneout, RetrievalModes.External,ContourApproximationModes.ApproxSimple);
-
-            //Cv2.ImWrite(currentpath + "\\StaticFiles\\findcontours.jpg", findcontorneout);
-            //var contornofinalbound = new Mat();
-
-            //copytrehimg.
-
-            //var grabcontour = new Mat();
-            //var puntosdeelemento = Cv2.BoundingRect(contousout[0]);
-            //Cv2.Rectangle(copytrehimg, puntosdeelemento, Scalar.Gold);
-            //Cv2.ImWrite(currentpath + "\\StaticFiles\\rectanglegold.jpg", copytrehimg);
-
-            //var croppImage  = output[puntosdeelemento];
-            //croppImage.SaveImage(currentpath + "\\StaticFiles\\croopp.jpg");
 
             return estado;
         }
@@ -797,7 +723,7 @@ namespace GotsThorlabs.BLL
                 frame.CopyTo(mosaic.SubMat(region));
                 nameimage = $"{nameFile}{x}_{y}.jpg";
                 pathsave = Path.Combine(path, nameimage);
-                //mosaic.SaveImage(pathsave); /// OR
+
                 frame.SaveImage(pathsave);
             }
 

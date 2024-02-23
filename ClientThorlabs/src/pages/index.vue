@@ -100,9 +100,9 @@ onMounted( async () => {
                 if (imgRef.value) { imgRef.value.src = `${item}` }
             },
             complete: () => { console.log("Stream completed"); },
-            error: (err: Error) => { alertStore.NewAlert({type: 'error',data:'error al establecer la conexion ', tittle:'Revisar conexiones '}) },
+            error: (err: Error) => { alertStore.NewAlert({type: 'error',data: err.message, tittle:'Revisar conexiones '}) },
         });
-    } catch (err) { console.error(err); }
+    } catch (err) {  alertStore.NewAlert({type: 'error',data: 'error al establecer coneccion signalr [ES]', tittle:'Revisar conexiones '}) }
 }
 async function InitStreamImg()
 {

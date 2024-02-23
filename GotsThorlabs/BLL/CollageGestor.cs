@@ -1,5 +1,8 @@
 ﻿namespace GotsThorlabs.BLL
 {
+    /// <summary>
+    /// CLASE SIN NINGUN TIPO DE REELEVANCIA, NO USAR ES PARA CREAR CSV PERO NO SE CONTINUO CON LA IDEA
+    /// </summary>
     public class CollageGestor
     {
         //string[] encabezados = { "Nombre", "Apellido", "Edad" };

@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 
 export interface ErrorItemAlert {
   type: 'error'|'warning'|'OK',
-  data: string,
+  data: string | null ,
   tittle: string
 }
 
@@ -17,7 +17,7 @@ export const alertsClient = defineStore( 'listAlertsStore', () =>
           // listAelerts.value.pop()
           listAelerts.value.splice(0,1)
 
-      }, 2000);
+      }, 2500);
     }
 
     return {listAelerts,NewAlert}
