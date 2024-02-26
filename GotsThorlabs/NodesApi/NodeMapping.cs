@@ -1,12 +1,14 @@
 ﻿using apitest.Controllers;
 using GotsThorlabs.BLL;
 using Thorlabs.MotionControl.KCube.InertialMotorCLI;
+using GotsThorlabs.Models;
 
 namespace GotsThorlabs.NodesApi
 {
     public class NodeMapping
     {
-        public NodeMapping (WebApplication App) {
+        public NodeMapping(WebApplication App)
+        {
 
             App.MapGet("/automotion/calibrate", async () =>
             {
@@ -39,6 +41,74 @@ namespace GotsThorlabs.NodesApi
 
             //    return Results.Ok(status);
             //});
+        }
+    }
+
+    
+}
+namespace GotsThorlabs.Stitchingapi
+{
+    public static class StitchingEndpoints
+    {
+        public static void MapStitchingEndpoints(this IEndpointRouteBuilder routes)
+        {
+            routes.MapGet("/api/Stitching", () =>
+            {
+                return new[] { new Stitching() };
+            })
+            .WithName("GetAllStitchings")
+            .Produces<Stitching[]>(StatusCodes.Status200OK);
+
+            routes.MapGet("/api/Stitching/{id}", (int id) =>
+            {
+                //return new Stitching { ID = id };
+            })
+            .WithName("GetStitchingById")
+            .Produces<Stitching>(StatusCodes.Status200OK);
+
+            routes.MapPut("/api/Stitching/{id}", (int id, Stitching input) =>
+            {
+                return Results.NoContent();
+            })
+            .WithName("UpdateStitching")
+            .Produces(StatusCodes.Status204NoContent);
+
+            routes.MapPost("/api/Stitching/", (Stitching model) =>
+            {
+                //return Results.Created($"//api/Stitchings/{model.ID}", model);
+            })
+            .WithName("CreateStitching")
+            .Produces<Stitching>(StatusCodes.Status201Created);
+
+            routes.MapDelete("/api/Stitching/{id}", (int id) =>
+            {
+                //return Results.Ok(new Stitching { ID = id });
+            })
+            .WithName("DeleteStitching")
+            .Produces<Stitching>(StatusCodes.Status200OK);
+        }
+    }
+}
+namespace GotsThorlabs.NodesApi
+{
+    public static class TourEndpoints
+    {
+        public static void MapTourEndpoints(this IEndpointRouteBuilder routes)
+        {
+            routes.MapGet("/api/Tour", () =>
+            {
+                return Tour.GetTours();
+            })
+            .WithName("GetAllTour")
+            .Produces<Stitching[]>(StatusCodes.Status200OK);
+
+            routes.MapGet("/api/Tour/{id}", (int id) =>
+            {
+                //return new Stitching { ID = id };
+            })
+            .WithName("GetTourById")
+            .Produces<Stitching>(StatusCodes.Status200OK);
+
         }
     }
 }

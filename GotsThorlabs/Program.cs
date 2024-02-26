@@ -1,5 +1,7 @@
 using System.Xml.Serialization;
 using GotsThorlabs.NodesApi;
+using GotsThorlabs.Stitchingapi;
+//using GotsThorlabs.Tour;
 using Thorlabs.MotionControl.DeviceManagerCLI;
 using GotsThorlabs.Hubs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -7,6 +9,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using apitest.Controllers;
 using Microsoft.Extensions.FileProviders;
+using GotsThorlabs;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
@@ -87,6 +90,9 @@ app.UseAuthorization();
 app.MapHub<ChatHub>("/chatHub");
 app.MapHub<StreamingHub>("/StreamingHub");
 app.MapHub<UpdateStatus>("/UpdateStatus");
+
+app.MapStitchingEndpoints();
+app.MapTourEndpoints();
 
 
 app.Run();
