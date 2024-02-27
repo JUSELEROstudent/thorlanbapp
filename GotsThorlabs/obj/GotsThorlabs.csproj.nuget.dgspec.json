@@ -90,7 +90,7 @@
             },
             "OpenCvSharp4": {
               "target": "Package",
-              "version": "[4.6.0.20220608, )"
+              "version": "[4.9.0.20240103, )"
             },
             "OpenCvSharp4.runtime.win": {
               "target": "Package",

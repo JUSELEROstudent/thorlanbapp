@@ -52,40 +52,44 @@ namespace GotsThorlabs.Stitchingapi
     {
         public static void MapStitchingEndpoints(this IEndpointRouteBuilder routes)
         {
-            routes.MapGet("/api/Stitching", () =>
+            routes.MapPost("/api/Stitching/{idTour}", (int idTour) =>
             {
-                return new[] { new Stitching() };
+                var toursource = Tour.GetToursById(idTour);
+                var stitchingobject = new ProcessTourData();
+                var stitchingresult = stitchingobject.ProcessTourDatawWhitStitchingScans(toursource.NameFolder);
+
+                return stitchingresult;
             })
-            .WithName("GetAllStitchings")
+            .WithName("GetStitchings")
             .Produces<Stitching[]>(StatusCodes.Status200OK);
 
-            routes.MapGet("/api/Stitching/{id}", (int id) =>
-            {
-                //return new Stitching { ID = id };
-            })
-            .WithName("GetStitchingById")
-            .Produces<Stitching>(StatusCodes.Status200OK);
+            //routes.MapGet("/api/Stitching/{id}", (int id) =>
+            //{
+            //    //return new Stitching { ID = id };
+            //})
+            //.WithName("GetStitchingById")
+            //.Produces<Stitching>(StatusCodes.Status200OK);
 
-            routes.MapPut("/api/Stitching/{id}", (int id, Stitching input) =>
-            {
-                return Results.NoContent();
-            })
-            .WithName("UpdateStitching")
-            .Produces(StatusCodes.Status204NoContent);
+            //routes.MapPut("/api/Stitching/{id}", (int id, Stitching input) =>
+            //{
+            //    return Results.NoContent();
+            //})
+            //.WithName("UpdateStitching")
+            //.Produces(StatusCodes.Status204NoContent);
 
-            routes.MapPost("/api/Stitching/", (Stitching model) =>
-            {
-                //return Results.Created($"//api/Stitchings/{model.ID}", model);
-            })
-            .WithName("CreateStitching")
-            .Produces<Stitching>(StatusCodes.Status201Created);
+            //routes.MapPost("/api/Stitching/", (Stitching model) =>
+            //{
+            //    //return Results.Created($"//api/Stitchings/{model.ID}", model);
+            //})
+            //.WithName("CreateStitching")
+            //.Produces<Stitching>(StatusCodes.Status201Created);
 
-            routes.MapDelete("/api/Stitching/{id}", (int id) =>
-            {
-                //return Results.Ok(new Stitching { ID = id });
-            })
-            .WithName("DeleteStitching")
-            .Produces<Stitching>(StatusCodes.Status200OK);
+            //routes.MapDelete("/api/Stitching/{id}", (int id) =>
+            //{
+            //    //return Results.Ok(new Stitching { ID = id });
+            //})
+            //.WithName("DeleteStitching")
+            //.Produces<Stitching>(StatusCodes.Status200OK);
         }
     }
 }

@@ -45,5 +45,15 @@ namespace GotsThorlabs.Models
 
             }
         }
+        public static Tour GetToursById(int idTour)
+        {
+            using (var queriable = ConnectionSqlite.CreateConnection())
+            {
+                string sql = $"SELECT * FROM Tour  WHERE idTour = {idTour}";
+                var items = queriable.Query<Tour>(sql);
+                return items.First();
+
+            }
+        }
     }
 }

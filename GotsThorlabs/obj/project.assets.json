@@ -2203,10 +2203,10 @@
           "lib/netstandard2.0/NuGet.Versioning.dll": {}
         }
       },
-      "OpenCvSharp4/4.6.0.20220608": {
+      "OpenCvSharp4/4.9.0.20240103": {
         "type": "package",
         "dependencies": {
-          "System.Memory": "4.5.4",
+          "System.Memory": "4.5.5",
           "System.Runtime.CompilerServices.Unsafe": "6.0.0"
         },
         "compile": {
@@ -7405,10 +7405,10 @@
         "nuget.versioning.nuspec"
       ]
     },
-    "OpenCvSharp4/4.6.0.20220608": {
-      "sha512": "+/EMZE0DodSRFHFniAMNRDYKr5cTBxUu0QABRcGT6duqopHZyeXX/siqbCorflkks2fpDHPB4Om/JoGzE3tHkA==",
+    "OpenCvSharp4/4.9.0.20240103": {
+      "sha512": "+BJMqToSH3dl+5SUF2YaPI+1eY/o/aTtvCQsY3qgcE4YS8qvPNS7MObzzVy4avYrBmcEEFnCvNF+1VbFnQjU9w==",
       "type": "package",
-      "path": "opencvsharp4/4.6.0.20220608",
+      "path": "opencvsharp4/4.9.0.20240103",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -7416,13 +7416,11 @@
         "lib/net48/OpenCvSharp.xml",
         "lib/net6.0/OpenCvSharp.dll",
         "lib/net6.0/OpenCvSharp.xml",
-        "lib/netcoreapp3.1/OpenCvSharp.dll",
-        "lib/netcoreapp3.1/OpenCvSharp.xml",
         "lib/netstandard2.0/OpenCvSharp.dll",
         "lib/netstandard2.0/OpenCvSharp.xml",
         "lib/netstandard2.1/OpenCvSharp.dll",
         "lib/netstandard2.1/OpenCvSharp.xml",
-        "opencvsharp4.4.6.0.20220608.nupkg.sha512",
+        "opencvsharp4.4.9.0.20240103.nupkg.sha512",
         "opencvsharp4.nuspec"
       ]
     },
@@ -11824,7 +11822,7 @@
       "Microsoft.IdentityModel.Tokens >= 6.25.1",
       "Microsoft.VisualStudio.Web.CodeGeneration.Design >= 6.0.16",
       "MySqlConnector >= 2.2.6",
-      "OpenCvSharp4 >= 4.6.0.20220608",
+      "OpenCvSharp4 >= 4.9.0.20240103",
       "OpenCvSharp4.runtime.win >= 4.6.0.20220608",
       "Swashbuckle.AspNetCore >= 6.5.0",
       "System.Data.SqlClient >= 4.8.5",
@@ -11922,7 +11920,7 @@
           },
           "OpenCvSharp4": {
             "target": "Package",
-            "version": "[4.6.0.20220608, )"
+            "version": "[4.9.0.20240103, )"
           },
           "OpenCvSharp4.runtime.win": {
             "target": "Package",
