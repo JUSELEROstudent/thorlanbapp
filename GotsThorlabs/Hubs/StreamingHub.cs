@@ -74,13 +74,14 @@ namespace GotsThorlabs.Hubs
     {
         public async IAsyncEnumerable<dynamic> Imgupdate(
           int indexcam,
+          string selecteddevicekim,
           int rows,
           int columns,
          [EnumeratorCancellation]
         CancellationToken cancellationToken)
         {
             var controlmotor = new TakeTour(indexcam,rows, columns);
-            var processimgs = controlmotor.Createmosaicstepbystep( 2, "97000001");
+            var processimgs = controlmotor.Createmosaicstepbystep( 2, (string)selecteddevicekim);
             await foreach (var url in processimgs)
             { 
                 yield return url;

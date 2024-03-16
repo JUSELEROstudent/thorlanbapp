@@ -9,7 +9,7 @@
 
     </div>
     <div class="flex flex-row">
-      <div class="bg-black w-9/12 h-[90vh]">ddd</div>
+      <div class="bg-black w-9/12 h-[90vh]"><img  :src="urlresponsestitching"></div>
       <div class="bg-lightgray w-3/12 h-[90vh] border-l-greenuis border-2 p-4 ml-2 rounded">
         <label class="text-black p-5">
           Datasets por procesar
@@ -44,6 +44,7 @@
 const config = useRuntimeConfig()
 
 const Tours = ref<Tour[]>([]);
+const urlresponsestitching = ref<string>("https://localhost:7166/SouerceStaticFiles/openNative.png");
 
 onMounted(async () => {
   try {
@@ -72,18 +73,16 @@ async function GetstitchingByIdTour(idTour: number)
   try {
     const myHeaders = new Headers()
     myHeaders.append('Authorization', 'Bearer ' + localStorage.getItem('stringjwt'))
-    //const raw = JSON.stringify({ 'idTour': idTour})
-
     const requestOptions = {
       method: 'POST',
       headers: myHeaders,
       redirect: 'follow',
       //idTourbody: raw
     }
-    const response = await fetch(`${config.public.apiUrl}/api/Stitching?idTour=${idTour}`, requestOptions);
+    const response = await fetch(`${config.public.apiUrl}/api/Stitching/${idTour}`, requestOptions);
     if (response.ok) {
-      const data = await response.json();
-      Tours.value= data;
+      const data = await response.text();
+      urlresponsestitching.value= data.toString();
     } else {
       console.error(`Error en la solicitud: ${response.status} - ${response.statusText}`);
     }

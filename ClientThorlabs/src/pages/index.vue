@@ -23,6 +23,10 @@
                 <input type="number" v-model="columns" class="input input-bordered w-full ml-2" name="fname" placeholder="Y" title="Numero de Columnas"  >
                 </div>
             </label>
+            <span class="text-black pl-3" title="seleccione el dispositivo a usar">Dispositivos</span>
+            <select  v-model="selecteddevicekim" class="select select-bordered w-full max-w-xs ">
+                            <option  v-for="device in listdevices" :key="device" required>{{ device }}</option>
+            </select>
             <div class="flex-1 " > 
                 <button @click="InitStreamImg()" class="btn btn-success bg-blue-900 float-end " :class="{'btn-disabled': statusstreamimg }">
                 Iniciar 
@@ -51,6 +55,8 @@ const imgRef = ref<HTMLImageElement | null>(null);
 const statusstreamimg = ref<boolean>(false);
 const rows = ref<number>(5);
 const columns = ref<number>(5);
+const listdevices = ref([]);
+const selecteddevicekim = ref([]);
 
 let hubConnection = await new signalR.HubConnectionBuilder()
     .withUrl(`${config.public.apiUrl}/UpdateStatus`, {
@@ -63,7 +69,7 @@ let hubConnection = await new signalR.HubConnectionBuilder()
 
 
 onMounted( async () => {
-  
+  getDevices();
   try {
       const myHeaders = new Headers()
       myHeaders.append('Authorization', 'Bearer ' + localStorage.getItem('stringjwt'))
@@ -95,7 +101,7 @@ onMounted( async () => {
         // debugger;
         await hubConnection.stop();
         await hubConnection.start();
-        hubConnection.stream("Imgupdate", currentCamera.value,rows.value,columns.value).subscribe({
+        hubConnection.stream("Imgupdate", currentCamera.value,selecteddevicekim.value,rows.value,columns.value).subscribe({
             next: (item: string) => {
                 if (imgRef.value) { imgRef.value.src = `${item}` }
             },
@@ -111,6 +117,19 @@ async function InitStreamImg()
     statusstreamimg.value= false;
 
 
+}
+
+async function getDevices() {
+  const myHeaders = new Headers();
+  myHeaders.append('Content-Type', 'application/json')
+  myHeaders.append('Authorization', 'Bearer ' + localStorage.getItem('stringjwt'))
+  const requestOptions = {
+    method: 'GET',
+    headers: myHeaders,
+  }
+  const petition = await fetch( `${config.public.apiUrl}/home/devices`, requestOptions)
+  const data = await petition.json()
+  listdevices.value = data
 }
 
 </script>

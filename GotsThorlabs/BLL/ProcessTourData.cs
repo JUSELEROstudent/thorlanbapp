@@ -36,6 +36,10 @@ namespace GotsThorlabs.BLL
 
         public string ProcessTourDatawWhitStitchingScans(string PathName)
         {
+            var developerurl2 = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
+
+            var rand = new Random();
+            var urlslocals = developerurl2.Split(";");
             var carpetaPath = Path.Combine(Environment.CurrentDirectory, "StaticFiles", PathName);
             string[] archivos = Directory.GetFiles(carpetaPath, "unitofpics*.jpg");
             Mat[] arraisMat = new Mat[archivos.Length];
@@ -56,9 +60,10 @@ namespace GotsThorlabs.BLL
 
             var solucion = stitched.Stitch(arraisMat, output);
             var estado = solucion == Stitcher.Status.OK ? true : false;
-            var direccionsave = Path.Combine(Environment.CurrentDirectory, "StaticFiles", PathName , "openNative.jpg");
+            var direccionsave = Path.Combine(Environment.CurrentDirectory, "StaticFiles", PathName, "openNative.jpg");
+            var urlstaticfiles1 = urlslocals[2] + $"/SouerceStaticFiles/{PathName}/" + "openNative.jpg" + "?ranmd=" + rand.Next().ToString();
             output.SaveImage(direccionsave);
-            return direccionsave;
+            return urlstaticfiles1;
         }
     }
 }
