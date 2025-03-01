@@ -9,7 +9,7 @@
 
     </div>
     <div class="flex flex-row">
-      <div class="bg-black w-9/12 h-[90vh]">ddd</div>
+      <div class="bg-black w-9/12 h-[90vh]"><img src="https://192.168.10.118:4040/SouerceStaticFiles/boat.jpg"></div>
       <div class="bg-lightgray w-3/12 h-[90vh] border-l-greenuis border-2 p-4 ml-2 rounded">
         <label class="text-black p-5">
           Datasets por procesar

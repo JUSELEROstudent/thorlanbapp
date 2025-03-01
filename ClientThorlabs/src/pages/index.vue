@@ -32,7 +32,7 @@
         </div>
         <div class="flex justify-center bg-black">
             <div v-show="isendrequest" class=" flex justify-center bg-black aspect-video max-h-[90vh]" >
-            <img  ref="imgRef" src="https://localhost:7166/SouerceStaticFiles/croopp.jpg">
+            <img  ref="imgRef" src="https://localhost:7166/SouerceStaticFiles/boat.jpg">
         </div>    
         </div>
     </div>

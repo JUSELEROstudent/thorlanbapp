@@ -19,7 +19,7 @@
           "Microsoft.IdentityModel.Tokens": "6.25.1",
           "Microsoft.VisualStudio.Web.CodeGeneration.Design": "6.0.16",
           "MySqlConnector": "2.2.6",
-          "OpenCvSharp4": "4.6.0.20220608",
+          "OpenCvSharp4": "4.9.0.20240103",
           "OpenCvSharp4.runtime.win": "4.6.0.20220608",
           "Swashbuckle.AspNetCore": "6.5.0",
           "System.Data.SqlClient": "4.8.5",
@@ -1828,7 +1828,7 @@
           }
         }
       },
-      "OpenCvSharp4/4.6.0.20220608": {
+      "OpenCvSharp4/4.9.0.20240103": {
         "dependencies": {
           "System.Memory": "4.5.5",
           "System.Runtime.CompilerServices.Unsafe": "6.0.0"
@@ -3921,12 +3921,12 @@
       "path": "nuget.versioning/6.6.1",
       "hashPath": "nuget.versioning.6.6.1.nupkg.sha512"
     },
-    "OpenCvSharp4/4.6.0.20220608": {
+    "OpenCvSharp4/4.9.0.20240103": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-+/EMZE0DodSRFHFniAMNRDYKr5cTBxUu0QABRcGT6duqopHZyeXX/siqbCorflkks2fpDHPB4Om/JoGzE3tHkA==",
-      "path": "opencvsharp4/4.6.0.20220608",
-      "hashPath": "opencvsharp4.4.6.0.20220608.nupkg.sha512"
+      "sha512": "sha512-+BJMqToSH3dl+5SUF2YaPI+1eY/o/aTtvCQsY3qgcE4YS8qvPNS7MObzzVy4avYrBmcEEFnCvNF+1VbFnQjU9w==",
+      "path": "opencvsharp4/4.9.0.20240103",
+      "hashPath": "opencvsharp4.4.9.0.20240103.nupkg.sha512"
     },
     "OpenCvSharp4.runtime.win/4.6.0.20220608": {
       "type": "package",

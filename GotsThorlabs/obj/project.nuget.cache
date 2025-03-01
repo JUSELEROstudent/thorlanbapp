@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "EQhrn57tqzSWZKWypvE+C64Cc5VG0DPGfWvDpvK7KT7EZ1EF/BeDa6u3udquxufCm1Z6WqXut+TP3Fe9+Jhqng==",
+  "dgSpecHash": "GH+n4gHj4I15crNi9Qe3VNPV9Dnq6N/hEUx82YaU32E9y0CWdecdbH2QPioNj0L8MBYRaVo1oHMRSk079mjkIQ==",
   "success": true,
-  "projectFilePath": "C:\\Users\\cocuy\\OneDrive\\Escritorio\\thorlabs\\GotsThorlabs\\GotsThorlabs\\GotsThorlabs.csproj",
+  "projectFilePath": "C:\\Users\\cocuy\\Desktop\\thorlabs\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\cocuy\\.nuget\\packages\\aforge\\2.2.5\\aforge.2.2.5.nupkg.sha512",
     "C:\\Users\\cocuy\\.nuget\\packages\\aforge.video\\2.2.5\\aforge.video.2.2.5.nupkg.sha512",
