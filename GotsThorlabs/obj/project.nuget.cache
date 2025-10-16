@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "GH+n4gHj4I15crNi9Qe3VNPV9Dnq6N/hEUx82YaU32E9y0CWdecdbH2QPioNj0L8MBYRaVo1oHMRSk079mjkIQ==",
+  "dgSpecHash": "1s8ua3N3Pjg=",
   "success": true,
-  "projectFilePath": "C:\\Users\\cocuy\\Desktop\\thorlabs\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj",
+  "projectFilePath": "C:\\ThorlabsApp\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\cocuy\\.nuget\\packages\\aforge\\2.2.5\\aforge.2.2.5.nupkg.sha512",
     "C:\\Users\\cocuy\\.nuget\\packages\\aforge.video\\2.2.5\\aforge.video.2.2.5.nupkg.sha512",
@@ -246,10 +246,36 @@
   ],
   "logs": [
     {
+      "code": "NU1903",
+      "level": "Warning",
+      "message": "Package 'System.Data.SqlClient' 4.8.5 has a known high severity vulnerability, https://github.com/advisories/GHSA-98g6-xh36-x2p7",
+      "projectPath": "C:\\ThorlabsApp\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\ThorlabsApp\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj",
+      "libraryId": "System.Data.SqlClient",
+      "targetGraphs": [
+        "net6.0"
+      ]
+    },
+    {
+      "code": "NU1902",
+      "level": "Warning",
+      "message": "Package 'System.IdentityModel.Tokens.Jwt' 6.25.1 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-59j7-ghrg-fj52",
+      "projectPath": "C:\\ThorlabsApp\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\ThorlabsApp\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj",
+      "libraryId": "System.IdentityModel.Tokens.Jwt",
+      "targetGraphs": [
+        "net6.0"
+      ]
+    },
+    {
       "code": "NU1701",
       "level": "Warning",
-      "warningLevel": 1,
       "message": "Package 'AForge 2.2.5' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net6.0'. This package may not be fully compatible with your project.",
+      "projectPath": "C:\\ThorlabsApp\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\ThorlabsApp\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj",
       "libraryId": "AForge",
       "targetGraphs": [
         "net6.0"
@@ -258,8 +284,10 @@
     {
       "code": "NU1701",
       "level": "Warning",
-      "warningLevel": 1,
       "message": "Package 'AForge.Video 2.2.5' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net6.0'. This package may not be fully compatible with your project.",
+      "projectPath": "C:\\ThorlabsApp\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\ThorlabsApp\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj",
       "libraryId": "AForge.Video",
       "targetGraphs": [
         "net6.0"
@@ -268,8 +296,10 @@
     {
       "code": "NU1701",
       "level": "Warning",
-      "warningLevel": 1,
       "message": "Package 'AForge.Video.DirectShow 2.2.5' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net6.0'. This package may not be fully compatible with your project.",
+      "projectPath": "C:\\ThorlabsApp\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\ThorlabsApp\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj",
       "libraryId": "AForge.Video.DirectShow",
       "targetGraphs": [
         "net6.0"

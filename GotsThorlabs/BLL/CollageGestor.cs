@@ -5,11 +5,7 @@
     /// </summary>
     public class CollageGestor
     {
-        //string[] encabezados = { "Nombre", "Apellido", "Edad" };
-        //string[][] datos = {
-        //    new string[] { "Juan", "Pérez", "30" },
-        //    new string[] { "María", "López", "25" }
-        //};
+
         private List<string> ejeX;
         private List<string> ejeY;
         private string pathNameCsv;

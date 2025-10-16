@@ -12,6 +12,7 @@ using Thorlabs.MotionControl.Tools.Logging;
 using Microsoft.AspNetCore.Mvc;
 using static Thorlabs.MotionControl.KCube.InertialMotorCLI.InertialMotorStatus;
 using Microsoft.AspNetCore.Builder;
+using System.Linq;
 
 namespace GotsThorlabs.NodesApi
 {
@@ -54,7 +55,7 @@ namespace GotsThorlabs.NodesApi
 
         public NodeHomepage(WebApplication App)
         {
-            App.MapPost("/movedevice",  ([FromBody]ObjMovement movestosite) =>
+            App.MapPost("/movedevice", ([FromBody] ObjMovement movestosite) =>
             {
 
                 // SimulationManager.Instance.InitializeSimulations();
@@ -117,7 +118,7 @@ namespace GotsThorlabs.NodesApi
                 //changet to use .moveto like a step movementerate no like a target point
                 //position = ((int)positionchanel + position) == position ? (int)positionchanel + position : 100;
                 // know have var kindMovemente that define what movement type is used can be relative or absolute
-                position = movestosite.kindMovement == "relative" ? (int)positionchanel + movestosite.relativemoveto: position;
+                position = movestosite.kindMovement == "relative" ? (int)positionchanel + movestosite.relativemoveto : position;
 
 
                 bool estatusMovement = Move_Method1(device, chanelsDevice[movestosite.chaneltomove], position);
@@ -163,7 +164,7 @@ namespace GotsThorlabs.NodesApi
                 //}
                 //return new List<string> { "Ok" };
 
-            }).RequireAuthorization();
+            });//.RequireAuthorization();
 
             App.MapGet("/home/devices", async () =>
             {
@@ -187,25 +188,38 @@ namespace GotsThorlabs.NodesApi
 
             App.MapGet("Home/cameras", async () =>
             {
-                //Dictionary<int, string> cameraslist = new Dictionary<int, string>();
                 List<ObjCameras> cameralists = new List<ObjCameras>();
-                int maxCameraIndex = 10; // Puedes ajustar esto según tus necesidades
-                for (int i = 0; i < maxCameraIndex; i++)
-                {
-                    using (VideoCapture capture2 = new VideoCapture(i))
-                    {
-                        // Intentar abrir el dispositivo de captura
-                        if (capture2.IsOpened())
-                        {
-                            string cameraName = capture2.GetBackendName().ToString(); //GetCaptureProperty(Emgu.CV.CvEnum.CapProp.FriendlyName).ToString();
-                            Console.WriteLine($"Cámara {i}: {cameraName} {capture2.CvPtr}");
-                            //cameraslist.Add(i,cameraName);
-                            cameralists.Add(new ObjCameras { cameraId = (int)i, cameraName = cameraName.ToString() });
-                        }
 
-                    }
+                FilterInfoCollection videoDevices = new FilterInfoCollection(FilterCategory.VideoInputDevice);
+                foreach (FilterInfo device in videoDevices)
+                {
+                    cameralists.Add(new ObjCameras
+                    {
+                        cameraId = cameralists.Count, // Índice basado en la lista
+                        cameraName = device.Name,
+                        UniqueId = device.MonikerString // Identificador único de la cámara
+                    });
                 }
+
                 return cameralists;
+                //int maxCameraIndex = 10; // Puedes ajustar esto según tus necesidades
+                //for (int i = 0; i < maxCameraIndex; i++)
+                //{
+                //    using (VideoCapture capture2 = new VideoCapture(i))
+                //    {
+                //        // Intentar abrir el dispositivo de captura
+                //        if (capture2.IsOpened())
+                //        {
+                //            //string uniqueId = capture2. GetCaptureProperty(Emgu.CV.CvEnum.CapProp.UniqueId).ToString();
+                //            string cameraName = capture2.GetBackendName().ToString(); //GetCaptureProperty(Emgu.CV.CvEnum.CapProp.FriendlyName).ToString();
+                //            Console.WriteLine($"Cámara {i}: {cameraName} {capture2.CvPtr}");
+                //            //cameraslist.Add(i,cameraName);
+                //            cameralists.Add(new ObjCameras { cameraId = (int)i, cameraName = cameraName.ToString() });
+                //        }
+
+                //    }
+                //}
+                //return cameralists;
             });
         } 
     }
@@ -226,6 +240,7 @@ public class ObjCameras
 {
     public int cameraId { get; set; }
     public string cameraName { get; set; }
+    public string UniqueId { get; set; }
 }
 
 public class KimFourChanelsThorlabs

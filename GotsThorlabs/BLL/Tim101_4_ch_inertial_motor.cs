@@ -295,7 +295,7 @@ namespace GotsThorlabs.BLL
                     Cv2.MeanStdDev(copyofFrame, out var mean, out var stddev);
                     var resultadolaplace = (stddev.Val0 * stddev.Val0).ToString();
 
-                    Cv2.PutText(frame, "laplacian :" + resultadolaplace, new Point(20, 30), HersheyFonts.Italic, 0.8,1);
+                    //Cv2.PutText(frame, "laplacian :" + resultadolaplace, new Point(20, 30), HersheyFonts.Italic, 0.8,1); /// inscripcion de laplaciona en la imagen 
 
 
                     Rect region = new Rect(frame.Cols*j, frame.Rows * i, frame.Cols, frame.Rows);
@@ -685,7 +685,15 @@ namespace GotsThorlabs.BLL
         {
             throw new NotImplementedException();
         }
-
+        /// <summary>
+        /// Funcion encargada de tomar y guardar las imgagenes en el recorrido cualquier configuracion en las imagenes debe ser porcesada aca 
+        /// </summary>
+        /// <param name="nameFile"></param>
+        /// <param name="path"></param>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <param name="z"></param>
+        /// <returns></returns>
         public string TakeAPic(string nameFile, string path,int x,int y,int z)
         {
             Mat frame = new Mat();
@@ -718,7 +726,7 @@ namespace GotsThorlabs.BLL
                 Cv2.Laplacian(grayresult, shaperesult, MatType.CV_64F);
                 Cv2.MeanStdDev(copyofFrame, out var mean, out var stddev);
                 resultadolaplace = (stddev.Val0 * stddev.Val0).ToString();
-                Cv2.PutText(frame, "laplacian :" + resultadolaplace, new Point(20, 30), HersheyFonts.Italic, 0.8, 1);
+                //Cv2.PutText(frame, "laplacian :" + resultadolaplace, new Point(20, 30), HersheyFonts.Italic, 0.8, 1);/ // inscripcion de laplaciona en la imagen
                 Rect region = new Rect(frame.Cols * x, frame.Rows * y, frame.Cols, frame.Rows);
                 frame.CopyTo(mosaic.SubMat(region));
                 nameimage = $"{nameFile}{x}_{y}.jpg";

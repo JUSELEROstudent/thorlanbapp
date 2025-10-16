@@ -80,7 +80,7 @@ namespace GotsThorlabs.Hubs
         CancellationToken cancellationToken)
         {
             var controlmotor = new TakeTour(indexcam,rows, columns);
-            var processimgs = controlmotor.Createmosaicstepbystep( 2, "97000001");
+            var processimgs = controlmotor.Createmosaicstepbystep( 2, "97000001");// el Id de la camara debe venir del front
             await foreach (var url in processimgs)
             { 
                 yield return url;

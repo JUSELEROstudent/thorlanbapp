@@ -388,7 +388,7 @@ namespace GotsThorlabs.BLL
                 Cv2.Laplacian(grayresult, shaperesult, MatType.CV_64F);
                 Cv2.MeanStdDev(copyofFrame, out var mean, out var stddev);
                 resultadolaplace = (stddev.Val0 * stddev.Val0).ToString();
-                Cv2.PutText(frame, "laplacian :" + resultadolaplace, new Point(20, 30), HersheyFonts.Italic, 0.8, 1);
+                //Cv2.PutText(frame, "laplacian :" + resultadolaplace, new Point(20, 30), HersheyFonts.Italic, 0.8, 1);
                 Rect region = new Rect(frame.Cols * x, frame.Rows * y, frame.Cols, frame.Rows);
                 frame.CopyTo(mosaic.SubMat(region));
                 nameimage = $"{nameFile}{x}_{y}.jpg";
