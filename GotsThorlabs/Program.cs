@@ -10,6 +10,9 @@ using System.Text;
 using apitest.Controllers;
 using Microsoft.Extensions.FileProviders;
 using GotsThorlabs;
+using Microsoft.EntityFrameworkCore;
+using GotsThorlabs.Database.EntityRepo;
+using Microsoft.EntityFrameworkCore.Sqlite;  
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
@@ -50,8 +53,20 @@ builder.Services.AddAuthorization((options) =>
         policy.Requirements.Add(new Authorizationadmin(4)));
 });
 
+var dbDir = Path.Combine(builder.Environment.ContentRootPath, "database");
+Directory.CreateDirectory(dbDir);
+var dbPath = Path.Combine(dbDir, "app.sqlite");
+
+builder.Services.AddDbContext<ThorlabsDbContext>(options =>
+    options.UseSqlite($"Data Source={dbPath}"));
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ThorlabsDbContext>();
+    db.Database.Migrate(); // creates/apply migrations -> creates tables in app.sqlite
+}
 
 app.UseCors(builder =>
 {
