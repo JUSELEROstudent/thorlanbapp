@@ -45,10 +45,10 @@ namespace GotsThorlabs.Controls
                 increase.IncreaseId = Guid.NewGuid();
             }
 
-            _db.Increases.Add(increase);
+            var savedValue = _db.Increases.Add(increase);
             await _db.SaveChangesAsync(ct);
 
-            return CreatedAtAction(nameof(GetByIdAsync), new { id = increase.IncreaseId }, increase);
+            return CreatedAtAction(nameof(increase), new { id = increase.IncreaseId }, increase);
         }
 
         // PUT: api/Increase/{id}
