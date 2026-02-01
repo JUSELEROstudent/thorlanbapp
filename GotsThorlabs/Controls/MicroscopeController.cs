@@ -48,7 +48,7 @@ namespace GotsThorlabs.Controls
             _db.Microscopes.Add(microscope);
             await _db.SaveChangesAsync(ct);
 
-            return CreatedAtAction(nameof(GetByIdAsync), new { id = microscope.MicroscopeId }, microscope);
+            return Ok(microscope);
         }
 
         // PUT: api/Microscope/{id}

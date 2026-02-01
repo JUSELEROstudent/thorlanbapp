@@ -48,7 +48,7 @@ namespace GotsThorlabs.Controls
             var savedValue = _db.Increases.Add(increase);
             await _db.SaveChangesAsync(ct);
 
-            return CreatedAtAction(nameof(increase), new { id = increase.IncreaseId }, increase);
+            return Ok(increase);
         }
 
         // PUT: api/Increase/{id}

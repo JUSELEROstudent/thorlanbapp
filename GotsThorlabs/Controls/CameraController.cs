@@ -48,7 +48,7 @@ namespace GotsThorlabs.Controls
             _db.Cameras.Add(camera);
             await _db.SaveChangesAsync(ct);
 
-            return CreatedAtAction(nameof(GetByIdAsync), new { id = camera.CameraId }, camera);
+            return Ok(camera);
         }
 
         // PUT: api/Camera/{id}
