@@ -205,23 +205,22 @@ const fetchAvailableCameras = async () => {
 // Función para eliminar elemento
 const deleteElement = async (cameraId: string) => {
   try {
-    const response = await $fetch(`${config.public.apiUrl}/api/camera/${cameraId}`, {
+    await $fetch(`${config.public.apiUrl}/api/camera/${cameraId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json'
       }
     })
 
-    if (response) {
-      alertStore.NewAlert({
-        type: 'OK',
-        tittle: 'Éxito',
-        data: 'Cámara eliminada exitosamente'
-      })
-      
-      // Refrescar la lista
-      await fetchElements()
-    }
+    // Si llega aquí sin error, la eliminación fue exitosa (204 No Content)
+    alertStore.NewAlert({
+      type: 'OK',
+      tittle: 'Éxito',
+      data: 'Cámara eliminada exitosamente'
+    })
+    
+    // Refrescar la lista
+    await fetchElements()
   } catch (error) {
     console.error('Error al eliminar cámara:', error)
     alertStore.NewAlert({

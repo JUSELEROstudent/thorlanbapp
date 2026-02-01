@@ -160,23 +160,22 @@ const fetchElements = async () => {
 // Función para eliminar elemento
 const deleteElement = async (increaseId: string) => {
   try {
-    const response = await $fetch(`${config.public.apiUrl}/api/increase/${increaseId}`, {
+    await $fetch(`${config.public.apiUrl}/api/increase/${increaseId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json'
       }
     })
 
-    if (response) {
-      alertStore.NewAlert({
-        type: 'OK',
-        tittle: 'Éxito',
-        data: 'Elemento eliminado exitosamente'
-      })
-      
-      // Refrescar la lista
-      await fetchElements()
-    }
+    // Si llega aquí sin error, la eliminación fue exitosa (204 No Content)
+    alertStore.NewAlert({
+      type: 'OK',
+      tittle: 'Éxito',
+      data: 'Elemento eliminado exitosamente'
+    })
+    
+    // Refrescar la lista
+    await fetchElements()
   } catch (error) {
     console.error('Error al eliminar elemento:', error)
     alertStore.NewAlert({

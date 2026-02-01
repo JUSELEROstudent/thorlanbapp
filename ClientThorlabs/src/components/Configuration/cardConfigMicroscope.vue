@@ -178,23 +178,22 @@ const fetchElements = async () => {
 // Función para eliminar elemento
 const deleteElement = async (microscopeId: string) => {
   try {
-    const response = await $fetch(`${config.public.apiUrl}/api/microscope/${microscopeId}`, {
+    await $fetch(`${config.public.apiUrl}/api/microscope/${microscopeId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json'
       }
     })
 
-    if (response) {
-      alertStore.NewAlert({
-        type: 'OK',
-        tittle: 'Éxito',
-        data: 'Microscopio eliminado exitosamente'
-      })
-      
-      // Refrescar la lista
-      await fetchElements()
-    }
+    // Si llega aquí sin error, la eliminación fue exitosa (204 No Content)
+    alertStore.NewAlert({
+      type: 'OK',
+      tittle: 'Éxito',
+      data: 'Microscopio eliminado exitosamente'
+    })
+    
+    // Refrescar la lista
+    await fetchElements()
   } catch (error) {
     console.error('Error al eliminar microscopio:', error)
     alertStore.NewAlert({
