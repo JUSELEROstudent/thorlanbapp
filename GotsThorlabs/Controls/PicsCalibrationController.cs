@@ -123,7 +123,7 @@ namespace GotsThorlabs.Controls
                 return Conflict("No se pudo guardar la calibración en la base de datos.");
             }
 
-            return CreatedAtAction(nameof(GetByIdAsync), new { id = entity.PicsCalibrationId }, entity);
+            return Ok(entity);
         }
 
         // PUT: api/PicsCalibration/{id}

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import * as signalR from "@microsoft/signalr";
+import { useCapturesStore } from "~/stores/captures";
 
 const config = useRuntimeConfig();
 
@@ -9,9 +10,8 @@ const savedCameraNames = ref<string[]>([]);
 const isStreaming = ref<boolean>(false);
 const lastFrameUrl = ref<string | null>(null);
 const isLoadingCameras = ref<boolean>(false);
-const capturedPairs = ref<{ id: number; images: string[] }[]>([]);
-
-const maxPerPair = 2;
+const capturesStore = useCapturesStore();
+const maxPerPair = capturesStore.maxPerPair;
 let streamSubscription: signalR.ISubscription<string> | null = null;
 
 const hubConnection = new signalR.HubConnectionBuilder()
@@ -131,34 +131,19 @@ const capturePhoto = () => {
     return;
   }
 
-  const pairs = capturedPairs.value;
-  let activePair = pairs[pairs.length - 1];
-  if (!activePair || activePair.images.length >= maxPerPair) {
-    activePair = { id: Date.now(), images: [] };
-    pairs.push(activePair);
-  }
-
-  activePair.images.push(lastFrameUrl.value);
+  capturesStore.addImage(lastFrameUrl.value);
 };
 
 const removeImage = (pairIndex: number, imageIndex: number) => {
-  const pair = capturedPairs.value[pairIndex];
-  if (!pair) {
-    return;
-  }
-
-  pair.images.splice(imageIndex, 1);
-  if (pair.images.length === 0) {
-    capturedPairs.value.splice(pairIndex, 1);
-  }
+  capturesStore.removeImage(pairIndex, imageIndex);
 };
 
 const clearAll = () => {
-  capturedPairs.value = [];
+  capturesStore.clearAll();
 };
 
 const nextSlotLabel = computed(() => {
-  const lastPair = capturedPairs.value[capturedPairs.value.length - 1];
+  const lastPair = capturesStore.pairs[capturesStore.pairs.length - 1];
   const currentCount = lastPair?.images.length ?? 0;
   const slot = currentCount >= maxPerPair ? 1 : currentCount + 1;
   return `Tomar foto (${slot}/${maxPerPair})`;
@@ -228,15 +213,15 @@ onBeforeUnmount(async () => {
           <button class="btn btn-success" @click="capturePhoto" :disabled="!lastFrameUrl">
             {{ nextSlotLabel }}
           </button>
-          <button class="btn btn-ghost" @click="clearAll" :disabled="capturedPairs.length === 0">
+          <button class="btn btn-ghost" @click="clearAll" :disabled="capturesStore.pairs.length === 0">
             Limpiar todo
           </button>
         </div>
       </div>
 
-      <div v-if="capturedPairs.length" class="space-y-4">
+      <div v-if="capturesStore.pairs.length" class="space-y-4">
         <div
-          v-for="(pair, pairIndex) in capturedPairs"
+          v-for="(pair, pairIndex) in capturesStore.pairs"
           :key="pair.id"
           class="rounded border border-base-200 p-3"
         >

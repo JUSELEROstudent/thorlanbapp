@@ -13,17 +13,25 @@
     <div>
       <div class="w-full flex flex-row space-x-4 p-4">
         <div class="flex-1 space-y-4">
-        <CardConfigMicroscope />
-                  <!-- Componente cardConfigElement -->
-        <cardConfigCamera />
-                  <!-- Componente cardConfigElement -->
-        <CardConfigIncrease />              
+          <CameraStreamCapture />
         </div>        
         
 
         
         <div class="flex-1 space-y-4">
-          <CameraStreamCapture />
+          <div class="collapse collapse-arrow bg-gray shadow">
+            <input type="checkbox" v-model="isAccordionOpen" />
+            <div class="collapse-title text-sm font-semibold text-white">
+              Configuración (Cámara, Microscopio, Increase)
+            </div>
+            <div class="collapse-content space-y-4">
+              <CardConfigMicroscope />
+                        <!-- Componente cardConfigElement -->
+              <cardConfigCamera />
+                        <!-- Componente cardConfigElement -->
+              <CardConfigIncrease />
+            </div>
+          </div>
           <CreateCalibration />
         </div>
       </div>
@@ -37,6 +45,8 @@ import cardConfigCamera from '../components/Configuration/cardConfigCamera.vue'
 import CardConfigMicroscope from '~/components/Configuration/cardConfigMicroscope.vue';
 import CameraStreamCapture from '~/components/Configuration/CameraStreamCapture.vue';
 import CreateCalibration from '~/components/Configuration/CreateCalibration.vue';
+
+const isAccordionOpen = ref(false)
 
 function alerta()
 {
