@@ -44,9 +44,10 @@
             <input 
               v-model="newRecord.name" 
               type="text" 
-              class="input input-bordered w-full"
-              placeholder="Ingrese el nombre de la cámara"
+              class="input input-bordered w-full bg-gray-100"
+              placeholder="El nombre se autocompleta"
               :disabled="isSaving"
+              readonly
             />
           </div>
           
@@ -60,7 +61,7 @@
             >
               <option value="" disabled>{{ isLoadingCameras ? 'Cargando cámaras...' : 'Seleccione una cámara' }}</option>
               <option 
-                v-for="camera in availableCameras" 
+                v-for="camera in filteredAvailableCameras" 
                 :key="camera.cameraId" 
                 :value="camera.uniqueId"
               >
@@ -104,7 +105,8 @@
         >
           <div class="flex-1">
             <span class="text-sm font-medium text-gray-900">{{ element.name }}</span>
-            <p class="text-xs text-gray-500">ID: {{ element.localIdentifier }} - {{ element.features }}</p>
+            <p class="text-xs text-gray-500">ID: {{ formatIdentifier(element.localIdentifier) }}</p>
+            <p class="text-xs text-gray-500">{{ element.features }}</p>
           </div>
           <button @click="deleteElement(element.cameraId)" class="btn btn-error btn-xs ml-3">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -118,7 +120,7 @@
   </div> 
   </template>
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { alertsClient } from '../../stores/alerts'
 
 const alertStore = alertsClient()
@@ -130,6 +132,11 @@ const isSaving = ref(false)
 const isLoadingCameras = ref(false)
 const elementList = ref<CameraElement[]>([])
 const availableCameras = ref<AvailableCamera[]>([])
+
+const filteredAvailableCameras = computed(() => {
+  const usedIds = new Set(elementList.value.map((item) => item.localIdentifier))
+  return availableCameras.value.filter((camera) => !usedIds.has(camera.uniqueId))
+})
 
 // Interface para el elemento
 interface CameraElement {
@@ -153,6 +160,34 @@ const newRecord = ref({
   features: ''
 })
 
+const notifyCameraConfigUpdated = () => {
+  if (process.client) {
+    window.dispatchEvent(new CustomEvent('camera-config-updated', {
+      detail: elementList.value
+    }))
+  }
+}
+
+const syncNameFromIdentifier = () => {
+  const match = availableCameras.value.find(
+    (camera) => camera.uniqueId === newRecord.value.localIdentifier
+  )
+  newRecord.value.name = match ? match.cameraName : ''
+}
+
+const formatIdentifier = (value: string, visibleChars = 8) => {
+  if (!value) return ''
+  if (value.length <= visibleChars) return value
+  return `${value.slice(0, visibleChars)}...`
+}
+
+watch([
+  () => newRecord.value.localIdentifier,
+  () => availableCameras.value
+], () => {
+  syncNameFromIdentifier()
+})
+
 // Función para obtener la lista de elementos
 const fetchElements = async () => {
   try {
@@ -165,6 +200,7 @@ const fetchElements = async () => {
     
     if (response) {
       elementList.value = response
+      notifyCameraConfigUpdated()
     }
   } catch (error) {
     console.error('Error al obtener cámaras:', error)

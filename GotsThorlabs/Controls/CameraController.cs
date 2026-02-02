@@ -45,6 +45,12 @@ namespace GotsThorlabs.Controls
                 camera.CameraId = Guid.NewGuid();
             }
 
+            var cameraExist = _db.Cameras.Where(item => item.Name.Trim().ToLower() == camera.Name.Trim().ToLower());
+            if(cameraExist.Any())
+            {
+                BadRequest("Ya existe una cámara con ese nombre.");
+            }
+
             _db.Cameras.Add(camera);
             await _db.SaveChangesAsync(ct);
 

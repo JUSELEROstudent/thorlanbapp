@@ -12,7 +12,7 @@
     </div>
     <div>
       <div class="w-full flex flex-row space-x-4 p-4">
-        <div class="flex-1">
+        <div class="flex-1 space-y-4">
         <CardConfigMicroscope />
                   <!-- Componente cardConfigElement -->
         <cardConfigCamera />
@@ -22,9 +22,9 @@
         
 
         
-        <div class="flex-1 p-4 bg-gray-100 rounded">
-          <h3 class="font-semibold mb-2">Sección Derecha</h3>
-          <div>test1</div>
+        <div class="flex-1 space-y-4">
+          <CameraStreamCapture />
+          <CreateCalibration />
         </div>
       </div>
       
@@ -35,6 +35,8 @@
 import CardConfigIncrease from '~/components/Configuration/cardConfigIncrease.vue';
 import cardConfigCamera from '../components/Configuration/cardConfigCamera.vue'
 import CardConfigMicroscope from '~/components/Configuration/cardConfigMicroscope.vue';
+import CameraStreamCapture from '~/components/Configuration/CameraStreamCapture.vue';
+import CreateCalibration from '~/components/Configuration/CreateCalibration.vue';
 
 function alerta()
 {

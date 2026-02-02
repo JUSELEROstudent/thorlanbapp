@@ -55,7 +55,7 @@ namespace GotsThorlabs.Controls
                 return Conflict("No se puede crear el grupo de calibración por claves foráneas inválidas.");
             }
 
-            return CreatedAtAction(nameof(GetByIdAsync), new { id = group.GroupCailbrationId }, group);
+            return Ok(group);
         }
 
         // PUT: api/GroupCalibration/{id}

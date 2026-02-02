@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using GotsThorlabs.Database.EntityRepo;
 using GotsThorlabs.Database.EntityRepo.Entities;
+using GotsThorlabs.Models;
+using Microsoft.Extensions.FileProviders;
 
 namespace GotsThorlabs.Controls
 {
@@ -11,10 +13,12 @@ namespace GotsThorlabs.Controls
     public class PicsCalibrationController : ControllerBase
     {
         private readonly ThorlabsDbContext _db;
+        private readonly IWebHostEnvironment _env;
 
-        public PicsCalibrationController(ThorlabsDbContext db)
+        public PicsCalibrationController(ThorlabsDbContext db, IWebHostEnvironment env)
         {
             _db = db;
+            _env = env;
         }
 
         // GET: api/PicsCalibration
@@ -34,7 +38,7 @@ namespace GotsThorlabs.Controls
             return Ok(pic);
         }
 
-        // POST: api/PicsCalibration
+        // POST: api/PicsCalibration (JSON)
         [HttpPost]
         public async Task<ActionResult<PicsCalibration>> CreateAsync([FromBody] PicsCalibration pic, CancellationToken ct)
         {
@@ -56,6 +60,70 @@ namespace GotsThorlabs.Controls
             }
 
             return CreatedAtAction(nameof(GetByIdAsync), new { id = pic.PicsCalibrationId }, pic);
+        }
+
+        // POST: api/PicsCalibration/upload (multipart/form-data)
+        [HttpPost("upload")]
+        [RequestSizeLimit(50_000_000)] // 50 MB
+        public async Task<ActionResult<PicsCalibration>> UploadAsync([FromForm] PicsCalibrationUploadDTO dto, CancellationToken ct)
+        {
+            if (dto is null || dto.Pic1File is null || dto.Pic2File is null)
+                return BadRequest("Debe enviar Pic1File y Pic2File");
+
+            // Ruta física donde se guardarán las imágenes
+            var staticRoot = Path.Combine(_env.ContentRootPath, "StaticFiles", "pics-calibrations");
+            Directory.CreateDirectory(staticRoot);
+
+            // Nombre único para la carpeta del registro
+            var id = Guid.NewGuid();
+            var recordDir = Path.Combine(staticRoot, id.ToString());
+            Directory.CreateDirectory(recordDir);
+
+            // Guardar archivos
+            string SaveFile(IFormFile f, string name)
+            {
+                var ext = Path.GetExtension(f.FileName);
+                var safeName = name + ext;
+                var fullPath = Path.Combine(recordDir, safeName);
+                using var stream = System.IO.File.Create(fullPath);
+                f.CopyTo(stream);
+                return fullPath;
+            }
+
+            SaveFile(dto.Pic1File, "pic1");
+            SaveFile(dto.Pic2File, "pic2");
+
+            // Construir rutas accesibles vía HTTP
+            var baseRequestPath = "/SouerceStaticFiles/pics-calibrations/" + id.ToString();
+            var pic1Url = baseRequestPath + "/pic1" + Path.GetExtension(dto.Pic1File.FileName);
+            var pic2Url = baseRequestPath + "/pic2" + Path.GetExtension(dto.Pic2File.FileName);
+
+            var entity = new PicsCalibration
+            {
+                PicsCalibrationId = id,
+                GroupCailbrationId = dto.GroupCailbrationId,
+                Pic1 = pic1Url,
+                Pic2 = pic2Url,
+                AxeDirectionCalibration = dto.AxeDirectionCalibration,
+                Acepted = dto.Acepted,
+                dx = dto.dx,
+                dy = dto.dy,
+                Confidence = dto.Confidence,
+                MeasureUnit = dto.MeasureUnit,
+                MovementValue = dto.MovementValue
+            };
+
+            _db.PicsCalibrations.Add(entity);
+            try
+            {
+                await _db.SaveChangesAsync(ct);
+            }
+            catch (DbUpdateException)
+            {
+                return Conflict("No se pudo guardar la calibración en la base de datos.");
+            }
+
+            return CreatedAtAction(nameof(GetByIdAsync), new { id = entity.PicsCalibrationId }, entity);
         }
 
         // PUT: api/PicsCalibration/{id}
