@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using GotsThorlabs.Database.EntityRepo.Entities;
 using GotsThorlabs.Interfaces;
 using GotsThorlabs.Services;
 using Microsoft.AspNetCore.SignalR;
@@ -63,7 +64,7 @@ namespace GotsThorlabs.BLL
             finalimg = new Mat[columns];
         }
 
-        public dynamic Createimagemosaic()
+        public dynamic Createimagemosaic(Guid picsCalibrationId)
         {
             var listado = deviceslist();
             if (listado == null) { return false; }
@@ -178,7 +179,7 @@ namespace GotsThorlabs.BLL
         ///<remarks>
         ///devuelve la url de la ubicacion en el servidor de la imagen actual del mapeo
         ///</remarks>
-        public async IAsyncEnumerable<dynamic> Createmosaicstepbystep( int dimMove, string kimDeviceId)
+        public async IAsyncEnumerable<dynamic> Createmosaicstepbystep( int dimMove, string kimDeviceId, Guid picsCalibrationId)
         {
             var developerurl = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
             var listado = deviceslist();
@@ -341,7 +342,7 @@ namespace GotsThorlabs.BLL
             yield return urlstaticfiles;
 
         }
-        public async IAsyncEnumerable<dynamic> Createmosaicstepbystep2(int dimMove, string kimDeviceId)
+        public async IAsyncEnumerable<dynamic> Createmosaicstepbystep2(int dimMove, string kimDeviceId, Guid picsCalibrationId)
         {
             var developerurl = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
             var listado = deviceslist();
@@ -400,7 +401,7 @@ namespace GotsThorlabs.BLL
 
             // Creacion de carpeta y nombre de archivo CSV con la clase encargada de gestionar el archivo
             string namefolder = Utilities.getTimeInString();
-            string fullnamefolder = CreateTour();
+            string fullnamefolder = CreateTour(picsCalibrationId);
 
             for (int j = 0; j < columns; j++)// posiblemente son las columnas 
             {
@@ -663,7 +664,7 @@ namespace GotsThorlabs.BLL
         /// </summary>
         /// <returns>retorna el nombre completo de la carpeta donde se va a guardar las imagenes </returns>
         /// <exception cref="NotImplementedException"></exception>
-        public string CreateTour()
+        public string CreateTour(Guid picsCalibrationId)
         {
             var currentPath = Directory.GetCurrentDirectory();
             string fullnamefolder = Path.Combine(currentPath, $"StaticFiles{Path.DirectorySeparatorChar}" + namefolder);

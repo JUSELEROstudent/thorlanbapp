@@ -337,7 +337,8 @@ namespace GotsThorlabs.BLL
             var currentPath = Directory.GetCurrentDirectory();
             string fullnamefolder = Path.Combine(currentPath, $"StaticFiles{Path.DirectorySeparatorChar}" + namefolder);
             bool status = Utilities.createFolder(fullnamefolder);
-            //using (var queryable = ConnectionSqlite.CreateConnection())
+            //using (var queryable = ConnectionSqlite.
+            //CreateConnection())
             //{
             //    queryable.Open();
             //    string createTour = @$"INSERT INTO tour ( date,nameFolder, NumberX, NumberY, NumberZ, Camera) VALUES 

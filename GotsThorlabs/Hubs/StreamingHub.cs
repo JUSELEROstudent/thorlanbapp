@@ -85,11 +85,12 @@ namespace GotsThorlabs.Hubs
           int rows,
           int columns,
           Guid picsCalibrationId,
+          string device,
          [EnumeratorCancellation]
         CancellationToken cancellationToken)
         {
             var controlmotor = new TakeTour(indexcam, rows, columns, _db);
-            var processimgs = controlmotor.Createmosaicstepbystep( 2, "97000001", picsCalibrationId);// el Id de la camara debe venir del front
+            var processimgs = controlmotor.Createmosaicstepbystep( 2, device.Trim(), picsCalibrationId);// el Id de la camara debe venir del front
             await foreach (var url in processimgs)
             { 
                 yield return url;

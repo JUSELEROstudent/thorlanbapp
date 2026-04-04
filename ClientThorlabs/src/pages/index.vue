@@ -12,6 +12,22 @@
                     {{ lc.cameraName }}
                 </option>
             </select>
+            <label style="color: white;" for="deviceSelect" class="space-x-2">
+                <span>Dispositivo</span>
+            </label>
+            <select id="deviceSelect" v-model="currentDevice" class="select select-bordered w-full max-w-xs ">
+                <option :value="ld" v-for="ld in listDevices">
+                    {{ ld }}
+                </option>
+            </select>
+            <label style="color: white;" for="groupSelect" class="space-x-2">
+                <span>Grupo</span>
+            </label>
+            <select id="groupSelect" v-model="currentGroup" class="select select-bordered w-full max-w-xs ">
+                <option :value="lg.groupCailbrationId" v-for="lg in listGroups">
+                    {{ lg.aditionalInfo }}
+                </option>
+            </select>
             <span class="text-black pl-3" title="defina la tamaño en medida  de columnas y filas "> Grid X * Y</span>
             <label>
                 <div class="flex items-center w-32">
@@ -24,7 +40,7 @@
                 </div>
             </label>
             <div class="flex-1 " > 
-                <button @click="InitStreamImg()" class="btn btn-success bg-blue-900 float-end " :class="{'btn-disabled': statusstreamimg }">
+                 <button @click="InitStreamImg()" class="btn btn-success bg-blue-900 float-end " :class="{'btn-disabled': statusstreamimg || !canStartStream }">
                 Iniciar 
                  </button>
             </div> 
@@ -44,13 +60,23 @@ import { alertsClient }  from './../stores/alerts'
 const config = useRuntimeConfig();
 const alertStore = alertsClient()
 
-const listCameras = ref<{ cameraId: number; cameraName: string }[]>([]);
-const currentCamera = ref<number>(0);
+const listCameras = ref<{ cameraId: string; cameraName: string }[]>([]);
+const currentCamera = ref<string>("");
+const listDevices = ref<string[]>([]);
+const currentDevice = ref<string>("");
+const listGroups = ref<{ groupCailbrationId: string; aditionalInfo: string }[]>([]);
+const currentGroup = ref<string>("");
 const isendrequest = ref<boolean>(false);
 const imgRef = ref<HTMLImageElement | null>(null);
 const statusstreamimg = ref<boolean>(false);
 const rows = ref<number>(5);
 const columns = ref<number>(5);
+const canStartStream = computed(() => {
+    const hasCamera = `${currentCamera.value ?? ""}`.trim().length > 0;
+    const hasDevice = `${currentDevice.value ?? ""}`.trim().length > 0;
+    const hasGroup = `${currentGroup.value ?? ""}`.trim().length > 0;
+    return hasCamera && hasDevice && hasGroup;
+});
 
 let hubConnection = await new signalR.HubConnectionBuilder()
     .withUrl(`${config.public.apiUrl}/UpdateStatus`, {
@@ -73,18 +99,43 @@ onMounted( async () => {
         headers: myHeaders
         // , redirect: 'follow'
       }
-      const response = await fetch(`${config.public.apiUrl}/Home/cameras`, requestOptions);
-      if (response.ok) {
-          const data = await response.json();
+      const [camerasResponse, devicesResponse, groupsResponse] = await Promise.all([
+          fetch(`${config.public.apiUrl}/Home/cameras`, requestOptions),
+          fetch(`${config.public.apiUrl}/home/devices`, requestOptions),
+          fetch(`${config.public.apiUrl}/api/GroupCalibration`, requestOptions)
+      ]);
+
+      if (camerasResponse.ok) {
+          const data = await camerasResponse.json();
           listCameras.value = data;
           if (listCameras.value.length > 0) {
               currentCamera.value = data[0].cameraId;
-              isendrequest.value= true;
-              //handleCamera();
           }
       } else {
-          console.error(`Error en la solicitud: ${response.status} - ${response.statusText}`);
+          console.error(`Error en la solicitud: ${camerasResponse.status} - ${camerasResponse.statusText}`);
       }
+
+      if (devicesResponse.ok) {
+          const data = await devicesResponse.json();
+          listDevices.value = data;
+          if (listDevices.value.length > 0) {
+              currentDevice.value = data[0];
+          }
+      } else {
+          console.error(`Error en la solicitud: ${devicesResponse.status} - ${devicesResponse.statusText}`);
+      }
+
+      if (groupsResponse.ok) {
+          const data = await groupsResponse.json();
+          listGroups.value = data;
+          if (listGroups.value.length > 0) {
+              currentGroup.value = data[0].groupCailbrationId;
+          }
+      } else {
+          console.error(`Error en la solicitud: ${groupsResponse.status} - ${groupsResponse.statusText}`);
+      }
+
+      isendrequest.value = listCameras.value.length > 0;
   } catch (error) {
       console.error('Error al realizar la solicitud:', error);
   }
@@ -95,7 +146,7 @@ onMounted( async () => {
         // debugger;
         await hubConnection.stop();
         await hubConnection.start();
-        hubConnection.stream("Imgupdate", currentCamera.value,rows.value,columns.value).subscribe({
+        hubConnection.stream("Imgupdate", currentCamera.value,rows.value,columns.value,currentGroup.value,currentDevice.value).subscribe({
             next: (item: string) => {
                 if (imgRef.value) { imgRef.value.src = `${item}` }
             },
@@ -106,6 +157,10 @@ onMounted( async () => {
 }
 async function InitStreamImg()
 {
+    if (!canStartStream.value) {
+        alertStore.NewAlert({type: 'error',data: 'Debe seleccionar camara, dispositivo y grupo.', tittle:'Validacion'})
+        return;
+    }
     statusstreamimg.value= true;
     const response = await handleCamera()
     statusstreamimg.value= false;
