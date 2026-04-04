@@ -97,21 +97,22 @@ namespace GotsThorlabs.NodesApi
 {
     public static class TourEndpoints
     {
+
         public static void MapTourEndpoints(this IEndpointRouteBuilder routes)
         {
-            routes.MapGet("/api/Tour", () =>
-            {
-                return Tour.GetTours();
-            })
-            .WithName("GetAllTour")
-            .Produces<Stitching[]>(StatusCodes.Status200OK);
+            //routes.MapGet("/api/Tour", () =>
+            //{
+            //    return Tour.GetTours();
+            //})
+            //.WithName("GetAllTour")
+            //.Produces<Stitching[]>(StatusCodes.Status200OK);
 
-            routes.MapGet("/api/Tour/{id}", (int id) =>
-            {
-                //return new Stitching { ID = id };
-            })
-            .WithName("GetTourById")
-            .Produces<Stitching>(StatusCodes.Status200OK);
+            //routes.MapGet("/api/Tour/{id}", (int id) =>
+            //{
+            //    //return new Stitching { ID = id };
+            //})
+            //.WithName("GetTourById")
+            //.Produces<Stitching>(StatusCodes.Status200OK);
 
         }
     }

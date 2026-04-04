@@ -40,6 +40,16 @@ public class ThorlabsDbContext : DbContext
             b.Property(x => x.NumberZ).HasColumnName("NumberZ").IsRequired();
             b.Property(x => x.Camera).HasColumnName("Camera").IsRequired();
             b.Property(x => x.EndStatus).HasColumnName("endStatus");
+
+            // Nuevo campo (FK) hacia picsCalibration
+            b.Property(x => x.PicsCalibrationId).HasColumnName("picsCalibrationId");
+
+            // Relación 1-1 opcional: Tour -> PicsCalibration (FK en Tour)
+            b.HasOne(x => x.PicsCalibration)
+             .WithOne(x => x.Tour)
+             .HasForeignKey<Tour>(x => x.PicsCalibrationId)
+             .OnDelete(DeleteBehavior.SetNull);
+
             b.HasMany(x => x.Images)
              .WithOne(x => x.Tour)
              .HasForeignKey(x => x.IdTour)

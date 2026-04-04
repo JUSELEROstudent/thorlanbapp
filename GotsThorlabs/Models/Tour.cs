@@ -16,20 +16,6 @@ namespace GotsThorlabs.Models
         public int? IdStitching { get; set; }
         public int? IdUser { get; set; }
 
-        //public Tour(int idTour, string date, string namefolder, int numberX, int numberY, int numberZ, string camera, string endStatus, int? idStitching, int? idUser)
-        //{
-        //    IdTour = idTour;
-        //    Date = date;
-        //    NameFolder = namefolder;
-        //    NumberX = numberX;
-        //    NumberY = numberY;
-        //    NumberZ = numberZ;
-        //    Camera = camera;
-        //    EndStatus = endStatus;
-        //    IdStitching = idStitching;
-        //    IdUser = idUser;
-        //}
-
         public override string ToString()
         {
             return $"Tour(IdTour={IdTour}, Date='{Date}', NumberX={NumberX}, NumberY={NumberY}, NumberZ={NumberZ}, Camera='{Camera}', EndStatus='{EndStatus}', IdStitching={IdStitching}, IdUser={IdUser})";

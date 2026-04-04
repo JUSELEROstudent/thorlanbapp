@@ -16,4 +16,7 @@ public class PicsCalibration
     public decimal MovementValue { get; set; }
 
     public GroupCalibration? GroupCalibration { get; set; }
+
+    // Relación 1-1 opcional con Tour (la FK vive en Tour)
+    public Tour? Tour { get; set; }
 }

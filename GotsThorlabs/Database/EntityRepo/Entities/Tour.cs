@@ -11,5 +11,9 @@ public class Tour
     public int Camera { get; set; }
     public string? EndStatus { get; set; }
 
+    // Nueva FK a picsCalibration
+    public Guid? PicsCalibrationId { get; set; }
+    public PicsCalibration? PicsCalibration { get; set; }
+
     public ICollection<Image> Images { get; set; } = new List<Image>();
 }

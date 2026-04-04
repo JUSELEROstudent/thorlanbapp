@@ -1,7 +1,8 @@
-﻿using Dapper;
-using GotsThorlabs.Interfaces;
-using GotsThorlabs.Services;
+﻿using GotsThorlabs.Interfaces;
+using GotsThorlabs.Database.EntityRepo;
+using GotsThorlabs.Database.EntityRepo.Entities;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using OpenCvSharp;
 using OpenCvSharp.Detail;
 using OpenCvSharp.Internal.Vectors;
@@ -13,7 +14,6 @@ using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using Thorlabs.MotionControl.DeviceManagerCLI;
 using Thorlabs.MotionControl.KCube.InertialMotorCLI;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace GotsThorlabs.BLL
 {
@@ -34,6 +34,9 @@ namespace GotsThorlabs.BLL
                     {4, InertialMotorStatus.MotorChannels.Channel4}
                 };
 
+        private readonly ThorlabsDbContext _db;
+        private int? _currentTourId;
+
         public int rows; //= i
         public int columns; // = j
         public int indexCam;
@@ -43,12 +46,13 @@ namespace GotsThorlabs.BLL
         public Mat[] finalimg;
         public Mat mosaic;// imagen general ya con el tamaño completo para la imagen final que laverga a todas las sub imagenes
 
-        public TakeTour(int IndexCam, int Rows, int Columns)
+        public TakeTour(int IndexCam, int Rows, int Columns, ThorlabsDbContext db)
         {
             rows = Rows;
             columns = Columns;
             indexCam = IndexCam;
             namefolder = Utilities.getTimeInString();
+            _db = db;
 
             int framewidth;
             int frameheight;
@@ -64,7 +68,7 @@ namespace GotsThorlabs.BLL
         }
 
        
-        public async IAsyncEnumerable<dynamic> Createmosaicstepbystep(int dimMove, string kimDeviceId)
+        public async IAsyncEnumerable<dynamic> Createmosaicstepbystep(int dimMove, string kimDeviceId,Guid picsCalibrationId)
         {
             var developerurl = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
             var listado = deviceslist();
@@ -117,7 +121,7 @@ namespace GotsThorlabs.BLL
             var rand = new Random();
             //string namefolder = Utilities.getTimeInString();
 
-            string fullnamefolder = CreateTour();
+            string fullnamefolder = CreateTour(picsCalibrationId);
 
             for (int j = 0; j < columns; j++)// posiblemente son las columnas 
             {
@@ -328,18 +332,32 @@ namespace GotsThorlabs.BLL
         /// </summary>
         /// <returns>retorna el nombre completo de la carpeta donde se va a guardar las imagenes </returns>
         /// <exception cref="NotImplementedException"></exception>
-        public string CreateTour()
+        public string CreateTour(Guid picsCalibrationId)
         {
             var currentPath = Directory.GetCurrentDirectory();
             string fullnamefolder = Path.Combine(currentPath, $"StaticFiles{Path.DirectorySeparatorChar}" + namefolder);
             bool status = Utilities.createFolder(fullnamefolder);
-            using (var queryable = ConnectionSqlite.CreateConnection())
+            //using (var queryable = ConnectionSqlite.CreateConnection())
+            //{
+            //    queryable.Open();
+            //    string createTour = @$"INSERT INTO tour ( date,nameFolder, NumberX, NumberY, NumberZ, Camera) VALUES 
+            //                        ( '{DateTime.Now.ToString()}', '{namefolder}', '{columns}', '{rows}', '0', '{indexCam}')";
+            //    var rowsAffected = queryable.Query(createTour);
+            //}
+
+            var tour = new Tour
             {
-                queryable.Open();
-                string createTour = @$"INSERT INTO tour ( date,nameFolder, NumberX, NumberY, NumberZ, Camera) VALUES 
-                                    ( '{DateTime.Now.ToString()}', '{namefolder}', '{columns}', '{rows}', '0', '{indexCam}')";
-                var rowsAffected = queryable.Query(createTour);
-            }
+                Date = DateTime.Now,
+                NameFolder = namefolder,
+                NumberX = columns,
+                NumberY = rows,
+                NumberZ = 0,
+                Camera = indexCam,
+                PicsCalibrationId = picsCalibrationId
+            };
+            _db.Tours.Add(tour);
+            _db.SaveChanges();
+            _currentTourId = tour.IdTour;
 
             return fullnamefolder;
 
@@ -347,11 +365,21 @@ namespace GotsThorlabs.BLL
 
         public void EndStatus(string statusOfTour)
         {
-            using (var queryable = ConnectionSqlite.CreateConnection())
+            //using (var queryable = ConnectionSqlite.CreateConnection())
+            //{
+            //    queryable.Open();
+            //    string createTour = @$"UPDATE tour SET endStatus='{statusOfTour}' WHERE nameFolder = '{namefolder}'";
+            //    var rowsAffected = queryable.Query(createTour);
+            //}
+
+            var tourToUpdate = _currentTourId.HasValue
+                ? _db.Tours.FirstOrDefault(x => x.IdTour == _currentTourId.Value)
+                : _db.Tours.FirstOrDefault(x => x.NameFolder == namefolder);
+
+            if (tourToUpdate != null)
             {
-                queryable.Open();
-                string createTour = @$"UPDATE tour SET endStatus='{statusOfTour}' WHERE nameFolder = '{namefolder}'";
-                var rowsAffected = queryable.Query(createTour);
+                tourToUpdate.EndStatus = statusOfTour;
+                _db.SaveChanges();
             }
             //throw new NotImplementedException();
         }
@@ -397,12 +425,32 @@ namespace GotsThorlabs.BLL
                 frame.SaveImage(pathsave);
             }
 
-            using (var queryable = ConnectionSqlite.CreateConnection())
+            //using (var queryable = ConnectionSqlite.CreateConnection())
+            //{
+            //    queryable.Open();
+            //    string createTour = @$"INSERT INTO image ( name ,gausianVal, path, X, Y, Z,idTour)
+            //                        SELECT '{nameimage}',{resultadolaplace}, '{namefolder}',{x},{y},0,idTour FROM tour WHERE nameFolder = '{namefolder}'";
+            //    var rowsAffected = queryable.Query(createTour);
+            //}
+
+            var resolvedTourId = _currentTourId ?? _db.Tours
+                .Where(x => x.NameFolder == namefolder)
+                .Select(x => (int?)x.IdTour)
+                .FirstOrDefault();
+
+            if (resolvedTourId.HasValue)
             {
-                queryable.Open();
-                string createTour = @$"INSERT INTO image ( name ,gausianVal, path, X, Y, Z,idTour)
-                                    SELECT '{nameimage}',{resultadolaplace}, '{namefolder}',{x},{y},0,idTour FROM tour WHERE nameFolder = '{namefolder}'";
-                var rowsAffected = queryable.Query(createTour);
+                _db.Images.Add(new GotsThorlabs.Database.EntityRepo.Entities.Image
+                {
+                    Name = nameimage,
+                    GausianVal = double.TryParse(resultadolaplace, out var blurValue) ? blurValue : null,
+                    Path = namefolder,
+                    X = x,
+                    Y = y,
+                    Z = 0,
+                    IdTour = resolvedTourId.Value
+                });
+                _db.SaveChanges();
             }
 
             return pathsave;

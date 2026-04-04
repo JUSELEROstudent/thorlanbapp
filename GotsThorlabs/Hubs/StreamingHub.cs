@@ -1,4 +1,5 @@
 ﻿using GotsThorlabs.BLL;
+using GotsThorlabs.Database.EntityRepo;
 using Microsoft.AspNetCore.SignalR;
 using OpenCvSharp;
 using System.Drawing;
@@ -72,15 +73,23 @@ namespace GotsThorlabs.Hubs
 
     public class UpdateStatus : Hub
     {
+        private readonly GotsThorlabs.Database.EntityRepo.ThorlabsDbContext _db;
+
+        public UpdateStatus(GotsThorlabs.Database.EntityRepo.ThorlabsDbContext db)
+        {
+            _db = db;
+        }
+
         public async IAsyncEnumerable<dynamic> Imgupdate(
           int indexcam,
           int rows,
           int columns,
+          Guid picsCalibrationId,
          [EnumeratorCancellation]
         CancellationToken cancellationToken)
         {
-            var controlmotor = new TakeTour(indexcam,rows, columns);
-            var processimgs = controlmotor.Createmosaicstepbystep( 2, "97000001");// el Id de la camara debe venir del front
+            var controlmotor = new TakeTour(indexcam, rows, columns, _db);
+            var processimgs = controlmotor.Createmosaicstepbystep( 2, "97000001", picsCalibrationId);// el Id de la camara debe venir del front
             await foreach (var url in processimgs)
             { 
                 yield return url;
