@@ -30,6 +30,13 @@ namespace GotsThorlabs.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("features");
 
+                    b.Property<string>("DriverType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT")
+                        .HasColumnName("driverType")
+                        .HasDefaultValue("generic");
+
                     b.Property<string>("LocalIdentifier")
                         .IsRequired()
                         .HasMaxLength(250)

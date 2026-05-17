@@ -6,6 +6,7 @@ public class Camera
     public string Name { get; set; } = default!;
     public string LocalIdentifier { get; set; } = default!;
     public string Features { get; set; } = default!;
+    public string DriverType { get; set; } = "generic";
 
     public ICollection<GroupCalibration> GroupCalibrations { get; set; } = new List<GroupCalibration>();
 }

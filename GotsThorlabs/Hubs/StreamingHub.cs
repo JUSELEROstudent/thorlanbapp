@@ -11,6 +11,12 @@ namespace GotsThorlabs.Hubs
 {
     public class StreamingHub : Hub
     {
+        private readonly GotsThorlabs.Interfaces.ICameraService _cameraService;
+
+        public StreamingHub(GotsThorlabs.Interfaces.ICameraService cameraService)
+        {
+            _cameraService = cameraService;
+        }
         public async IAsyncEnumerable<byte[]> Counter(
          int camera,
          int delay,
@@ -20,7 +26,6 @@ namespace GotsThorlabs.Hubs
             var idconection = Context.ConnectionAborted;
             Console.WriteLine(idconection);
             var acptationvalue = true;
-            using var capture = new VideoCapture(camera, VideoCaptureAPIs.DSHOW);
 
             int maxCameraIndex = 10; // Puedes ajustar esto según tus necesidades
             // cancelado porque lo que se hace a continuacion se hace en camaras directamente
@@ -40,20 +45,16 @@ namespace GotsThorlabs.Hubs
             //for (var i = 0; i < count; i++)
             while (acptationvalue)
             {
-                
-                if (!capture.IsOpened()) {
+                // capture via camera service
+                using var image = _cameraService?.CaptureFrame(camera) ?? new Mat();
+
+                // if capture failed or returned empty frame, stop streaming
+                if (image.Empty())
+                {
                     acptationvalue = false;
-                    capture.FrameWidth = 1920;
-                    capture.FrameHeight = 1080;
-                    capture.AutoFocus = true;
-
-                    const int sleepTime = 10;
+                    await Task.Delay(10);
+                    continue;
                 }
-
-                //using var window = new Window("capture");
-                var image = new Mat();
-
-                capture.Read(image);
                 //El proceso de guardado queda deshabilitado por el momento
                 //string pathsave = string.Format("{0}\\camtaked.jpg", AppDomain.CurrentDomain.BaseDirectory);
                 //image.SaveImage(pathsave);
@@ -74,23 +75,34 @@ namespace GotsThorlabs.Hubs
     public class UpdateStatus : Hub
     {
         private readonly GotsThorlabs.Database.EntityRepo.ThorlabsDbContext _db;
+        private readonly GotsThorlabs.Interfaces.ICameraService _cameraService;
 
-        public UpdateStatus(GotsThorlabs.Database.EntityRepo.ThorlabsDbContext db)
+        public UpdateStatus(GotsThorlabs.Database.EntityRepo.ThorlabsDbContext db, GotsThorlabs.Interfaces.ICameraService cameraService)
         {
             _db = db;
+            _cameraService = cameraService;
         }
-
+        /// <summary>
+        /// creacion de tour basado en el dispositivo thorlabs conectado y la groupcalibration que este valido 
+        /// </summary>
+        /// <param name="indexcam">no se usa esta camara ahora se usa el de grupo de calibracion </param>
+        /// <param name="rows">cantidad de filas pra la creacion del mapeo </param>
+        /// <param name="columns">cantidad de columnas para el mapeo </param>
+        /// <param name="groupCalibrationId"> calibracion grupo que se quiere usar </param>
+        /// <param name="device">dispositivo que se quire usar </param>
+        /// <param name="cancellationToken">token de cancelacion de la tarea </param>
+        /// <returns></returns>
         public async IAsyncEnumerable<dynamic> Imgupdate(
           int indexcam,
           int rows,
           int columns,
-          Guid picsCalibrationId,
+          Guid groupCalibrationId,
           string device,
          [EnumeratorCancellation]
         CancellationToken cancellationToken)
         {
-            var controlmotor = new TakeTour(indexcam, rows, columns, _db);
-            var processimgs = controlmotor.Createmosaicstepbystep( 2, device.Trim(), picsCalibrationId);// el Id de la camara debe venir del front
+            var controlmotor = new TakeTour(indexcam, rows, columns, _db, _cameraService);
+            var processimgs = controlmotor.Createmosaicstepbystep( 2, device.Trim(), groupCalibrationId);// el Id de la camara debe venir del front
             await foreach (var url in processimgs)
             { 
                 yield return url;

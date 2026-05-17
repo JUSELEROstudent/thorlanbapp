@@ -40,6 +40,8 @@ namespace GotsThorlabs.Controls
         {
             if (camera is null) return BadRequest();
 
+            camera.DriverType = string.IsNullOrWhiteSpace(camera.DriverType) ? "generic" : camera.DriverType.Trim().ToLowerInvariant();
+
             if (camera.CameraId == Guid.Empty)
             {
                 camera.CameraId = Guid.NewGuid();
@@ -70,6 +72,7 @@ namespace GotsThorlabs.Controls
             existing.Name = update.Name;
             existing.LocalIdentifier = update.LocalIdentifier;
             existing.Features = update.Features;
+            existing.DriverType = string.IsNullOrWhiteSpace(update.DriverType) ? "generic" : update.DriverType.Trim().ToLowerInvariant();
 
             await _db.SaveChangesAsync(ct);
             return NoContent();

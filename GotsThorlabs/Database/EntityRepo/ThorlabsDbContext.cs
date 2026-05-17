@@ -79,6 +79,7 @@ public class ThorlabsDbContext : DbContext
             b.Property(x => x.Name).HasColumnName("name").IsRequired().HasMaxLength(50);
             b.Property(x => x.LocalIdentifier).HasColumnName("localIdentifier").IsRequired().HasMaxLength(250);
             b.Property(x => x.Features).HasColumnName("features").IsRequired().HasMaxLength(250);
+            b.Property(x => x.DriverType).HasColumnName("driverType").IsRequired().HasMaxLength(50).HasDefaultValue("generic");
         });
 
         // Microscope

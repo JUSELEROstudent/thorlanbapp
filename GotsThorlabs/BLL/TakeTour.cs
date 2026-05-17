@@ -35,6 +35,7 @@ namespace GotsThorlabs.BLL
                 };
 
         private readonly ThorlabsDbContext _db;
+        private readonly GotsThorlabs.Interfaces.ICameraService _cameraService;
         private int? _currentTourId;
 
         public int rows; //= i
@@ -46,29 +47,37 @@ namespace GotsThorlabs.BLL
         public Mat[] finalimg;
         public Mat mosaic;// imagen general ya con el tamaño completo para la imagen final que laverga a todas las sub imagenes
 
-        public TakeTour(int IndexCam, int Rows, int Columns, ThorlabsDbContext db)
+        public TakeTour(int IndexCam, int Rows, int Columns, ThorlabsDbContext db, GotsThorlabs.Interfaces.ICameraService cameraService)
         {
             rows = Rows;
             columns = Columns;
             indexCam = IndexCam;
             namefolder = Utilities.getTimeInString();
             _db = db;
+            _cameraService = cameraService;
 
             int framewidth;
             int frameheight;
 
-            using (var capture = new VideoCapture(indexCam, VideoCaptureAPIs.DSHOW))
+            // try to obtain frame size using camera service; fallback to defaults
+            try
             {
-                frameheight = capture.FrameHeight;
-                framewidth = capture.FrameWidth;
-            };
+                using var frame = _cameraService?.CaptureFrame(indexCam);
+                frameheight = frame?.Rows ?? 1080;
+                framewidth = frame?.Cols ?? 1920;
+            }
+            catch
+            {
+                frameheight = 1080;
+                framewidth = 1920;
+            }
             mosaic = new Mat(rows * frameheight, columns * framewidth, MatType.CV_8UC3);//mosaico final
             image = new Mat[rows];
             finalimg = new Mat[columns];
         }
 
        
-        public async IAsyncEnumerable<dynamic> Createmosaicstepbystep(int dimMove, string kimDeviceId,Guid picsCalibrationId)
+        public async IAsyncEnumerable<dynamic> Createmosaicstepbystep(int dimMove, string kimDeviceId,Guid groupCalibrationId)
         {
             var developerurl = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
             var listado = deviceslist();
@@ -119,9 +128,17 @@ namespace GotsThorlabs.BLL
 
             Decimal newPos = deviceconnect.GetPosition(InertialMotorStatus.MotorChannels.Channel1);
             var rand = new Random();
-            //string namefolder = Utilities.getTimeInString();
+            
+            //seccion validacion de groupcalibration 
+            var allCalibrations = _db.PicsCalibrations.AsNoTracking().Where(x => x.GroupCailbrationId == groupCalibrationId).ToList();
+            var mostAcurateCalibration = allCalibrations.OrderBy(item => Math.Abs(item.dx)).ThenBy(item2 => Math.Abs(item2.dy)).FirstOrDefault();
+            if (mostAcurateCalibration == null)
+            {
+                throw new Exception("No se encontró una calibración válida para el tour.");
+            }
+            //fin validacion groupcalibration 
 
-            string fullnamefolder = CreateTour(picsCalibrationId);
+            string fullnamefolder = CreateTour(mostAcurateCalibration.PicsCalibrationId);
 
             for (int j = 0; j < columns; j++)// posiblemente son las columnas 
             {
@@ -337,6 +354,8 @@ namespace GotsThorlabs.BLL
             var currentPath = Directory.GetCurrentDirectory();
             string fullnamefolder = Path.Combine(currentPath, $"StaticFiles{Path.DirectorySeparatorChar}" + namefolder);
             bool status = Utilities.createFolder(fullnamefolder);
+
+            //var allCalibrations = _db.GroupCalibrations.AsNoTracking().ToList();
             //using (var queryable = ConnectionSqlite.
             //CreateConnection())
             //{
@@ -354,7 +373,7 @@ namespace GotsThorlabs.BLL
                 NumberY = rows,
                 NumberZ = 0,
                 Camera = indexCam,
-                PicsCalibrationId = picsCalibrationId
+                PicsCalibrationId = picsCalibrationId,
             };
             _db.Tours.Add(tour);
             _db.SaveChanges();
@@ -392,23 +411,15 @@ namespace GotsThorlabs.BLL
             string resultadolaplace;
             string nameimage;
 
-            using (var capture = new VideoCapture(indexCam, VideoCaptureAPIs.DSHOW))///migrar a tomar imagen
+            // capture frame via injected camera service
+            using (var captured = _cameraService?.CaptureFrame(indexCam))
             {
-                var frameheight = capture.FrameHeight;
-                var framewidth = capture.FrameWidth;
+                var frameheight = captured?.Rows ?? 1080;
+                var framewidth = captured?.Cols ?? 1920;
                 Mat mosaic = new Mat(rows * frameheight, columns * framewidth, MatType.CV_8UC3);
 
-                if (!capture.IsOpened())
-                {
-
-                    capture.FrameWidth = 1920;
-                    capture.FrameHeight = 1080;
-                    capture.AutoFocus = true;
-
-                    const int sleepTime = 10;
-                }
-                capture.Read(frame);
-                var copyofFrame = frame;
+                var copyofFrame = captured ?? new Mat();
+                frame = copyofFrame;
                 image[y] = frame;
                 // se hcae el calculo de la place para el estado del blur 
                 Mat grayresult = new Mat();

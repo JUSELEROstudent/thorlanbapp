@@ -22,6 +22,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddCors();
 builder.Services.AddSignalR();
+// Register default camera service
+builder.Services.AddSingleton<GotsThorlabs.Interfaces.ICameraService, GotsThorlabs.Services.VideoCaptureCameraService>();
 builder.Services.AddAuthentication(options =>
 {
     // El sistema de autenticacion de esta forma definido solo fuciona para la minimal api. cuando se desea hacer para la forma de webApi controlladores es mejor hacerlo de otra forma
@@ -85,7 +87,7 @@ if (app.Environment.IsDevelopment())
 app.MapGet("/security/getMessageSecure", () => "Hello World!").RequireAuthorization(); //.RequireAuthorization("administrator"); esta parte es para agregar politicas no es necesario por ahora
 app.MapGet("/security/getMessage2", () => "Hello World!");
 app.UseHttpsRedirection();
-SimulationManager.Instance.InitializeSimulations();
+//SimulationManager.Instance.InitializeSimulations();
 
 var variableapinode = new NodeGenerics(app);
 var loginloginnodes = new NodeLogin(app);
