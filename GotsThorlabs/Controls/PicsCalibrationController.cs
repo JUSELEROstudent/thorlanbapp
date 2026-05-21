@@ -14,11 +14,14 @@ namespace GotsThorlabs.Controls
     {
         private readonly ThorlabsDbContext _db;
         private readonly IWebHostEnvironment _env;
+        private readonly string _imagesBasePath;
 
-        public PicsCalibrationController(ThorlabsDbContext db, IWebHostEnvironment env)
+        public PicsCalibrationController(ThorlabsDbContext db, IWebHostEnvironment env, IConfiguration configuration)
         {
             _db = db;
             _env = env;
+            _imagesBasePath = configuration["CalibrationImagesPath"]
+                ?? Path.Combine(env.ContentRootPath, "StaticFiles", "pics-calibrations");
         }
 
         // GET: api/PicsCalibration
@@ -38,18 +41,47 @@ namespace GotsThorlabs.Controls
             return Ok(pic);
         }
 
-        // POST: api/PicsCalibration (JSON)
+        // POST: api/PicsCalibration (multipart/form-data con imágenes)
         [HttpPost]
-        public async Task<ActionResult<PicsCalibration>> CreateAsync([FromBody] PicsCalibration pic, CancellationToken ct)
+        [RequestSizeLimit(50_000_000)] // 50 MB
+        public async Task<ActionResult<PicsCalibration>> CreateAsync([FromForm] PicsCalibrationUploadDTO dto, CancellationToken ct)
         {
-            if (pic is null) return BadRequest();
+            if (dto is null) return BadRequest();
+            if (dto.Pic1File is null || dto.Pic2File is null)
+                return BadRequest("Debe enviar Pic1File y Pic2File.");
 
-            if (pic.PicsCalibrationId == Guid.Empty)
+            var id = Guid.NewGuid();
+            var recordDir = Path.Combine(_imagesBasePath, id.ToString());
+            Directory.CreateDirectory(recordDir);
+
+            string SaveFile(IFormFile f, string name)
             {
-                pic.PicsCalibrationId = Guid.NewGuid();
+                var ext = Path.GetExtension(f.FileName);
+                var fullPath = Path.Combine(recordDir, name + ext);
+                using var stream = System.IO.File.Create(fullPath);
+                f.CopyTo(stream);
+                return fullPath;
             }
 
-            _db.PicsCalibrations.Add(pic);
+            var pic1Path = SaveFile(dto.Pic1File, "pic1");
+            var pic2Path = SaveFile(dto.Pic2File, "pic2");
+
+            var entity = new PicsCalibration
+            {
+                PicsCalibrationId = id,
+                GroupCailbrationId = dto.GroupCailbrationId,
+                Pic1 = pic1Path,
+                Pic2 = pic2Path,
+                AxeDirectionCalibration = dto.AxeDirectionCalibration,
+                Acepted = dto.Acepted,
+                dx = dto.dx,
+                dy = dto.dy,
+                Confidence = dto.Confidence,
+                MeasureUnit = dto.MeasureUnit,
+                MovementValue = dto.MovementValue
+            };
+
+            _db.PicsCalibrations.Add(entity);
             try
             {
                 await _db.SaveChangesAsync(ct);
@@ -59,7 +91,7 @@ namespace GotsThorlabs.Controls
                 return Conflict("No se puede crear la calibración por grupo inválido u otras restricciones.");
             }
 
-            return CreatedAtAction(nameof(GetByIdAsync), new { id = pic.PicsCalibrationId }, pic);
+            return Ok(entity);
         }
 
         // POST: api/PicsCalibration/upload (multipart/form-data)
@@ -70,13 +102,9 @@ namespace GotsThorlabs.Controls
             if (dto is null || dto.Pic1File is null || dto.Pic2File is null)
                 return BadRequest("Debe enviar Pic1File y Pic2File");
 
-            // Ruta física donde se guardarán las imágenes
-            var staticRoot = Path.Combine(_env.ContentRootPath, "StaticFiles", "pics-calibrations");
-            Directory.CreateDirectory(staticRoot);
-
-            // Nombre único para la carpeta del registro
+            // Ruta física donde se guardarán las imágenes (configurada en appsettings.json)
             var id = Guid.NewGuid();
-            var recordDir = Path.Combine(staticRoot, id.ToString());
+            var recordDir = Path.Combine(_imagesBasePath, id.ToString());
             Directory.CreateDirectory(recordDir);
 
             // Guardar archivos

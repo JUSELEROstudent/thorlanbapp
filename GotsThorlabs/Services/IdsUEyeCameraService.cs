@@ -121,6 +121,12 @@ namespace GotsThorlabs.Services
                 // Apply the selected profile before auto-exposure convergence.
                 ApplyProfile(camera);
 
+                // Always ensure freerun mode (TriggerMode.Off) regardless of what the profile loaded.
+                // In freerun the camera captures continuously and Freeze() takes the next ready frame.
+                // If a trigger mode is active, Freeze() would block indefinitely waiting for an external signal.
+                camera.Trigger.Set(TriggerMode.Off);
+                Console.WriteLine("[IdsUEye] Trigger set to Off (freerun)");
+
                 // Enable auto-shutter + auto-gain
                 // Then feed frames until the image is no longer overexposed, then lock the values.
                 ApplyAutoExposure(camera);
@@ -170,7 +176,7 @@ namespace GotsThorlabs.Services
 
                 // DEBUG: save both the raw uEye bytes and the resulting OpenCV Mat for visual comparison.
                 // TODO: remove this block once color/capture issues are resolved.
-                SaveDebugFrames(bufPtr, width, height, pitch, mat);
+                ////////////SaveDebugFrames(bufPtr, width, height, pitch, mat);//descomentar cuandose quiera ver la imagen en ambios casos cv y peak
 
                 return mat;
             }

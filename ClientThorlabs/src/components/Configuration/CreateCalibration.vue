@@ -607,7 +607,7 @@ const savePicCalibration = async (groupId: string) => {
     formData.append('Pic1File', dataUrlToFile(selectedPair.images[0], 'pic1.png'))
     formData.append('Pic2File', dataUrlToFile(selectedPair.images[1], 'pic2.png'))
 
-    const response = await $fetch(`${config.public.apiUrl}/api/PicsCalibration/upload`, {
+    const response = await $fetch(`${config.public.apiUrl}/api/PicsCalibration`, {
       method: 'POST',
       body: formData
     })
