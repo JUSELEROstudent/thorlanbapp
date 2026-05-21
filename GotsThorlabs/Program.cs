@@ -26,6 +26,7 @@ builder.Services.AddSignalR();
 // CameraServiceFactory selects the right one at runtime by driverType string.
 builder.Services.AddSingleton<GotsThorlabs.Services.VideoCaptureCameraService>();
 builder.Services.AddSingleton<GotsThorlabs.Services.IdsPeakCameraService>();
+builder.Services.AddSingleton<GotsThorlabs.Services.IdsUEyeCameraService>();
 builder.Services.AddSingleton<GotsThorlabs.Services.CameraServiceFactory>();
 // Default ICameraService resolves to the factory's generic driver.
 builder.Services.AddSingleton<GotsThorlabs.Interfaces.ICameraService>(sp =>

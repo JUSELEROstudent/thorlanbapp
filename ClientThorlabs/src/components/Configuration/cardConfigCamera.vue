@@ -93,6 +93,7 @@
               <option value="" disabled>Seleccione un driver</option>
               <option value="generic">generic</option>
               <option value="ids_peak_dotnet">ids_peak_dotnet</option>
+              <option value="ids_ueye">ids_ueye</option>
             </select>
           </div>
         </div>
@@ -358,7 +359,7 @@ const saveNewRecord = async () => {
       Name: newRecord.value.name.trim(),
       LocalIdentifier: newRecord.value.localIdentifier.trim(),
       Features: newRecord.value.features.trim(),
-      DriverType: newRecord.value.driverType.trim()
+      DriverType: newRecord.value.driverType.trim() 
     }
 
     // Realizar petición al endpoint

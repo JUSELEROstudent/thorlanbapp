@@ -1,6 +1,7 @@
 using IDSImaging.Peak.API;
 using IDSImaging.Peak.API.Core;
 using IDSImaging.Peak.API.Core.Nodes;
+using IDSImaging.Peak.IPL;
 using GotsThorlabs.Interfaces;
 using GotsThorlabs.Models;
 using OpenCvSharp;
@@ -43,7 +44,7 @@ namespace GotsThorlabs.Services
             {
                 if (!_libraryInitialized)
                 {
-                    Library.Initialize();
+                    IDSImaging.Peak.API.Library.Initialize();
                     _libraryInitialized = true;
                 }
             }
@@ -146,99 +147,86 @@ namespace GotsThorlabs.Services
             remoteNodemap.FindNode<CommandNode>("AcquisitionStart").Execute();
             remoteNodemap.FindNode<CommandNode>("AcquisitionStart").WaitUntilDone();
 
+            // Discard warm-up frames so auto-exposure/auto-white-balance can settle
+            // before the real capture. 3 frames is enough for most IDS sensors.
+            const int warmUpFrames = 3;
+            for (int w = 0; w < warmUpFrames; w++)
+            {
+                try
+                {
+                    using var warmBuf = dataStream.WaitForFinishedBuffer(2000);
+                    dataStream.QueueBuffer(warmBuf);
+                }
+                catch { break; }
+            }
+
             Mat result = new Mat();
             try
             {
-                using var buffer = dataStream.WaitForFinishedBuffer(3000);
+                // Retry up to 3 times to get a complete (non-corrupted) buffer.
+                IDSImaging.Peak.API.Core.Buffer? buffer = null;
+                const int maxRetries = 3;
+                for (int attempt = 0; attempt < maxRetries; attempt++)
+                {
+                    var candidate = dataStream.WaitForFinishedBuffer(3000);
+                    if (!candidate.IsIncomplete())
+                    {
+                        buffer = candidate;
+                        break;
+                    }
+                    Console.WriteLine($"[IdsPeakCamera] Incomplete buffer on attempt {attempt + 1}, retrying...");
+                    dataStream.QueueBuffer(candidate);
+                }
 
-                // Convert raw buffer to OpenCV Mat (BGR)
+                if (buffer == null)
+                {
+                    Console.WriteLine("[IdsPeakCamera] Could not acquire a complete buffer after retries.");
+                    return result;
+                }
+
+                using var _ = buffer;
+
                 int width = (int)buffer.Width();
                 int height = (int)buffer.Height();
 
-                // Read actual pixel format from device to choose the correct conversion.
-                string pixelFormat = string.Empty;
+                // Read pixel format reported by the buffer (reflects device active format).
+                string pixelFormatName = string.Empty;
                 try
                 {
-                    pixelFormat = remoteNodemap.FindNode<EnumerationNode>("PixelFormat").CurrentEntry().SymbolicValue();
-                    Console.WriteLine($"[IdsPeakCamera] PixelFormat={pixelFormat} width={width} height={height} payloadSize={payloadSize}");
+                    pixelFormatName = remoteNodemap.FindNode<EnumerationNode>("PixelFormat").CurrentEntry().SymbolicValue();
+                    Console.WriteLine($"[IdsPeakCamera] PixelFormat={pixelFormatName} width={width} height={height} payloadSize={payloadSize}");
                 }
-                catch (Exception ex) { Console.WriteLine($"[IdsPeakCamera] Could not read PixelFormat: {ex.Message}"); }
-
-                // PayloadSize reflects the actual bytes from the camera.
-                int rawSize = (int)payloadSize;
-                byte[] rawData = new byte[rawSize];
-                Marshal.Copy(buffer.BasePtr(), rawData, 0, rawData.Length);
-
-                int totalPixels = width * height;
-                int bytesPerPixel = totalPixels > 0 ? rawSize / totalPixels : 0;
-
-                // Map GenICam/IDS PixelFormat names to OpenCV conversion codes.
-                // IDS cameras can report names like "BayerRG8", "Bayer RG 8", "bayer_rg8", etc.
-                // We normalize by removing spaces/underscores before matching.
-                var bayerConversionMap = new Dictionary<string, ColorConversionCodes>(StringComparer.OrdinalIgnoreCase)
+                catch (Exception ex)
                 {
-                    { "BayerRG8",  ColorConversionCodes.BayerRG2BGR },
-                    { "BayerBG8",  ColorConversionCodes.BayerBG2BGR },
-                    { "BayerGR8",  ColorConversionCodes.BayerGR2BGR },
-                    { "BayerGB8",  ColorConversionCodes.BayerGB2BGR },
-                    // Alternative spellings seen in IDS SDK versions
-                    { "bayer_rg8", ColorConversionCodes.BayerRG2BGR },
-                    { "bayer_bg8", ColorConversionCodes.BayerBG2BGR },
-                    { "bayer_gr8", ColorConversionCodes.BayerGR2BGR },
-                    { "bayer_gb8", ColorConversionCodes.BayerGB2BGR },
-                };
-
-                // Normalize: remove spaces and underscores for flexible matching
-                string pixelFormatNorm = pixelFormat.Replace(" ", "").Replace("_", "");
-
-                if (!string.IsNullOrEmpty(pixelFormat) &&
-                    (pixelFormatNorm.Equals("BGR8", StringComparison.OrdinalIgnoreCase) ||
-                     pixelFormatNorm.Equals("RGB8", StringComparison.OrdinalIgnoreCase)))
-                {
-                    // 3-channel packed: copy raw bytes then fix channel order if RGB.
-                    result = new Mat(height, width, MatType.CV_8UC3);
-                    Marshal.Copy(rawData, 0, result.Data, rawData.Length);
-                    if (pixelFormatNorm.Equals("RGB8", StringComparison.OrdinalIgnoreCase))
-                        Cv2.CvtColor(result, result, ColorConversionCodes.RGB2BGR);
-                }
-                else if (!string.IsNullOrEmpty(pixelFormat) &&
-                         bayerConversionMap.TryGetValue(pixelFormatNorm, out var bayerCode))
-                {
-                    // Bayer raw: demosaic using the correct pattern reported by the device.
-                    using var rawMat = new Mat(height, width, MatType.CV_8UC1);
-                    Marshal.Copy(rawData, 0, rawMat.Data, rawData.Length);
-                    result = new Mat(height, width, MatType.CV_8UC3);
-                    Cv2.CvtColor(rawMat, result, bayerCode);
-                }
-                else if (!string.IsNullOrEmpty(pixelFormat) &&
-                         pixelFormatNorm.StartsWith("Mono", StringComparison.OrdinalIgnoreCase))
-                {
-                    // Monochrome: expand to 3-channel for consistency.
-                    using var rawMat = new Mat(height, width, MatType.CV_8UC1);
-                    Marshal.Copy(rawData, 0, rawMat.Data, rawData.Length);
-                    result = new Mat(height, width, MatType.CV_8UC3);
-                    Cv2.CvtColor(rawMat, result, ColorConversionCodes.GRAY2BGR);
-                }
-                else if (bytesPerPixel == 3)
-                {
-                    // Heuristic fallback: 3 bytes/pixel — assume BGR8 packed.
-                    result = new Mat(height, width, MatType.CV_8UC3);
-                    Marshal.Copy(rawData, 0, result.Data, rawData.Length);
-                }
-                else if (bytesPerPixel == 1)
-                {
-                    // Heuristic fallback: 1 byte/pixel — assume BayerRG8 (most common IDS sensor pattern).
-                    using var rawMat = new Mat(height, width, MatType.CV_8UC1);
-                    Marshal.Copy(rawData, 0, rawMat.Data, rawData.Length);
-                    result = new Mat(height, width, MatType.CV_8UC3);
-                    Cv2.CvtColor(rawMat, result, ColorConversionCodes.BayerRG2BGR);
-                }
-                else
-                {
-                    result = new Mat();
+                    Console.WriteLine($"[IdsPeakCamera] Could not read PixelFormat: {ex.Message}");
                 }
 
-                dataStream.QueueBuffer(buffer);
+                // Build an IPL Image directly from the raw buffer pointer — same path used by the vendor application.
+                // IPL handles Bayer demosaicing and color correction internally, producing identical results to
+                // the IDS cockpit / IDS peak viewer.
+                var iplPixelFormat = new IDSImaging.Peak.IPL.PixelFormat(
+                    Enum.TryParse<PixelFormatName>(pixelFormatName, out var pfn)
+                        ? pfn
+                        : PixelFormatName.BayerRG8);
+
+                using var iplImage = new IDSImaging.Peak.IPL.Image(
+                    iplPixelFormat,
+                    buffer.BasePtr(),
+                    (uint)payloadSize,
+                    (uint)width,
+                    (uint)height);
+
+                // Convert to BGR8 (OpenCV native order) using IPL's built-in high-quality debayering.
+                var bgrFormat = new IDSImaging.Peak.IPL.PixelFormat(PixelFormatName.BGR8);
+                using var bgrImage = iplImage.ConvertTo(bgrFormat);
+
+                // Copy IPL BGR8 result into an OpenCV Mat.
+                int bgrSize = width * height * 3;
+                result = new Mat(height, width, MatType.CV_8UC3);
+                unsafe
+                {
+                    System.Buffer.MemoryCopy(bgrImage.Data().ToPointer(), result.Data.ToPointer(), bgrSize, bgrSize);
+                }
             }
             finally
             {
@@ -311,7 +299,7 @@ namespace GotsThorlabs.Services
             {
                 if (_libraryInitialized)
                 {
-                    Library.Close();
+                    IDSImaging.Peak.API.Library.Close();
                     _libraryInitialized = false;
                 }
             }

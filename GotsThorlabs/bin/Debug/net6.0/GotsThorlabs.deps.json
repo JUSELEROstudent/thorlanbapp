@@ -33,7 +33,8 @@
           "Thorlabs.MotionControl.GenericMotorCLI": "1.14.35.20468",
           "Thorlabs.MotionControl.KCube.InertialMotorCLI": "1.14.35.20468",
           "Thorlabs.MotionControl.Tools.Common": "1.0.0.20468",
-          "Thorlabs.MotionControl.Tools.Logging": "1.0.0.20468"
+          "Thorlabs.MotionControl.Tools.Logging": "1.0.0.20468",
+          "uEyeDotNet": "2.0.1.0"
         },
         "runtime": {
           "GotsThorlabs.dll": {}
@@ -2704,6 +2705,14 @@
           }
         }
       },
+      "uEyeDotNet/2.0.1.0": {
+        "runtime": {
+          "uEyeDotNet.dll": {
+            "assemblyVersion": "2.0.1.0",
+            "fileVersion": "2.0.1.0"
+          }
+        }
+      },
       "Thorlabs.MotionControl.PrivateInternal/1.14.35.20468": {
         "runtime": {
           "Thorlabs.MotionControl.PrivateInternal.dll": {
@@ -3880,6 +3889,11 @@
       "sha512": ""
     },
     "Thorlabs.MotionControl.Tools.Logging/1.0.0.20468": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "uEyeDotNet/2.0.1.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""

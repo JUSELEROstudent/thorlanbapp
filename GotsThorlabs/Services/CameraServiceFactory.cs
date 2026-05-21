@@ -16,18 +16,23 @@ namespace GotsThorlabs.Services
 
         public CameraServiceFactory(
             VideoCaptureCameraService genericService,
-            IdsPeakCameraService idsPeakService)
+            IdsPeakCameraService idsPeakService,
+            IdsUEyeCameraService idsUEyeService)
         {
             _services = new Dictionary<string, ICameraService>(StringComparer.OrdinalIgnoreCase)
             {
                 ["generic"]         = genericService,
                 ["ids_peak_dotnet"] = idsPeakService,
+                // Classic uEye USB/GigE cameras via the installed uEyeDotNet.dll driver.
+                // Change DriverType to "ids_ueye" in the DB camera record to activate.
+                ["ids_ueye"]        = idsUEyeService,
             };
 
             _discoveryServices = new Dictionary<string, ICameraDiscoveryService>(StringComparer.OrdinalIgnoreCase)
             {
                 ["generic"]         = genericService,
                 ["ids_peak_dotnet"] = idsPeakService,
+                ["ids_ueye"]        = idsUEyeService,
             };
         }
 

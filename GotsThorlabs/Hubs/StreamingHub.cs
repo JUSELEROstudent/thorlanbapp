@@ -26,6 +26,7 @@ namespace GotsThorlabs.Hubs
         /// Live preview stream.
         /// cameraName: name of the camera record in DB — used to resolve the correct driver.
         ///             Falls back to "generic" if no record is found.
+        /// Stream stays alive until the client disconnects or cancellationToken is triggered.
         /// </summary>
         public async IAsyncEnumerable<byte[]> Counter(
          int camera,
@@ -34,56 +35,68 @@ namespace GotsThorlabs.Hubs
          [EnumeratorCancellation]
         CancellationToken cancellationToken)
         {
-            var idconection = Context.ConnectionAborted;
-            Console.WriteLine(idconection + "----here is"); 
+            // Combine client cancellation with connection abort so the loop stops
+            // automatically when the SignalR connection drops.
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
+                cancellationToken, Context.ConnectionAborted);
+            var token = linkedCts.Token;
 
-            // Provisional: resolve driver from DB camera record by name.
-            // TODO: replace with a more robust selection mechanism.
+            // Resolve driver and localIdentifier from DB once before the loop.
             var driverType = "generic";
+            var localIdentifier = camera.ToString();
+
             if (!string.IsNullOrWhiteSpace(cameraName))
             {
                 var cameraRecord = await _db.Cameras
                     .AsNoTracking()
                     .FirstOrDefaultAsync(c => c.Name.ToLower() == cameraName.Trim().ToLower());
+
                 if (cameraRecord != null)
+                {
                     driverType = cameraRecord.DriverType;
+                    if (!string.IsNullOrWhiteSpace(cameraRecord.LocalIdentifier))
+                        localIdentifier = cameraRecord.LocalIdentifier;
+                }
             }
 
             var cameraService = _cameraFactory.GetService(driverType);
 
-            // Resolve the device's LocalIdentifier from the DB record.
-            // Falls back to the raw camera int as string for generic drivers.
-            var localIdentifier = camera.ToString();
-            if (!string.IsNullOrWhiteSpace(cameraName))
+            Console.WriteLine($"[StreamingHub] Stream started — camera={cameraName ?? localIdentifier} driver={driverType}");
+
+            // Loop runs until client cancels, connection drops, or camera switch.
+            // A failed/empty frame is skipped with a short backoff; it does NOT stop the stream.
+            while (!token.IsCancellationRequested)
             {
-                var record = await _db.Cameras
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(c => c.Name.ToLower() == cameraName.Trim().ToLower());
-                if (record != null && !string.IsNullOrWhiteSpace(record.LocalIdentifier))
-                    localIdentifier = record.LocalIdentifier;
-            }
-
-            var acptationvalue = true;
-
-            while (acptationvalue)
-            {
-                // capture via selected camera service (blocking per device)
-                using var image = cameraService.CaptureFrame(localIdentifier) ?? new Mat();
-
-                if (image.Empty())
+                byte[]? frameBytes = null;
+                try
                 {
-                    acptationvalue = false;
-                    await Task.Delay(10);
-                    continue;
+                    using var image = cameraService.CaptureFrame(localIdentifier) ?? new Mat();
+
+                    if (!image.Empty())
+                        frameBytes = image.ToBytes();
                 }
-                var imgretonr = image.ToBytes();
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[StreamingHub] Frame capture error: {ex.Message} — retrying...");
+                }
 
-                cancellationToken.ThrowIfCancellationRequested();
-
-                yield return imgretonr;
-
-                await Task.Delay(delay);
+                if (frameBytes != null)
+                {
+                    yield return frameBytes;
+                    await Task.Delay(delay, token).ConfigureAwait(false);
+                }
+                else
+                {
+                    // Short back-off on empty/failed frame — keeps stream alive.
+                    await Task.Delay(100, token).ConfigureAwait(false);
+                }
             }
+
+            Console.WriteLine($"[StreamingHub] Stream stopped — camera={cameraName ?? localIdentifier}");
         }
     }
 
