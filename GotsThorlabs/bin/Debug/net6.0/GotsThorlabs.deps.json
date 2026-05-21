@@ -11,6 +11,8 @@
           "AForge.Video.DirectShow": "2.2.5",
           "Dapper": "2.1.28",
           "Emgu.CV.runtime.windows": "4.7.0.5276",
+          "IDSImaging.Peak.API": "1.15.0.4",
+          "IDSImaging.Peak.IPL": "1.17.2.4",
           "Microsoft.AspNetCore.Authentication.JwtBearer": "6.0.12",
           "Microsoft.AspNetCore.SignalR.Common": "7.0.1",
           "Microsoft.Data.SqlClient.SNI.runtime": "5.0.1",
@@ -782,6 +784,342 @@
         "resources": {
           "lib/net6.0/zh-Hant/Humanizer.resources.dll": {
             "locale": "zh-Hant"
+          }
+        }
+      },
+      "IDSImaging.Peak.API/1.15.0.4": {
+        "dependencies": {
+          "IDSImaging.Peak.Common": "1.3.0.1"
+        },
+        "runtime": {
+          "lib/netstandard2.0/IDSImaging.Peak.API.IPLExtension.dll": {
+            "assemblyVersion": "1.15.0.4",
+            "fileVersion": "1.15.0.4"
+          }
+        },
+        "runtimeTargets": {
+          "runtimes/linux-arm64/lib/netstandard2.0/IDSImaging.Peak.API.dll": {
+            "rid": "linux-arm64",
+            "assetType": "runtime",
+            "assemblyVersion": "1.15.0.4",
+            "fileVersion": "1.15.0.4"
+          },
+          "runtimes/linux-x64/lib/netstandard2.0/IDSImaging.Peak.API.dll": {
+            "rid": "linux-x64",
+            "assetType": "runtime",
+            "assemblyVersion": "1.15.0.4",
+            "fileVersion": "1.15.0.4"
+          },
+          "runtimes/win-x64/lib/netstandard2.0/IDSImaging.Peak.API.dll": {
+            "rid": "win-x64",
+            "assetType": "runtime",
+            "assemblyVersion": "1.15.0.4",
+            "fileVersion": "1.15.0.4"
+          },
+          "runtimes/win-x86/lib/netstandard2.0/IDSImaging.Peak.API.dll": {
+            "rid": "win-x86",
+            "assetType": "runtime",
+            "assemblyVersion": "1.15.0.4",
+            "fileVersion": "1.15.0.4"
+          },
+          "runtimes/linux-arm64/native/libFirmwareUpdate_gcc49_v3_4.so": {
+            "rid": "linux-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-arm64/native/libGCBase_gcc49_v3_4.so": {
+            "rid": "linux-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-arm64/native/libGenApi_gcc49_v3_4.so": {
+            "rid": "linux-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-arm64/native/libIDSImaging.Peak.API.Native.so": {
+            "rid": "linux-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-arm64/native/libLog_gcc49_v3_4.so": {
+            "rid": "linux-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-arm64/native/libMathParser_gcc49_v3_4.so": {
+            "rid": "linux-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-arm64/native/libNodeMapData_gcc49_v3_4.so": {
+            "rid": "linux-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-arm64/native/libXmlParser_gcc49_v3_4.so": {
+            "rid": "linux-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-arm64/native/libids_peak.so": {
+            "rid": "linux-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-arm64/native/liblog4cpp_gcc49_v3_4.so": {
+            "rid": "linux-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-x64/native/libFirmwareUpdate_gcc48_v3_4.so": {
+            "rid": "linux-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-x64/native/libGCBase_gcc48_v3_4.so": {
+            "rid": "linux-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-x64/native/libGenApi_gcc48_v3_4.so": {
+            "rid": "linux-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-x64/native/libIDSImaging.Peak.API.Native.so": {
+            "rid": "linux-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-x64/native/libLog_gcc48_v3_4.so": {
+            "rid": "linux-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-x64/native/libMathParser_gcc48_v3_4.so": {
+            "rid": "linux-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-x64/native/libNodeMapData_gcc48_v3_4.so": {
+            "rid": "linux-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-x64/native/libXmlParser_gcc48_v3_4.so": {
+            "rid": "linux-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-x64/native/libids_peak.so": {
+            "rid": "linux-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-x64/native/liblog4cpp_gcc48_v3_4.so": {
+            "rid": "linux-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/win-x64/native/FirmwareUpdate_MD_VC141_v3_4.dll": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "3.4.1.0"
+          },
+          "runtimes/win-x64/native/GCBase_MD_VC141_v3_4.dll": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "3.4.1.0"
+          },
+          "runtimes/win-x64/native/GenApi_MD_VC141_v3_4.dll": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "3.4.1.0"
+          },
+          "runtimes/win-x64/native/IDSImaging.Peak.API.Native.dll": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "1.15.0.4"
+          },
+          "runtimes/win-x64/native/Log_MD_VC141_v3_4.dll": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "3.4.1.0"
+          },
+          "runtimes/win-x64/native/MathParser_MD_VC141_v3_4.dll": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "3.4.1.0"
+          },
+          "runtimes/win-x64/native/NodeMapData_MD_VC141_v3_4.dll": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "3.4.1.0"
+          },
+          "runtimes/win-x64/native/XmlParser_MD_VC141_v3_4.dll": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "3.4.1.0"
+          },
+          "runtimes/win-x64/native/ids_peak.dll": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "1.15.0.0"
+          },
+          "runtimes/win-x64/native/log4cpp_MD_VC141_v3_4.dll": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "3.4.1.0"
+          },
+          "runtimes/win-x86/native/FirmwareUpdate_MD_VC141_v3_4.dll": {
+            "rid": "win-x86",
+            "assetType": "native",
+            "fileVersion": "3.4.1.0"
+          },
+          "runtimes/win-x86/native/GCBase_MD_VC141_v3_4.dll": {
+            "rid": "win-x86",
+            "assetType": "native",
+            "fileVersion": "3.4.1.0"
+          },
+          "runtimes/win-x86/native/GenApi_MD_VC141_v3_4.dll": {
+            "rid": "win-x86",
+            "assetType": "native",
+            "fileVersion": "3.4.1.0"
+          },
+          "runtimes/win-x86/native/IDSImaging.Peak.API.Native.dll": {
+            "rid": "win-x86",
+            "assetType": "native",
+            "fileVersion": "1.15.0.4"
+          },
+          "runtimes/win-x86/native/Log_MD_VC141_v3_4.dll": {
+            "rid": "win-x86",
+            "assetType": "native",
+            "fileVersion": "3.4.1.0"
+          },
+          "runtimes/win-x86/native/MathParser_MD_VC141_v3_4.dll": {
+            "rid": "win-x86",
+            "assetType": "native",
+            "fileVersion": "3.4.1.0"
+          },
+          "runtimes/win-x86/native/NodeMapData_MD_VC141_v3_4.dll": {
+            "rid": "win-x86",
+            "assetType": "native",
+            "fileVersion": "3.4.1.0"
+          },
+          "runtimes/win-x86/native/XmlParser_MD_VC141_v3_4.dll": {
+            "rid": "win-x86",
+            "assetType": "native",
+            "fileVersion": "3.4.1.0"
+          },
+          "runtimes/win-x86/native/ids_peak.dll": {
+            "rid": "win-x86",
+            "assetType": "native",
+            "fileVersion": "1.15.0.0"
+          },
+          "runtimes/win-x86/native/log4cpp_MD_VC141_v3_4.dll": {
+            "rid": "win-x86",
+            "assetType": "native",
+            "fileVersion": "3.4.1.0"
+          }
+        }
+      },
+      "IDSImaging.Peak.Common/1.3.0.1": {
+        "runtime": {
+          "lib/netstandard2.0/IDSImaging.Peak.Common.dll": {
+            "assemblyVersion": "1.3.0.1",
+            "fileVersion": "1.3.0.1"
+          }
+        }
+      },
+      "IDSImaging.Peak.IPL/1.17.2.4": {
+        "dependencies": {
+          "IDSImaging.Peak.Common": "1.3.0.1"
+        },
+        "runtimeTargets": {
+          "runtimes/linux-arm64/lib/netstandard2.0/IDSImaging.Peak.IPL.dll": {
+            "rid": "linux-arm64",
+            "assetType": "runtime",
+            "assemblyVersion": "1.17.2.4",
+            "fileVersion": "1.17.2.4"
+          },
+          "runtimes/linux-x64/lib/netstandard2.0/IDSImaging.Peak.IPL.dll": {
+            "rid": "linux-x64",
+            "assetType": "runtime",
+            "assemblyVersion": "1.17.2.4",
+            "fileVersion": "1.17.2.4"
+          },
+          "runtimes/win-x64/lib/netstandard2.0/IDSImaging.Peak.IPL.dll": {
+            "rid": "win-x64",
+            "assetType": "runtime",
+            "assemblyVersion": "1.17.2.4",
+            "fileVersion": "1.17.2.4"
+          },
+          "runtimes/win-x86/lib/netstandard2.0/IDSImaging.Peak.IPL.dll": {
+            "rid": "win-x86",
+            "assetType": "runtime",
+            "assemblyVersion": "1.17.2.4",
+            "fileVersion": "1.17.2.4"
+          },
+          "runtimes/linux-arm64/native/libIDSImaging.Peak.IPL.Native.so": {
+            "rid": "linux-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-arm64/native/libids_peak_ipl.so": {
+            "rid": "linux-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-arm64/native/libtbb_libcxx.so.12": {
+            "rid": "linux-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-x64/native/libIDSImaging.Peak.IPL.Native.so": {
+            "rid": "linux-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-x64/native/libids_peak_ipl.so": {
+            "rid": "linux-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-x64/native/libtbb_libcxx.so.12": {
+            "rid": "linux-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/win-x64/native/IDSImaging.Peak.IPL.Native.dll": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "1.17.2.4"
+          },
+          "runtimes/win-x64/native/ids_peak_ipl.dll": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "1.17.2.0"
+          },
+          "runtimes/win-x64/native/tbb12.dll": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "2022.2.0.0"
+          },
+          "runtimes/win-x86/native/IDSImaging.Peak.IPL.Native.dll": {
+            "rid": "win-x86",
+            "assetType": "native",
+            "fileVersion": "1.17.2.4"
+          },
+          "runtimes/win-x86/native/ids_peak_ipl.dll": {
+            "rid": "win-x86",
+            "assetType": "native",
+            "fileVersion": "1.17.2.0"
+          },
+          "runtimes/win-x86/native/tbb12.dll": {
+            "rid": "win-x86",
+            "assetType": "native",
+            "fileVersion": "2022.2.0.0"
           }
         }
       },
@@ -2794,6 +3132,27 @@
       "sha512": "sha512-VIXB7HCUC34OoaGnO3HJVtSv2/wljPhjV7eKH4+TFPgQdJj2lvHNKY41Dtg0Bphu7X5UaXFR4zrYYyo+GNOjbA==",
       "path": "humanizer.core.zh-hant/2.14.1",
       "hashPath": "humanizer.core.zh-hant.2.14.1.nupkg.sha512"
+    },
+    "IDSImaging.Peak.API/1.15.0.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-mI0Ym6R+tBcF82ccFa9qsQFQGmrpnkSvhyh1mVBDnzR295MYDL4pLLKCQ24D5AdJsBDadmqvsvs5+cmq7HzhgQ==",
+      "path": "idsimaging.peak.api/1.15.0.4",
+      "hashPath": "idsimaging.peak.api.1.15.0.4.nupkg.sha512"
+    },
+    "IDSImaging.Peak.Common/1.3.0.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-7Sd2Dgqe2QEbmgXdxG1KKTDPJAHlAnLlDvDcPLfA0eWLnUaq56i8t9SFpm0gFHLkA7Jg32/J1UH76GWV9ATiZA==",
+      "path": "idsimaging.peak.common/1.3.0.1",
+      "hashPath": "idsimaging.peak.common.1.3.0.1.nupkg.sha512"
+    },
+    "IDSImaging.Peak.IPL/1.17.2.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-JRc92CMQQzLk3SmpUx3FPXbFqKwPcp2dN5fkaP0WPvsKl7ut9gpxxgsEeD4Li3bXHkJTZiOOckhLuB0roLUqPQ==",
+      "path": "idsimaging.peak.ipl/1.17.2.4",
+      "hashPath": "idsimaging.peak.ipl.1.17.2.4.nupkg.sha512"
     },
     "MessagePack/2.1.152": {
       "type": "package",

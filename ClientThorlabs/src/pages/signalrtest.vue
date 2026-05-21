@@ -9,6 +9,10 @@ const currentCamera = ref<number>(0);
 
 const imgRef = ref<HTMLImageElement | null>(null);
 const listCameras = ref<{ cameraId: number; cameraName: string }[]>([]);
+const currentCameraName = computed(() => {
+  const found = listCameras.value.find(c => c.cameraId === currentCamera.value)
+  return found ? found.cameraName : ''
+})
 const isendrequest = ref<boolean>(false);
 
 let hubConnection = await new signalR.HubConnectionBuilder()
@@ -24,7 +28,7 @@ const handleCamera = async () => {
         // debugger;
         await hubConnection.stop();
         await hubConnection.start();
-        hubConnection.stream("Counter", currentCamera.value, 10).subscribe({
+        hubConnection.stream("Counter", currentCamera.value, 10, currentCameraName.value).subscribe({
             next: (item: string) => {
                 if (imgRef.value) { imgRef.value.src = `data:image/png;base64,${item}` }
             },

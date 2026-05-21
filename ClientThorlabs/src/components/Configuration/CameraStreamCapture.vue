@@ -40,7 +40,7 @@ const startStream = async () => {
 
     streamSubscription?.dispose();
     streamSubscription = hubConnection
-      .stream("Counter", currentCamera.value, 10)
+      .stream("Counter", currentCamera.value, 10, listCameras.value.find(c => c.cameraId === currentCamera.value)?.cameraName ?? "")
       .subscribe({
         next: (item: string) => {
           lastFrameUrl.value = `data:image/png;base64,${item}`;

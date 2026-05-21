@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using GotsThorlabs.Database.EntityRepo;
 using GotsThorlabs.Database.EntityRepo.Entities;
+using GotsThorlabs.Services;
 
 namespace GotsThorlabs.Controls
 {
@@ -11,10 +12,12 @@ namespace GotsThorlabs.Controls
     public class CameraController : ControllerBase
     {
         private readonly ThorlabsDbContext _db;
+        private readonly CameraServiceFactory _cameraFactory;
 
-        public CameraController(ThorlabsDbContext db)
+        public CameraController(ThorlabsDbContext db, CameraServiceFactory cameraFactory)
         {
             _db = db;
+            _cameraFactory = cameraFactory;
         }
 
         // GET: api/Camera
@@ -45,6 +48,16 @@ namespace GotsThorlabs.Controls
             if (camera.CameraId == Guid.Empty)
             {
                 camera.CameraId = Guid.NewGuid();
+            }
+
+            // Normalize LocalIdentifier: resolve raw value (moniker, index, etc.)
+            // to the stable identifier (SerialNumber for IDS, numeric index for DirectShow).
+            if (!string.IsNullOrWhiteSpace(camera.LocalIdentifier))
+            {
+                var resolved = _cameraFactory.ResolveLocalIdentifier(camera.DriverType, camera.LocalIdentifier);
+                if (resolved is not null)
+                    camera.LocalIdentifier = resolved;
+                // If not resolved, keep the original value so it is not silently dropped.
             }
 
             var cameraExist = _db.Cameras.Where(item => item.Name.Trim().ToLower() == camera.Name.Trim().ToLower());

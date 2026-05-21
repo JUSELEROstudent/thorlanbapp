@@ -22,8 +22,14 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddCors();
 builder.Services.AddSignalR();
-// Register default camera service
-builder.Services.AddSingleton<GotsThorlabs.Interfaces.ICameraService, GotsThorlabs.Services.VideoCaptureCameraService>();
+// Camera services: each concrete service is a singleton (device-level locking inside).
+// CameraServiceFactory selects the right one at runtime by driverType string.
+builder.Services.AddSingleton<GotsThorlabs.Services.VideoCaptureCameraService>();
+builder.Services.AddSingleton<GotsThorlabs.Services.IdsPeakCameraService>();
+builder.Services.AddSingleton<GotsThorlabs.Services.CameraServiceFactory>();
+// Default ICameraService resolves to the factory's generic driver.
+builder.Services.AddSingleton<GotsThorlabs.Interfaces.ICameraService>(sp =>
+    sp.GetRequiredService<GotsThorlabs.Services.CameraServiceFactory>().GetService("generic"));
 builder.Services.AddAuthentication(options =>
 {
     // El sistema de autenticacion de esta forma definido solo fuciona para la minimal api. cuando se desea hacer para la forma de webApi controlladores es mejor hacerlo de otra forma

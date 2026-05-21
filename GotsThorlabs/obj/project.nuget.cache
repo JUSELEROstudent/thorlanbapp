@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "xP3D19hX75Q=",
+  "dgSpecHash": "/3XDhnHmlb0=",
   "success": true,
   "projectFilePath": "C:\\ThorlabsApp\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj",
   "expectedPackageFiles": [
@@ -63,6 +63,9 @@
     "C:\\Users\\cocuy\\.nuget\\packages\\humanizer.core.zh-cn\\2.14.1\\humanizer.core.zh-cn.2.14.1.nupkg.sha512",
     "C:\\Users\\cocuy\\.nuget\\packages\\humanizer.core.zh-hans\\2.14.1\\humanizer.core.zh-hans.2.14.1.nupkg.sha512",
     "C:\\Users\\cocuy\\.nuget\\packages\\humanizer.core.zh-hant\\2.14.1\\humanizer.core.zh-hant.2.14.1.nupkg.sha512",
+    "C:\\Users\\cocuy\\.nuget\\packages\\idsimaging.peak.api\\1.15.0.4\\idsimaging.peak.api.1.15.0.4.nupkg.sha512",
+    "C:\\Users\\cocuy\\.nuget\\packages\\idsimaging.peak.common\\1.3.0.1\\idsimaging.peak.common.1.3.0.1.nupkg.sha512",
+    "C:\\Users\\cocuy\\.nuget\\packages\\idsimaging.peak.ipl\\1.17.2.4\\idsimaging.peak.ipl.1.17.2.4.nupkg.sha512",
     "C:\\Users\\cocuy\\.nuget\\packages\\messagepack\\2.1.152\\messagepack.2.1.152.nupkg.sha512",
     "C:\\Users\\cocuy\\.nuget\\packages\\messagepack.annotations\\2.1.152\\messagepack.annotations.2.1.152.nupkg.sha512",
     "C:\\Users\\cocuy\\.nuget\\packages\\messagepackanalyzer\\2.1.152\\messagepackanalyzer.2.1.152.nupkg.sha512",

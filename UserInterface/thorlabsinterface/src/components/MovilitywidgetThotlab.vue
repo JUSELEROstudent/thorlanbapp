@@ -109,7 +109,7 @@ export default {
           await connectionsream.start().catch((err) => store.dispatch('showAlert', { message: err.toString(), type: 'error', tittle: 'ha sucedido un error en la coneccion' }))
         }
         // const sourceBuffer = mediaSource.addSourceBuffer(mime)
-        await connectionsream.stream('Counter', currentcamera.value.cameraId, 10)
+        await connectionsream.stream('Counter', currentcamera.value.cameraId, 10, currentcamera.value.cameraName)
           .subscribe({
             next: (item) => {
               imagen.value = ''

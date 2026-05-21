@@ -44,6 +44,8 @@
     <PackageReference Include="AForge.Video.DirectShow" Version="2.2.5" />
     <PackageReference Include="Dapper" Version="2.1.28" />
     <PackageReference Include="Emgu.CV.runtime.windows" Version="4.7.0.5276" />
+    <PackageReference Include="IDSImaging.Peak.API" Version="1.15.0.4" />
+    <PackageReference Include="IDSImaging.Peak.IPL" Version="1.17.2.4" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Abstractions" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.12" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Common" Version="7.0.1" />

@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 using static Thorlabs.MotionControl.KCube.InertialMotorCLI.InertialMotorStatus;
 using Microsoft.AspNetCore.Builder;
 using System.Linq;
+using GotsThorlabs.Services;
 
 namespace GotsThorlabs.NodesApi
 {
@@ -55,6 +56,7 @@ namespace GotsThorlabs.NodesApi
 
         public NodeHomepage(WebApplication App)
         {
+            var cameraFactory = App.Services.GetRequiredService<CameraServiceFactory>();
             App.MapPost("/movedevice", ([FromBody] ObjMovement movestosite) =>
             {
 
@@ -186,19 +188,41 @@ namespace GotsThorlabs.NodesApi
             });//.RequireAuthorization();
 
 
-            App.MapGet("Home/cameras", async () =>
+            App.MapGet("Home/cameras", () =>
             {
                 List<ObjCameras> cameralists = new List<ObjCameras>();
 
-                FilterInfoCollection videoDevices = new FilterInfoCollection(FilterCategory.VideoInputDevice);
-                foreach (FilterInfo device in videoDevices)
+                // Generic (DirectShow) cameras — UniqueId = numeric index string
+                var genericDevices = cameraFactory.GetDiscoveryService("generic").EnumerateDevices();
+                foreach (var d in genericDevices)
                 {
                     cameralists.Add(new ObjCameras
                     {
-                        cameraId = cameralists.Count, // Índice basado en la lista
-                        cameraName = device.Name,
-                        UniqueId = device.MonikerString // Identificador único de la cámara
+                        cameraId = cameralists.Count,
+                        cameraName = d.DisplayName,
+                        UniqueId = d.SerialNumber, // numeric index as string for DirectShow
+                        DriverType = "generic"
                     });
+                }
+
+                // IDS Peak cameras — UniqueId = SerialNumber (most reliable identifier)
+                try
+                {
+                    var idsDevices = cameraFactory.GetDiscoveryService("ids_peak_dotnet").EnumerateDevices();
+                    foreach (var d in idsDevices)
+                    {
+                        cameralists.Add(new ObjCameras
+                        {
+                            cameraId = cameralists.Count,
+                            cameraName = d.DisplayName,
+                            UniqueId = d.SerialNumber, // SerialNumber from IDS Peak SDK
+                            DriverType = "ids_peak_dotnet"
+                        });
+                    }
+                }
+                catch
+                {
+                    // IDS Peak SDK may not be available on all machines; ignore gracefully.
                 }
 
                 return cameralists;
@@ -241,6 +265,7 @@ public class ObjCameras
     public int cameraId { get; set; }
     public string cameraName { get; set; }
     public string UniqueId { get; set; }
+    public string DriverType { get; set; }
 }
 
 public class KimFourChanelsThorlabs

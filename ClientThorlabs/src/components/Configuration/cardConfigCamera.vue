@@ -81,6 +81,20 @@
               :disabled="isSaving"
             ></textarea>
           </div>
+
+          <!-- Campo DriverType -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Driver Type *</label>
+            <select
+              v-model="newRecord.driverType"
+              class="select select-bordered w-full"
+              :disabled="isSaving"
+            >
+              <option value="" disabled>Seleccione un driver</option>
+              <option value="generic">generic</option>
+              <option value="ids_peak_dotnet">ids_peak_dotnet</option>
+            </select>
+          </div>
         </div>
       </div>
       
@@ -144,6 +158,7 @@ interface CameraElement {
   name: string
   localIdentifier: string
   features: string
+  driverType?: string
 }
 
 // Interface para las cámaras disponibles
@@ -157,7 +172,8 @@ interface AvailableCamera {
 const newRecord = ref({
   name: '',
   localIdentifier: '',
-  features: ''
+  features: '',
+  driverType: ''
 })
 
 const notifyCameraConfigUpdated = () => {
@@ -274,7 +290,8 @@ const enableAddMode = async () => {
   newRecord.value = {
     name: '',
     localIdentifier: '',
-    features: ''
+    features: '',
+    driverType: ''
   }
   // Cargar cámaras disponibles
   await fetchAvailableCameras()
@@ -287,7 +304,8 @@ const cancelAddMode = () => {
   newRecord.value = {
     name: '',
     localIdentifier: '',
-    features: ''
+    features: '',
+    driverType: ''
   }
 }
 
@@ -322,6 +340,15 @@ const saveNewRecord = async () => {
       return
     }
 
+    if (!newRecord.value.driverType.trim()) {
+      alertStore.NewAlert({
+        type: 'error',
+        tittle: 'Error de validación',
+        data: 'El tipo de driver es requerido'
+      })
+      return
+    }
+
     // Bloquear botón guardar
     isSaving.value = true
 
@@ -330,7 +357,8 @@ const saveNewRecord = async () => {
       CameraId: crypto.randomUUID(), // Generar nuevo GUID
       Name: newRecord.value.name.trim(),
       LocalIdentifier: newRecord.value.localIdentifier.trim(),
-      Features: newRecord.value.features.trim()
+      Features: newRecord.value.features.trim(),
+      DriverType: newRecord.value.driverType.trim()
     }
 
     // Realizar petición al endpoint
@@ -357,7 +385,8 @@ const saveNewRecord = async () => {
       newRecord.value = {
         name: '',
         localIdentifier: '',
-        features: ''
+        features: '',
+        driverType: ''
       }
       
       // Refrescar la lista después de crear

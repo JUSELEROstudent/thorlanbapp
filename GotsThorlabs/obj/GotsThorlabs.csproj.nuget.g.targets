@@ -5,5 +5,7 @@
     <Import Project="$(NuGetPackageRoot)microsoft.extensions.apidescription.server\6.0.5\build\Microsoft.Extensions.ApiDescription.Server.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.extensions.apidescription.server\6.0.5\build\Microsoft.Extensions.ApiDescription.Server.targets')" />
     <Import Project="$(NuGetPackageRoot)sqlitepclraw.lib.e_sqlite3\2.1.6\buildTransitive\net6.0\SQLitePCLRaw.lib.e_sqlite3.targets" Condition="Exists('$(NuGetPackageRoot)sqlitepclraw.lib.e_sqlite3\2.1.6\buildTransitive\net6.0\SQLitePCLRaw.lib.e_sqlite3.targets')" />
     <Import Project="$(NuGetPackageRoot)microsoft.extensions.logging.abstractions\6.0.4\buildTransitive\netcoreapp3.1\Microsoft.Extensions.Logging.Abstractions.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.extensions.logging.abstractions\6.0.4\buildTransitive\netcoreapp3.1\Microsoft.Extensions.Logging.Abstractions.targets')" />
+    <Import Project="$(NuGetPackageRoot)idsimaging.peak.ipl\1.17.2.4\build\IDSImaging.Peak.IPL.targets" Condition="Exists('$(NuGetPackageRoot)idsimaging.peak.ipl\1.17.2.4\build\IDSImaging.Peak.IPL.targets')" />
+    <Import Project="$(NuGetPackageRoot)idsimaging.peak.api\1.15.0.4\build\IDSImaging.Peak.API.targets" Condition="Exists('$(NuGetPackageRoot)idsimaging.peak.api\1.15.0.4\build\IDSImaging.Peak.API.targets')" />
   </ImportGroup>
 </Project>
