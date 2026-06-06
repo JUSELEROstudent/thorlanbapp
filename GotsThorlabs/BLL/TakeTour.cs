@@ -40,18 +40,19 @@ namespace GotsThorlabs.BLL
 
         public int rows; //= i
         public int columns; // = j
-        public int indexCam;
+        /// <summary>LocalIdentifier of the camera resolved from GroupCalibration → Camera in the DB.</summary>
+        public string localIdentifier;
         string namefolder;
 
         public Mat[] image;
         public Mat[] finalimg;
         public Mat mosaic;// imagen general ya con el tamaño completo para la imagen final que laverga a todas las sub imagenes
 
-        public TakeTour(int IndexCam, int Rows, int Columns, ThorlabsDbContext db, GotsThorlabs.Interfaces.ICameraService cameraService)
+        public TakeTour(string LocalIdentifier, int Rows, int Columns, ThorlabsDbContext db, GotsThorlabs.Interfaces.ICameraService cameraService)
         {
             rows = Rows;
             columns = Columns;
-            indexCam = IndexCam;
+            localIdentifier = LocalIdentifier;
             namefolder = Utilities.getTimeInString();
             _db = db;
             _cameraService = cameraService;
@@ -62,7 +63,7 @@ namespace GotsThorlabs.BLL
             // try to obtain frame size using camera service; fallback to defaults
             try
             {
-                using var frame = _cameraService?.CaptureFrame(indexCam);
+                using var frame = _cameraService?.CaptureFrame(localIdentifier);
                 frameheight = frame?.Rows ?? 1080;
                 framewidth = frame?.Cols ?? 1920;
             }
@@ -91,12 +92,16 @@ namespace GotsThorlabs.BLL
             KCubeInertialMotor deviceconnect = KCubeInertialMotor.CreateKCubeInertialMotor(kimDeviceId);
             try
             {
-                // Open a connection to  devices.
+                if (!deviceconnect.IsConnected)
+                {
+                    deviceconnect.Disconnect(true);
+                }
+                    // Open a connection to  devices.
                 deviceconnect.Connect(kimDeviceId);
             }
             catch (Exception)
             {
-                deviceconnect.Disconnect();
+                deviceconnect.Disconnect(true);
                 throw new HubException("Error al establecer al dispositivo kim04 [ES]");
             }
             if (!deviceconnect.IsSettingsInitialized())
@@ -372,7 +377,7 @@ namespace GotsThorlabs.BLL
                 NumberX = columns,
                 NumberY = rows,
                 NumberZ = 0,
-                Camera = indexCam,
+                Camera = 0, // camera identified by LocalIdentifier; int index no longer used
                 PicsCalibrationId = picsCalibrationId,
             };
             _db.Tours.Add(tour);
@@ -411,30 +416,35 @@ namespace GotsThorlabs.BLL
             string resultadolaplace;
             string nameimage;
 
-            // capture frame via injected camera service
-            using (var captured = _cameraService?.CaptureFrame(indexCam))
+            // capture frame via injected camera service resolved from GroupCalibration → Camera
+            using (var captured = _cameraService?.CaptureFrame(localIdentifier))
             {
-                var frameheight = captured?.Rows ?? 1080;
-                var framewidth = captured?.Cols ?? 1920;
-                Mat mosaic = new Mat(rows * frameheight, columns * framewidth, MatType.CV_8UC3);
+                // Clone the captured Mat so it remains valid after 'captured' is disposed
+                var ownedFrame = (captured != null) ? captured.Clone() : new Mat();
 
-                var copyofFrame = captured ?? new Mat();
-                frame = copyofFrame;
-                image[y] = frame;
-                // se hcae el calculo de la place para el estado del blur 
-                Mat grayresult = new Mat();
-                Mat shaperesult = new Mat();
-                Cv2.CvtColor(copyofFrame, grayresult, ColorConversionCodes.BGR2GRAY);
-                Cv2.Laplacian(grayresult, shaperesult, MatType.CV_64F);
-                Cv2.MeanStdDev(copyofFrame, out var mean, out var stddev);
-                resultadolaplace = (stddev.Val0 * stddev.Val0).ToString();
-                //Cv2.PutText(frame, "laplacian :" + resultadolaplace, new Point(20, 30), HersheyFonts.Italic, 0.8, 1);
-                Rect region = new Rect(frame.Cols * x, frame.Rows * y, frame.Cols, frame.Rows);
-                frame.CopyTo(mosaic.SubMat(region));
-                nameimage = $"{nameFile}{x}_{y}.jpg";
-                pathsave = Path.Combine(path, nameimage);
+                var frameheight = ownedFrame.Rows > 0 ? ownedFrame.Rows : 1080;
+                var framewidth = ownedFrame.Cols > 0 ? ownedFrame.Cols : 1920;
+                using (var mosaic = new Mat(rows * frameheight, columns * framewidth, MatType.CV_8UC3))
+                {
+                    // Dispose any previous stored frame at this slot to avoid leaks
+                    image[y]?.Dispose();
+                    image[y] = ownedFrame;
 
-                frame.SaveImage(pathsave);
+                    // se hcae el calculo de la place para el estado del blur 
+                    using var grayresult = new Mat();
+                    using var shaperesult = new Mat();
+                    Cv2.CvtColor(ownedFrame, grayresult, ColorConversionCodes.BGR2GRAY);
+                    Cv2.Laplacian(grayresult, shaperesult, MatType.CV_64F);
+                    Cv2.MeanStdDev(ownedFrame, out var mean, out var stddev);
+                    resultadolaplace = (stddev.Val0 * stddev.Val0).ToString();
+
+                    Rect region = new Rect(ownedFrame.Cols * x, ownedFrame.Rows * y, ownedFrame.Cols, ownedFrame.Rows);
+                    ownedFrame.CopyTo(mosaic.SubMat(region));
+                    nameimage = $"{nameFile}{x}_{y}.jpg";
+                    pathsave = Path.Combine(path, nameimage);
+
+                    ownedFrame.SaveImage(pathsave);
+                }
             }
 
             //using (var queryable = ConnectionSqlite.CreateConnection())

@@ -131,9 +131,11 @@ namespace GotsThorlabs.Hubs
                 .FirstOrDefaultAsync(g => g.GroupCailbrationId == groupCalibrationId);
 
             var driverType = groupCalibration?.Camera?.DriverType ?? "generic";
+            var resolvedLocalIdentifier = groupCalibration?.Camera?.LocalIdentifier
+                ?? throw new HubException("No se encontró la cámara asociada a la calibración.");
             var cameraService = _cameraFactory.GetService(driverType);
 
-            var controlmotor = new TakeTour(indexcam, rows, columns, _db, cameraService);
+            var controlmotor = new TakeTour(resolvedLocalIdentifier, rows, columns, _db, cameraService);
             var processimgs = controlmotor.Createmosaicstepbystep(2, device.Trim(), groupCalibrationId);
             await foreach (var url in processimgs)
             {

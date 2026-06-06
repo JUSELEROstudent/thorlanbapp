@@ -87,7 +87,7 @@ try {
 
         </div>
         <div v-show="isendrequest" class=" flex justify-center bg-black " >
-            <img  ref="imgRef">
+            <img ref="imgRef" class="max-h-[75vh] w-auto object-contain">
         </div>
         <div v-show="!isendrequest" class="skeleton w-full h-48 space-y-4 p-4 bg-lightgray"> </div>
         <DriveManual />
