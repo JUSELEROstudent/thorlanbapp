@@ -1,18 +1,17 @@
 using System.Xml.Serialization;
 using GotsThorlabs.NodesApi;
 using GotsThorlabs.Stitchingapi;
-//using GotsThorlabs.Tour;
 using Thorlabs.MotionControl.DeviceManagerCLI;
 using GotsThorlabs.Hubs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using apitest.Controllers;
 using Microsoft.Extensions.FileProviders;
 using GotsThorlabs;
 using Microsoft.EntityFrameworkCore;
 using GotsThorlabs.Database.EntityRepo;
-using Microsoft.EntityFrameworkCore.Sqlite;  
+using Microsoft.EntityFrameworkCore.Sqlite;
+using apitest.Controllers;  
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
@@ -68,6 +67,16 @@ var dbPath = Path.Combine(dbDir, "app.sqlite");
 
 builder.Services.AddDbContext<ThorlabsDbContext>(options =>
     options.UseSqlite($"Data Source={dbPath}"));
+
+// CRUD services
+builder.Services.AddScoped<GotsThorlabs.Interfaces.IMicroscopeService, GotsThorlabs.Services.MicroscopeService>();
+builder.Services.AddScoped<GotsThorlabs.Interfaces.IIncreaseService, GotsThorlabs.Services.IncreaseService>();
+builder.Services.AddScoped<GotsThorlabs.Interfaces.IGroupCalibrationService, GotsThorlabs.Services.GroupCalibrationService>();
+builder.Services.AddScoped<GotsThorlabs.Interfaces.ICameraCrudService, GotsThorlabs.Services.CameraCrudService>();
+builder.Services.AddScoped<GotsThorlabs.Interfaces.IPicsCalibrationService, GotsThorlabs.Services.PicsCalibrationService>();
+builder.Services.AddScoped<GotsThorlabs.Interfaces.IPhaseCorrelationService, GotsThorlabs.Services.PhaseCorrelationService>();
+builder.Services.AddScoped<GotsThorlabs.Interfaces.ITourCrudService, GotsThorlabs.Services.TourCrudService>();
+builder.Services.AddScoped<GotsThorlabs.Interfaces.IAuthService, GotsThorlabs.Services.AuthService>();
 
 var app = builder.Build();
 

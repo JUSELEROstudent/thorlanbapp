@@ -1,22 +1,19 @@
-﻿using apitest.Controllers;
-using Thorlabs.MotionControl.DeviceManagerCLI;
-using Thorlabs.MotionControl.KCube.InertialMotorCLI;
+﻿using GotsThorlabs.Interfaces;
+using GotsThorlabs.Models;
+
 namespace GotsThorlabs.NodesApi
- 
 {
     public class NodeLogin
     {
         public NodeLogin(WebApplication App)
         {
-
-            // Getters de las peticiones.
-            App.MapPost("/api/login", async (login sesionuser) =>
+            App.MapPost("/api/login", async (LoginDTO sesionuser, IAuthService authService) =>
             {
-                var loginverificationclass = new InnerloginController();
-                return Results.Ok(loginverificationclass.Post(sesionuser));
-
-            }
-            );
+                var result = authService.Login(sesionuser);
+                if (result.Token is not null)
+                    return Results.Ok(result.Token);
+                return Results.BadRequest(result);
+            });
         }
     }
 }

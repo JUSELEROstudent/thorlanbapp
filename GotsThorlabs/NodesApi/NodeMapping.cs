@@ -1,7 +1,6 @@
-﻿using apitest.Controllers;
-using GotsThorlabs.BLL;
-using Thorlabs.MotionControl.KCube.InertialMotorCLI;
+﻿using GotsThorlabs.BLL;
 using GotsThorlabs.Models;
+using Thorlabs.MotionControl.KCube.InertialMotorCLI;
 
 namespace GotsThorlabs.NodesApi
 {

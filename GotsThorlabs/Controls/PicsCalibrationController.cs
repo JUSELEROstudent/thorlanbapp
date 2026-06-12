@@ -1,10 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using GotsThorlabs.Database.EntityRepo;
-using GotsThorlabs.Database.EntityRepo.Entities;
+﻿using Microsoft.AspNetCore.Mvc;
+using GotsThorlabs.Interfaces;
 using GotsThorlabs.Models;
-using Microsoft.Extensions.FileProviders;
+using GotsThorlabs.Database.EntityRepo.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace GotsThorlabs.Controls
 {
@@ -12,198 +10,88 @@ namespace GotsThorlabs.Controls
     [ApiController]
     public class PicsCalibrationController : ControllerBase
     {
-        private readonly ThorlabsDbContext _db;
-        private readonly IWebHostEnvironment _env;
-        private readonly string _imagesBasePath;
+        private readonly IPicsCalibrationService _service;
 
-        public PicsCalibrationController(ThorlabsDbContext db, IWebHostEnvironment env, IConfiguration configuration)
+        public PicsCalibrationController(IPicsCalibrationService service)
         {
-            _db = db;
-            _env = env;
-            _imagesBasePath = configuration["CalibrationImagesPath"]
-                ?? Path.Combine(env.ContentRootPath, "StaticFiles", "pics-calibrations");
+            _service = service;
         }
 
-        // GET: api/PicsCalibration
         [HttpGet]
         public async Task<ActionResult<IEnumerable<PicsCalibration>>> GetAllAsync(CancellationToken ct)
         {
-            var pics = await _db.PicsCalibrations.AsNoTracking().ToListAsync(ct);
+            var pics = await _service.GetAllAsync(ct);
             return Ok(pics);
         }
 
-        // GET: api/PicsCalibration/{id}
         [HttpGet("{id:guid}")]
         public async Task<ActionResult<PicsCalibration>> GetByIdAsync(Guid id, CancellationToken ct)
         {
-            var pic = await _db.PicsCalibrations.AsNoTracking().FirstOrDefaultAsync(p => p.PicsCalibrationId == id, ct);
+            var pic = await _service.GetByIdAsync(id, ct);
             if (pic is null) return NotFound();
             return Ok(pic);
         }
 
-        // POST: api/PicsCalibration (multipart/form-data con imágenes)
         [HttpPost]
-        [RequestSizeLimit(50_000_000)] // 50 MB
+        [RequestSizeLimit(50_000_000)]
         public async Task<ActionResult<PicsCalibration>> CreateAsync([FromForm] PicsCalibrationUploadDTO dto, CancellationToken ct)
         {
             if (dto is null) return BadRequest();
-            if (dto.Pic1File is null || dto.Pic2File is null)
-                return BadRequest("Debe enviar Pic1File y Pic2File.");
-
-            var id = Guid.NewGuid();
-            var recordDir = Path.Combine(_imagesBasePath, id.ToString());
-            Directory.CreateDirectory(recordDir);
-
-            string SaveFile(IFormFile f, string name)
-            {
-                var ext = Path.GetExtension(f.FileName);
-                var fullPath = Path.Combine(recordDir, name + ext);
-                using var stream = System.IO.File.Create(fullPath);
-                f.CopyTo(stream);
-                return fullPath;
-            }
-
-            var pic1Path = SaveFile(dto.Pic1File, "pic1");
-            var pic2Path = SaveFile(dto.Pic2File, "pic2");
-
-            var entity = new PicsCalibration
-            {
-                PicsCalibrationId = id,
-                GroupCailbrationId = dto.GroupCailbrationId,
-                Pic1 = pic1Path,
-                Pic2 = pic2Path,
-                AxeDirectionCalibration = dto.AxeDirectionCalibration,
-                Acepted = dto.Acepted,
-                dx = dto.dx,
-                dy = dto.dy,
-                Confidence = dto.Confidence,
-                MeasureUnit = dto.MeasureUnit,
-                MovementValue = dto.MovementValue
-            };
-
-            _db.PicsCalibrations.Add(entity);
             try
             {
-                await _db.SaveChangesAsync(ct);
+                var entity = await _service.CreateAsync(dto, ct);
+                return Ok(entity);
             }
-            catch (DbUpdateException)
+            catch (ArgumentException ex) { return BadRequest(ex.Message); }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException)
             {
                 return Conflict("No se puede crear la calibración por grupo inválido u otras restricciones.");
             }
-
-            return Ok(entity);
         }
 
-        // POST: api/PicsCalibration/upload (multipart/form-data)
         [HttpPost("upload")]
-        [RequestSizeLimit(50_000_000)] // 50 MB
+        [RequestSizeLimit(50_000_000)]
         public async Task<ActionResult<PicsCalibration>> UploadAsync([FromForm] PicsCalibrationUploadDTO dto, CancellationToken ct)
         {
-            if (dto is null || dto.Pic1File is null || dto.Pic2File is null)
-                return BadRequest("Debe enviar Pic1File y Pic2File");
-
-            // Ruta física donde se guardarán las imágenes (configurada en appsettings.json)
-            var id = Guid.NewGuid();
-            var recordDir = Path.Combine(_imagesBasePath, id.ToString());
-            Directory.CreateDirectory(recordDir);
-
-            // Guardar archivos
-            string SaveFile(IFormFile f, string name)
-            {
-                var ext = Path.GetExtension(f.FileName);
-                var safeName = name + ext;
-                var fullPath = Path.Combine(recordDir, safeName);
-                using var stream = System.IO.File.Create(fullPath);
-                f.CopyTo(stream);
-                return fullPath;
-            }
-
-            SaveFile(dto.Pic1File, "pic1");
-            SaveFile(dto.Pic2File, "pic2");
-
-            // Construir rutas accesibles vía HTTP
-            var baseRequestPath = "/SouerceStaticFiles/pics-calibrations/" + id.ToString();
-            var pic1Url = baseRequestPath + "/pic1" + Path.GetExtension(dto.Pic1File.FileName);
-            var pic2Url = baseRequestPath + "/pic2" + Path.GetExtension(dto.Pic2File.FileName);
-
-            var entity = new PicsCalibration
-            {
-                PicsCalibrationId = id,
-                GroupCailbrationId = dto.GroupCailbrationId,
-                Pic1 = pic1Url,
-                Pic2 = pic2Url,
-                AxeDirectionCalibration = dto.AxeDirectionCalibration,
-                Acepted = dto.Acepted,
-                dx = dto.dx,
-                dy = dto.dy,
-                Confidence = dto.Confidence,
-                MeasureUnit = dto.MeasureUnit,
-                MovementValue = dto.MovementValue
-            };
-
-            _db.PicsCalibrations.Add(entity);
+            if (dto is null) return BadRequest();
             try
             {
-                await _db.SaveChangesAsync(ct);
+                var entity = await _service.UploadAsync(dto, ct);
+                return Ok(entity);
             }
-            catch (DbUpdateException)
+            catch (ArgumentException ex) { return BadRequest(ex.Message); }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException)
             {
                 return Conflict("No se pudo guardar la calibración en la base de datos.");
             }
-
-            return Ok(entity);
         }
 
-        // PUT: api/PicsCalibration/{id}
         [HttpPut("{id:guid}")]
-        public async Task<IActionResult> UpdateAsync(Guid id, [FromBody] PicsCalibration update, CancellationToken ct)
+        public async Task<IActionResult> UpdateAsync(Guid id, [FromBody] PicsCalibrationUpdateDTO dto, CancellationToken ct)
         {
-            if (update is null) return BadRequest();
-            if (id != update.PicsCalibrationId && update.PicsCalibrationId != Guid.Empty) return BadRequest("Id mismatch");
-
-            var existing = await _db.PicsCalibrations.FirstOrDefaultAsync(p => p.PicsCalibrationId == id, ct);
-            if (existing is null) return NotFound();
-
-            existing.GroupCailbrationId = update.GroupCailbrationId;
-            existing.Pic1 = update.Pic1;
-            existing.Pic2 = update.Pic2;
-            existing.AxeDirectionCalibration = update.AxeDirectionCalibration;
-            existing.Acepted = update.Acepted;
-            existing.dx = update.dx;
-            existing.dy = update.dy;
-            existing.Confidence = update.Confidence;
-            existing.MeasureUnit = update.MeasureUnit;
-            existing.MovementValue = update.MovementValue;
+            if (dto is null) return BadRequest();
+            if (id != dto.PicsCalibrationId && dto.PicsCalibrationId != Guid.Empty) return BadRequest("Id mismatch");
 
             try
             {
-                await _db.SaveChangesAsync(ct);
+                await _service.UpdateAsync(id, dto, ct);
             }
-            catch (DbUpdateException)
+            catch (KeyNotFoundException) { return NotFound(); }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException)
             {
                 return Conflict("No se puede actualizar la calibración por restricciones de base de datos.");
             }
-
             return NoContent();
         }
 
-        // DELETE: api/PicsCalibration/{id}
         [HttpDelete("{id:guid}")]
         public async Task<IActionResult> DeleteAsync(Guid id, CancellationToken ct)
         {
-            var pic = await _db.PicsCalibrations.FirstOrDefaultAsync(p => p.PicsCalibrationId == id, ct);
-            if (pic is null) return NotFound();
-
-            _db.PicsCalibrations.Remove(pic);
             try
             {
-                await _db.SaveChangesAsync(ct);
+                await _service.DeleteAsync(id, ct);
             }
-            catch (DbUpdateException)
-            {
-                return Conflict("No se puede eliminar la calibración por restricciones de base de datos.");
-            }
-
+            catch (KeyNotFoundException) { return NotFound(); }
             return NoContent();
         }
     }

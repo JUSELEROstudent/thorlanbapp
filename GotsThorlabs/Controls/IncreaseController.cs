@@ -1,7 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using GotsThorlabs.Database.EntityRepo;
+﻿using Microsoft.AspNetCore.Mvc;
+using GotsThorlabs.Interfaces;
+using GotsThorlabs.Models;
 using GotsThorlabs.Database.EntityRepo.Entities;
 
 namespace GotsThorlabs.Controls
@@ -10,82 +9,58 @@ namespace GotsThorlabs.Controls
     [ApiController]
     public class IncreaseController : ControllerBase
     {
-        private readonly ThorlabsDbContext _db;
+        private readonly IIncreaseService _service;
 
-        public IncreaseController(ThorlabsDbContext db)
+        public IncreaseController(IIncreaseService service)
         {
-            _db = db;
+            _service = service;
         }
 
-        // GET: api/Increase
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Increase>>> GetAllAsync(CancellationToken ct)
         {
-            var increases = await _db.Increases.AsNoTracking().ToListAsync(ct);
+            var increases = await _service.GetAllAsync(ct);
             return Ok(increases);
         }
 
-        // GET: api/Increase/{id}
         [HttpGet("{id:guid}")]
         public async Task<ActionResult<Increase>> GetByIdAsync(Guid id, CancellationToken ct)
         {
-            var increase = await _db.Increases.AsNoTracking().FirstOrDefaultAsync(i => i.IncreaseId == id, ct);
+            var increase = await _service.GetByIdAsync(id, ct);
             if (increase is null) return NotFound();
             return Ok(increase);
         }
 
-        // POST: api/Increase
         [HttpPost]
-        public async Task<ActionResult<Increase>> CreateAsync([FromBody] Increase increase, CancellationToken ct)
+        public async Task<ActionResult<Increase>> CreateAsync([FromBody] IncreaseDTO dto, CancellationToken ct)
         {
-            if (increase is null) return BadRequest();
-
-            if (increase.IncreaseId == Guid.Empty)
-            {
-                increase.IncreaseId = Guid.NewGuid();
-            }
-
-            var savedValue = _db.Increases.Add(increase);
-            await _db.SaveChangesAsync(ct);
-
-            return Ok(increase);
+            if (dto is null) return BadRequest();
+            var entity = await _service.CreateAsync(dto, ct);
+            return Ok(entity);
         }
 
-        // PUT: api/Increase/{id}
         [HttpPut("{id:guid}")]
-        public async Task<IActionResult> UpdateAsync(Guid id, [FromBody] Increase update, CancellationToken ct)
+        public async Task<IActionResult> UpdateAsync(Guid id, [FromBody] IncreaseDTO dto, CancellationToken ct)
         {
-            if (update is null) return BadRequest();
-            if (id != update.IncreaseId && update.IncreaseId != Guid.Empty) return BadRequest("Id mismatch");
+            if (dto is null) return BadRequest();
+            if (id != dto.IncreaseId && dto.IncreaseId != Guid.Empty) return BadRequest("Id mismatch");
 
-            var existing = await _db.Increases.FirstOrDefaultAsync(i => i.IncreaseId == id, ct);
-            if (existing is null) return NotFound();
-
-            existing.Name = update.Name;
-            existing.Value = update.Value;
-            existing.AditionalInfo = update.AditionalInfo;
-
-            await _db.SaveChangesAsync(ct);
+            try
+            {
+                await _service.UpdateAsync(id, dto, ct);
+            }
+            catch (KeyNotFoundException) { return NotFound(); }
             return NoContent();
         }
 
-        // DELETE: api/Increase/{id}
         [HttpDelete("{id:guid}")]
         public async Task<IActionResult> DeleteAsync(Guid id, CancellationToken ct)
         {
-            var increase = await _db.Increases.FirstOrDefaultAsync(i => i.IncreaseId == id, ct);
-            if (increase is null) return NotFound();
-
-            _db.Increases.Remove(increase);
             try
             {
-                await _db.SaveChangesAsync(ct);
+                await _service.DeleteAsync(id, ct);
             }
-            catch (DbUpdateException)
-            {
-                return Conflict("No se puede eliminar el aumento porque tiene dependencias.");
-            }
-
+            catch (KeyNotFoundException) { return NotFound(); }
             return NoContent();
         }
     }

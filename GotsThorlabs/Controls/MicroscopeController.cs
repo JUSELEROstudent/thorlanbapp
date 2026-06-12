@@ -1,7 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using GotsThorlabs.Database.EntityRepo;
+﻿using Microsoft.AspNetCore.Mvc;
+using GotsThorlabs.Interfaces;
+using GotsThorlabs.Models;
 using GotsThorlabs.Database.EntityRepo.Entities;
 
 namespace GotsThorlabs.Controls
@@ -10,83 +9,58 @@ namespace GotsThorlabs.Controls
     [ApiController]
     public class MicroscopeController : ControllerBase
     {
-        private readonly ThorlabsDbContext _db;
+        private readonly IMicroscopeService _service;
 
-        public MicroscopeController(ThorlabsDbContext db)
+        public MicroscopeController(IMicroscopeService service)
         {
-            _db = db;
+            _service = service;
         }
 
-        // GET: api/Microscope
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Microscope>>> GetAllAsync(CancellationToken ct)
         {
-            var microscopes = await _db.Microscopes.AsNoTracking().ToListAsync(ct);
+            var microscopes = await _service.GetAllAsync(ct);
             return Ok(microscopes);
         }
 
-        // GET: api/Microscope/{id}
         [HttpGet("{id:guid}")]
         public async Task<ActionResult<Microscope>> GetByIdAsync(Guid id, CancellationToken ct)
         {
-            var microscope = await _db.Microscopes.AsNoTracking().FirstOrDefaultAsync(m => m.MicroscopeId == id, ct);
+            var microscope = await _service.GetByIdAsync(id, ct);
             if (microscope is null) return NotFound();
             return Ok(microscope);
         }
 
-        // POST: api/Microscope
         [HttpPost]
-        public async Task<ActionResult<Microscope>> CreateAsync([FromBody] Microscope microscope, CancellationToken ct)
+        public async Task<ActionResult<Microscope>> CreateAsync([FromBody] MicroscopeDTO dto, CancellationToken ct)
         {
-            if (microscope is null) return BadRequest();
-
-            if (microscope.MicroscopeId == Guid.Empty)
-            {
-                microscope.MicroscopeId = Guid.NewGuid();
-            }
-
-            _db.Microscopes.Add(microscope);
-            await _db.SaveChangesAsync(ct);
-
-            return Ok(microscope);
+            if (dto is null) return BadRequest();
+            var entity = await _service.CreateAsync(dto, ct);
+            return Ok(entity);
         }
 
-        // PUT: api/Microscope/{id}
         [HttpPut("{id:guid}")]
-        public async Task<IActionResult> UpdateAsync(Guid id, [FromBody] Microscope update, CancellationToken ct)
+        public async Task<IActionResult> UpdateAsync(Guid id, [FromBody] MicroscopeDTO dto, CancellationToken ct)
         {
-            if (update is null) return BadRequest();
-            if (id != update.MicroscopeId && update.MicroscopeId != Guid.Empty) return BadRequest("Id mismatch");
+            if (dto is null) return BadRequest();
+            if (id != dto.MicroscopeId && dto.MicroscopeId != Guid.Empty) return BadRequest("Id mismatch");
 
-            var existing = await _db.Microscopes.FirstOrDefaultAsync(m => m.MicroscopeId == id, ct);
-            if (existing is null) return NotFound();
-
-            existing.Name = update.Name;
-            existing.Brand = update.Brand;
-            existing.Site = update.Site;
-            existing.AditionalInfo = update.AditionalInfo;
-
-            await _db.SaveChangesAsync(ct);
+            try
+            {
+                await _service.UpdateAsync(id, dto, ct);
+            }
+            catch (KeyNotFoundException) { return NotFound(); }
             return NoContent();
         }
 
-        // DELETE: api/Microscope/{id}
         [HttpDelete("{id:guid}")]
         public async Task<IActionResult> DeleteAsync(Guid id, CancellationToken ct)
         {
-            var microscope = await _db.Microscopes.FirstOrDefaultAsync(m => m.MicroscopeId == id, ct);
-            if (microscope is null) return NotFound();
-
-            _db.Microscopes.Remove(microscope);
             try
             {
-                await _db.SaveChangesAsync(ct);
+                await _service.DeleteAsync(id, ct);
             }
-            catch (DbUpdateException)
-            {
-                return Conflict("No se puede eliminar el microscopio porque tiene dependencias.");
-            }
-
+            catch (KeyNotFoundException) { return NotFound(); }
             return NoContent();
         }
     }

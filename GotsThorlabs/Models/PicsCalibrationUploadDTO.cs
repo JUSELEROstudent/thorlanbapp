@@ -13,6 +13,8 @@ namespace GotsThorlabs.Models
         public decimal Confidence { get; set; }
         public string MeasureUnit { get; set; } = default!;
         public decimal MovementValue { get; set; }
+        public int? NumberOfSteps { get; set; }
+        public string? AxisMovementName { get; set; }
 
         // Archivos de imagen
         public IFormFile Pic1File { get; set; } = default!;

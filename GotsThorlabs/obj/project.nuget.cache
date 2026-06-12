@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "/3XDhnHmlb0=",
+  "dgSpecHash": "wngcv2K4LCw=",
   "success": true,
   "projectFilePath": "C:\\ThorlabsApp\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj",
   "expectedPackageFiles": [
@@ -263,7 +263,7 @@
     {
       "code": "NU1903",
       "level": "Warning",
-      "message": "Package 'System.Data.SqlClient' 4.8.5 has a known high severity vulnerability, https://github.com/advisories/GHSA-98g6-xh36-x2p7",
+      "message": "El paquete \"System.Data.SqlClient\" 4.8.5 tiene una vulnerabilidad de gravedad alta conocida, https://github.com/advisories/GHSA-98g6-xh36-x2p7",
       "projectPath": "C:\\ThorlabsApp\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj",
       "warningLevel": 1,
       "filePath": "C:\\ThorlabsApp\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj",
@@ -275,7 +275,7 @@
     {
       "code": "NU1902",
       "level": "Warning",
-      "message": "Package 'System.IdentityModel.Tokens.Jwt' 6.25.1 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-59j7-ghrg-fj52",
+      "message": "El paquete \"System.IdentityModel.Tokens.Jwt\" 6.25.1 tiene una vulnerabilidad de gravedad moderada conocida, https://github.com/advisories/GHSA-59j7-ghrg-fj52",
       "projectPath": "C:\\ThorlabsApp\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj",
       "warningLevel": 1,
       "filePath": "C:\\ThorlabsApp\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj",
@@ -287,7 +287,7 @@
     {
       "code": "NU1701",
       "level": "Warning",
-      "message": "Package 'AForge 2.2.5' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net6.0'. This package may not be fully compatible with your project.",
+      "message": "El paquete \"AForge 2.2.5\" se restauró con \".NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1\" en lugar de la plataforma de destino del proyecto \"net6.0\". Puede que el paquete no sea totalmente compatible con el proyecto.",
       "projectPath": "C:\\ThorlabsApp\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj",
       "warningLevel": 1,
       "filePath": "C:\\ThorlabsApp\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj",
@@ -299,7 +299,7 @@
     {
       "code": "NU1701",
       "level": "Warning",
-      "message": "Package 'AForge.Video 2.2.5' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net6.0'. This package may not be fully compatible with your project.",
+      "message": "El paquete \"AForge.Video 2.2.5\" se restauró con \".NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1\" en lugar de la plataforma de destino del proyecto \"net6.0\". Puede que el paquete no sea totalmente compatible con el proyecto.",
       "projectPath": "C:\\ThorlabsApp\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj",
       "warningLevel": 1,
       "filePath": "C:\\ThorlabsApp\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj",
@@ -311,7 +311,7 @@
     {
       "code": "NU1701",
       "level": "Warning",
-      "message": "Package 'AForge.Video.DirectShow 2.2.5' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net6.0'. This package may not be fully compatible with your project.",
+      "message": "El paquete \"AForge.Video.DirectShow 2.2.5\" se restauró con \".NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1\" en lugar de la plataforma de destino del proyecto \"net6.0\". Puede que el paquete no sea totalmente compatible con el proyecto.",
       "projectPath": "C:\\ThorlabsApp\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj",
       "warningLevel": 1,
       "filePath": "C:\\ThorlabsApp\\thorlanbapp\\GotsThorlabs\\GotsThorlabs.csproj",

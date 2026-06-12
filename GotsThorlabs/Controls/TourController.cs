@@ -1,8 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using GotsThorlabs.Database.EntityRepo;
-using GotsThorlabs.Database.EntityRepo.Entities;
+﻿using Microsoft.AspNetCore.Mvc;
+using GotsThorlabs.Interfaces;
+using GotsThorlabs.Models;
+using TourEntity = GotsThorlabs.Database.EntityRepo.Entities.Tour;
 
 namespace GotsThorlabs.Controls
 {
@@ -10,90 +9,61 @@ namespace GotsThorlabs.Controls
     [ApiController]
     public class TourController : ControllerBase
     {
-        private readonly ThorlabsDbContext _db;
+        private readonly ITourCrudService _service;
 
-        public TourController(ThorlabsDbContext db)
+        public TourController(ITourCrudService service)
         {
-            _db = db;
+            _service = service;
         }
 
-        // GET: api/Tour
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Tour>>> GetAllAsync(CancellationToken ct)
+        public async Task<ActionResult<IEnumerable<TourEntity>>> GetAllAsync(CancellationToken ct)
         {
-            var tours = await _db.Tours.AsNoTracking().ToListAsync(ct);
+            var tours = await _service.GetAllAsync(ct);
             return Ok(tours);
         }
 
-        // GET: api/Tour/{id}
         [HttpGet("{id:int}")]
-        public async Task<ActionResult<Tour>> GetByIdAsync(int id, CancellationToken ct)
+        public async Task<ActionResult<TourEntity>> GetByIdAsync(int id, CancellationToken ct)
         {
-            var tour = await _db.Tours.AsNoTracking().FirstOrDefaultAsync(t => t.IdTour == id, ct);
+            var tour = await _service.GetByIdAsync(id, ct);
             if (tour is null) return NotFound();
             return Ok(tour);
         }
 
-        // POST: api/Tour
         [HttpPost]
-        public async Task<ActionResult<Tour>> CreateAsync([FromBody] Tour tour, CancellationToken ct)
+        public async Task<ActionResult<TourEntity>> CreateAsync([FromBody] TourDTO dto, CancellationToken ct)
         {
-            if (tour is null) return BadRequest();
-
-            // Basic validation
-            if (string.IsNullOrWhiteSpace(tour.NameFolder))
-                return BadRequest("El campo NameFolder es requerido.");
-
-            // Date comes as DateTime in EF entity; ensure not default
-            if (tour.Date == default)
-                tour.Date = DateTime.UtcNow;
-
-            _db.Tours.Add(tour);
-            await _db.SaveChangesAsync(ct);
-
-            return Ok(tour);
+            if (dto is null) return BadRequest();
+            try
+            {
+                var entity = await _service.CreateAsync(dto, ct);
+                return Ok(entity);
+            }
+            catch (ArgumentException ex) { return BadRequest(ex.Message); }
         }
 
-        // PUT: api/Tour/{id}
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> UpdateAsync(int id, [FromBody] Tour update, CancellationToken ct)
+        public async Task<IActionResult> UpdateAsync(int id, [FromBody] TourDTO dto, CancellationToken ct)
         {
-            if (update is null) return BadRequest();
-            if (id != update.IdTour && update.IdTour != 0) return BadRequest("Id mismatch");
+            if (dto is null) return BadRequest();
 
-            var existing = await _db.Tours.FirstOrDefaultAsync(t => t.IdTour == id, ct);
-            if (existing is null) return NotFound();
-
-            // Update scalar fields
-            existing.Date = update.Date == default ? existing.Date : update.Date;
-            existing.NameFolder = update.NameFolder;
-            existing.NumberX = update.NumberX;
-            existing.NumberY = update.NumberY;
-            existing.NumberZ = update.NumberZ;
-            existing.Camera = update.Camera;
-            existing.EndStatus = update.EndStatus;
-
-            await _db.SaveChangesAsync(ct);
+            try
+            {
+                await _service.UpdateAsync(id, dto, ct);
+            }
+            catch (KeyNotFoundException) { return NotFound(); }
             return NoContent();
         }
 
-        // DELETE: api/Tour/{id}
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteAsync(int id, CancellationToken ct)
         {
-            var tour = await _db.Tours.FirstOrDefaultAsync(t => t.IdTour == id, ct);
-            if (tour is null) return NotFound();
-
-            _db.Tours.Remove(tour);
             try
             {
-                await _db.SaveChangesAsync(ct);
+                await _service.DeleteAsync(id, ct);
             }
-            catch (DbUpdateException)
-            {
-                return Conflict("No se puede eliminar el tour porque tiene dependencias.");
-            }
-
+            catch (KeyNotFoundException) { return NotFound(); }
             return NoContent();
         }
     }
