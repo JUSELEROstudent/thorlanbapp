@@ -20,7 +20,7 @@ namespace GotsThorlabs.Services
             return await _db.Tours.AsNoTracking().ToListAsync(ct);
         }
 
-        public async Task<TourEntity?> GetByIdAsync(int id, CancellationToken ct)
+        public async Task<TourEntity?> GetByIdAsync(long id, CancellationToken ct)
         {
             return await _db.Tours.AsNoTracking().FirstOrDefaultAsync(t => t.IdTour == id, ct);
         }
@@ -32,7 +32,7 @@ namespace GotsThorlabs.Services
 
             var entity = new TourEntity
             {
-                Date = dto.Date == default ? DateTime.UtcNow : dto.Date,
+                Date = string.IsNullOrWhiteSpace(dto.Date) ? DateTime.Now.ToString("o") : dto.Date,
                 NameFolder = dto.NameFolder,
                 NumberX = dto.NumberX,
                 NumberY = dto.NumberY,
@@ -47,12 +47,12 @@ namespace GotsThorlabs.Services
             return entity;
         }
 
-        public async Task UpdateAsync(int id, TourDTO dto, CancellationToken ct)
+        public async Task UpdateAsync(long id, TourDTO dto, CancellationToken ct)
         {
             var existing = await _db.Tours.FirstOrDefaultAsync(t => t.IdTour == id, ct);
             if (existing is null) throw new KeyNotFoundException($"Tour {id} not found.");
 
-            existing.Date = dto.Date == default ? existing.Date : dto.Date;
+            existing.Date = string.IsNullOrWhiteSpace(dto.Date) ? existing.Date : dto.Date;
             existing.NameFolder = dto.NameFolder;
             existing.NumberX = dto.NumberX;
             existing.NumberY = dto.NumberY;
@@ -63,7 +63,7 @@ namespace GotsThorlabs.Services
             await _db.SaveChangesAsync(ct);
         }
 
-        public async Task DeleteAsync(int id, CancellationToken ct)
+        public async Task DeleteAsync(long id, CancellationToken ct)
         {
             var tour = await _db.Tours.FirstOrDefaultAsync(t => t.IdTour == id, ct);
             if (tour is null) throw new KeyNotFoundException($"Tour {id} not found.");

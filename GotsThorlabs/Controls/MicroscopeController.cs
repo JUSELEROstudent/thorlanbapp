@@ -23,8 +23,8 @@ namespace GotsThorlabs.Controls
             return Ok(microscopes);
         }
 
-        [HttpGet("{id:guid}")]
-        public async Task<ActionResult<Microscope>> GetByIdAsync(Guid id, CancellationToken ct)
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Microscope>> GetByIdAsync(string id, CancellationToken ct)
         {
             var microscope = await _service.GetByIdAsync(id, ct);
             if (microscope is null) return NotFound();
@@ -39,11 +39,11 @@ namespace GotsThorlabs.Controls
             return Ok(entity);
         }
 
-        [HttpPut("{id:guid}")]
-        public async Task<IActionResult> UpdateAsync(Guid id, [FromBody] MicroscopeDTO dto, CancellationToken ct)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateAsync(string id, [FromBody] MicroscopeDTO dto, CancellationToken ct)
         {
             if (dto is null) return BadRequest();
-            if (id != dto.MicroscopeId && dto.MicroscopeId != Guid.Empty) return BadRequest("Id mismatch");
+            if (id != dto.MicroscopeId && !string.IsNullOrEmpty(dto.MicroscopeId)) return BadRequest("Id mismatch");
 
             try
             {
@@ -53,8 +53,8 @@ namespace GotsThorlabs.Controls
             return NoContent();
         }
 
-        [HttpDelete("{id:guid}")]
-        public async Task<IActionResult> DeleteAsync(Guid id, CancellationToken ct)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteAsync(string id, CancellationToken ct)
         {
             try
             {

@@ -24,7 +24,7 @@ namespace GotsThorlabs.Services
             return await _db.PicsCalibrations.AsNoTracking().ToListAsync(ct);
         }
 
-        public async Task<PicsCalibration?> GetByIdAsync(Guid id, CancellationToken ct)
+        public async Task<PicsCalibration?> GetByIdAsync(string id, CancellationToken ct)
         {
             return await _db.PicsCalibrations.AsNoTracking().FirstOrDefaultAsync(p => p.PicsCalibrationId == id, ct);
         }
@@ -34,8 +34,8 @@ namespace GotsThorlabs.Services
             if (dto.Pic1File is null || dto.Pic2File is null)
                 throw new ArgumentException("Debe enviar Pic1File y Pic2File.");
 
-            var id = Guid.NewGuid();
-            var recordDir = Path.Combine(_imagesBasePath, id.ToString());
+            var id = Guid.NewGuid().ToString();
+            var recordDir = Path.Combine(_imagesBasePath, id);
             Directory.CreateDirectory(recordDir);
 
             var pic1Path = SaveFile(dto.Pic1File, recordDir, "pic1");
@@ -48,9 +48,9 @@ namespace GotsThorlabs.Services
                 Pic1 = pic1Path,
                 Pic2 = pic2Path,
                 AxeDirectionCalibration = dto.AxeDirectionCalibration,
-                Acepted = dto.Acepted,
-                dx = dto.dx,
-                dy = dto.dy,
+                Acepted = dto.Acepted ? 1 : 0   ,
+                Dx = dto.Dx,
+                Dy = dto.Dy,
                 Confidence = dto.Confidence,
                 MeasureUnit = dto.MeasureUnit,
                 MovementValue = dto.MovementValue
@@ -66,14 +66,14 @@ namespace GotsThorlabs.Services
             if (dto.Pic1File is null || dto.Pic2File is null)
                 throw new ArgumentException("Debe enviar Pic1File y Pic2File.");
 
-            var id = Guid.NewGuid();
-            var recordDir = Path.Combine(_imagesBasePath, id.ToString());
+            var id = Guid.NewGuid().ToString();
+            var recordDir = Path.Combine(_imagesBasePath, id);
             Directory.CreateDirectory(recordDir);
 
             SaveFile(dto.Pic1File, recordDir, "pic1");
             SaveFile(dto.Pic2File, recordDir, "pic2");
 
-            var baseRequestPath = "/SouerceStaticFiles/pics-calibrations/" + id.ToString();
+            var baseRequestPath = "/SouerceStaticFiles/pics-calibrations/" + id;
             var pic1Url = baseRequestPath + "/pic1" + Path.GetExtension(dto.Pic1File.FileName);
             var pic2Url = baseRequestPath + "/pic2" + Path.GetExtension(dto.Pic2File.FileName);
 
@@ -84,9 +84,9 @@ namespace GotsThorlabs.Services
                 Pic1 = pic1Url,
                 Pic2 = pic2Url,
                 AxeDirectionCalibration = dto.AxeDirectionCalibration,
-                Acepted = dto.Acepted,
-                dx = dto.dx,
-                dy = dto.dy,
+                Acepted = dto.Acepted ? 1 : 0,
+                Dx = dto.Dx,
+                Dy = dto.Dy,
                 Confidence = dto.Confidence,
                 MeasureUnit = dto.MeasureUnit,
                 MovementValue = dto.MovementValue
@@ -97,7 +97,7 @@ namespace GotsThorlabs.Services
             return entity;
         }
 
-        public async Task UpdateAsync(Guid id, PicsCalibrationUpdateDTO dto, CancellationToken ct)
+        public async Task UpdateAsync(string id, PicsCalibrationUpdateDTO dto, CancellationToken ct)
         {
             var existing = await _db.PicsCalibrations.FirstOrDefaultAsync(p => p.PicsCalibrationId == id, ct);
             if (existing is null) throw new KeyNotFoundException($"PicsCalibration {id} not found.");
@@ -107,8 +107,8 @@ namespace GotsThorlabs.Services
             existing.Pic2 = dto.Pic2;
             existing.AxeDirectionCalibration = dto.AxeDirectionCalibration;
             existing.Acepted = dto.Acepted;
-            existing.dx = dto.dx;
-            existing.dy = dto.dy;
+            existing.Dx = dto.Dx;
+            existing.Dy = dto.Dy;
             existing.Confidence = dto.Confidence;
             existing.MeasureUnit = dto.MeasureUnit;
             existing.MovementValue = dto.MovementValue;
@@ -116,7 +116,7 @@ namespace GotsThorlabs.Services
             await _db.SaveChangesAsync(ct);
         }
 
-        public async Task DeleteAsync(Guid id, CancellationToken ct)
+        public async Task DeleteAsync(string id, CancellationToken ct)
         {
             var pic = await _db.PicsCalibrations.FirstOrDefaultAsync(p => p.PicsCalibrationId == id, ct);
             if (pic is null) throw new KeyNotFoundException($"PicsCalibration {id} not found.");

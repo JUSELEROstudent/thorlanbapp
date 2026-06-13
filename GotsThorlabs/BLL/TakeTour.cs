@@ -36,7 +36,7 @@ namespace GotsThorlabs.BLL
 
         private readonly ThorlabsDbContext _db;
         private readonly GotsThorlabs.Interfaces.ICameraService _cameraService;
-        private int? _currentTourId;
+        private long? _currentTourId;
 
         public int rows; //= i
         public int columns; // = j
@@ -78,7 +78,7 @@ namespace GotsThorlabs.BLL
         }
 
        
-        public async IAsyncEnumerable<dynamic> Createmosaicstepbystep(int dimMove, string kimDeviceId,Guid groupCalibrationId)
+        public async IAsyncEnumerable<dynamic> Createmosaicstepbystep(int dimMove, string kimDeviceId, string groupCalibrationId)
         {
             var developerurl = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
             var listado = deviceslist();
@@ -136,7 +136,7 @@ namespace GotsThorlabs.BLL
             
             //seccion validacion de groupcalibration 
             var allCalibrations = _db.PicsCalibrations.AsNoTracking().Where(x => x.GroupCailbrationId == groupCalibrationId).ToList();
-            var mostAcurateCalibration = allCalibrations.OrderBy(item => Math.Abs(item.dx)).ThenBy(item2 => Math.Abs(item2.dy)).FirstOrDefault();
+            var mostAcurateCalibration = allCalibrations.OrderBy(item => Math.Abs(double.Parse(item.Dx))).ThenBy(item2 => Math.Abs(double.Parse(item2.Dy))).FirstOrDefault();
             if (mostAcurateCalibration == null)
             {
                 throw new Exception("No se encontró una calibración válida para el tour.");
@@ -354,7 +354,7 @@ namespace GotsThorlabs.BLL
         /// </summary>
         /// <returns>retorna el nombre completo de la carpeta donde se va a guardar las imagenes </returns>
         /// <exception cref="NotImplementedException"></exception>
-        public string CreateTour(Guid picsCalibrationId)
+        public string CreateTour(string picsCalibrationId)
         {
             var currentPath = Directory.GetCurrentDirectory();
             string fullnamefolder = Path.Combine(currentPath, $"StaticFiles{Path.DirectorySeparatorChar}" + namefolder);
@@ -372,7 +372,7 @@ namespace GotsThorlabs.BLL
 
             var tour = new Tour
             {
-                Date = DateTime.Now,
+                Date = DateTime.Now.ToString("o"),
                 NameFolder = namefolder,
                 NumberX = columns,
                 NumberY = rows,
@@ -457,7 +457,7 @@ namespace GotsThorlabs.BLL
 
             var resolvedTourId = _currentTourId ?? _db.Tours
                 .Where(x => x.NameFolder == namefolder)
-                .Select(x => (int?)x.IdTour)
+                .Select(x => (long?)x.IdTour)
                 .FirstOrDefault();
 
             if (resolvedTourId.HasValue)

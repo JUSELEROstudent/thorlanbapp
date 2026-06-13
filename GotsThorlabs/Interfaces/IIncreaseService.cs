@@ -6,9 +6,9 @@ namespace GotsThorlabs.Interfaces
     public interface IIncreaseService
     {
         Task<IEnumerable<Increase>> GetAllAsync(CancellationToken ct);
-        Task<Increase?> GetByIdAsync(Guid id, CancellationToken ct);
+        Task<Increase?> GetByIdAsync(string id, CancellationToken ct);
         Task<Increase> CreateAsync(IncreaseDTO dto, CancellationToken ct);
-        Task UpdateAsync(Guid id, IncreaseDTO dto, CancellationToken ct);
-        Task DeleteAsync(Guid id, CancellationToken ct);
+        Task UpdateAsync(string id, IncreaseDTO dto, CancellationToken ct);
+        Task DeleteAsync(string id, CancellationToken ct);
     }
 }

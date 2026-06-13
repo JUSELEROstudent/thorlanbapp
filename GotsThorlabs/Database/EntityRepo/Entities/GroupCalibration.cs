@@ -1,19 +1,25 @@
-namespace GotsThorlabs.Database.EntityRepo.Entities;
+﻿using System;
+using System.Collections.Generic;
 
-public class GroupCalibration
+namespace GotsThorlabs.Database.EntityRepo.Entities
 {
-    public Guid GroupCailbrationId { get; set; }
+    public partial class GroupCalibration
+    {
+        public GroupCalibration()
+        {
+            PicsCalibrations = new HashSet<PicsCalibration>();
+        }
 
-    public Guid CameraId { get; set; }
-    public Guid MicroscopeId { get; set; }
-    public Guid IncreaseId { get; set; }
+        public string GroupCailbrationId { get; set; } = null!;
+        public string CameraId { get; set; } = null!;
+        public string MicroscopeId { get; set; } = null!;
+        public string IncreaseId { get; set; } = null!;
+        public string Date { get; set; } = null!;
+        public string AditionalInfo { get; set; } = null!;
 
-    public DateTime Date { get; set; }
-    public string AditionalInfo { get; set; } = default!;
-
-    public Camera? Camera { get; set; }
-    public Microscope? Microscope { get; set; }
-    public Increase? Increase { get; set; }
-
-    public ICollection<PicsCalibration> PicsCalibrations { get; set; } = new List<PicsCalibration>();
+        public virtual Camera Camera { get; set; } = null!;
+        public virtual Increase Increase { get; set; } = null!;
+        public virtual Microscope Microscope { get; set; } = null!;
+        public virtual ICollection<PicsCalibration> PicsCalibrations { get; set; }
+    }
 }

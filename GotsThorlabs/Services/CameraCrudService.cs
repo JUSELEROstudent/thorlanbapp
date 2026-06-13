@@ -22,7 +22,7 @@ namespace GotsThorlabs.Services
             return await _db.Cameras.AsNoTracking().ToListAsync(ct);
         }
 
-        public async Task<Camera?> GetByIdAsync(Guid id, CancellationToken ct)
+        public async Task<Camera?> GetByIdAsync(string id, CancellationToken ct)
         {
             return await _db.Cameras.AsNoTracking().FirstOrDefaultAsync(c => c.CameraId == id, ct);
         }
@@ -33,7 +33,7 @@ namespace GotsThorlabs.Services
 
             var entity = new Camera
             {
-                CameraId = dto.CameraId == Guid.Empty ? Guid.NewGuid() : dto.CameraId,
+                CameraId = string.IsNullOrWhiteSpace(dto.CameraId) ? Guid.NewGuid().ToString() : dto.CameraId,
                 Name = dto.Name,
                 LocalIdentifier = dto.LocalIdentifier,
                 Features = dto.Features,
@@ -56,7 +56,7 @@ namespace GotsThorlabs.Services
             return entity;
         }
 
-        public async Task UpdateAsync(Guid id, CameraDTO dto, CancellationToken ct)
+        public async Task UpdateAsync(string id, CameraDTO dto, CancellationToken ct)
         {
             var existing = await _db.Cameras.FirstOrDefaultAsync(c => c.CameraId == id, ct);
             if (existing is null) throw new KeyNotFoundException($"Camera {id} not found.");
@@ -69,7 +69,7 @@ namespace GotsThorlabs.Services
             await _db.SaveChangesAsync(ct);
         }
 
-        public async Task DeleteAsync(Guid id, CancellationToken ct)
+        public async Task DeleteAsync(string id, CancellationToken ct)
         {
             var camera = await _db.Cameras.FirstOrDefaultAsync(c => c.CameraId == id, ct);
             if (camera is null) throw new KeyNotFoundException($"Camera {id} not found.");

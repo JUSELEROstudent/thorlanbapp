@@ -1,9 +1,13 @@
-namespace GotsThorlabs.Database.EntityRepo.Entities;
+﻿using System;
+using System.Collections.Generic;
 
-public class User
+namespace GotsThorlabs.Database.EntityRepo.Entities
 {
-    public int IdUser { get; set; }
-    public string Nickname { get; set; } = default!;
-    public string EMail { get; set; } = default!;
-    public string Password { get; set; } = default!;
+    public partial class User
+    {
+        public long IdUser { get; set; }
+        public string Nickname { get; set; } = null!;
+        public string EMail { get; set; } = null!;
+        public string Password { get; set; } = null!;
+    }
 }

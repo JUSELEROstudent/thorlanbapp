@@ -1,11 +1,20 @@
-namespace GotsThorlabs.Database.EntityRepo.Entities;
+﻿using System;
+using System.Collections.Generic;
 
-public class Increase
+namespace GotsThorlabs.Database.EntityRepo.Entities
 {
-    public Guid IncreaseId { get; set; }
-    public string Name { get; set; } = default!;
-    public decimal Value { get; set; }
-    public string AditionalInfo { get; set; } = default!;
+    public partial class Increase
+    {
+        public Increase()
+        {
+            GroupCalibrations = new HashSet<GroupCalibration>();
+        }
 
-    public ICollection<GroupCalibration> GroupCalibrations { get; set; } = new List<GroupCalibration>();
+        public string IncreaseId { get; set; } = null!;
+        public string Name { get; set; } = null!;
+        public string Value { get; set; } = null!;
+        public string AditionalInfo { get; set; } = null!;
+
+        public virtual ICollection<GroupCalibration> GroupCalibrations { get; set; }
+    }
 }

@@ -1,22 +1,30 @@
-namespace GotsThorlabs.Database.EntityRepo.Entities;
+ï»¿using System;
+using System.Collections.Generic;
 
-public class PicsCalibration
+namespace GotsThorlabs.Database.EntityRepo.Entities
 {
-    public Guid PicsCalibrationId { get; set; }
-    public Guid GroupCailbrationId { get; set; }
+    public partial class PicsCalibration
+    {
+        public PicsCalibration()
+        {
+            Tours = new HashSet<Tour>();
+        }
 
-    public string Pic1 { get; set; } = default!; // up to 1200 chars
-    public string Pic2 { get; set; } = default!; // up to 1200 chars
-    public string AxeDirectionCalibration { get; set; } = default!; // length 2
-    public bool Acepted { get; set; }
-    public decimal dx { get; set; }
-    public decimal dy { get; set; }
-    public decimal Confidence { get; set; }
-    public string MeasureUnit { get; set; } = default!;
-    public decimal MovementValue { get; set; }
+        public string PicsCalibrationId { get; set; } = null!;
+        public string GroupCailbrationId { get; set; } = null!;
+        public string Pic1 { get; set; } = null!;
+        public string Pic2 { get; set; } = null!;
+        public string AxeDirectionCalibration { get; set; } = null!;
+        public long Acepted { get; set; }
+        public string Dx { get; set; } = null!;
+        public string Dy { get; set; } = null!;
+        public string Confidence { get; set; } = null!;
+        public string MeasureUnit { get; set; } = null!;
+        public string MovementValue { get; set; } = null!;
+        public long? NumberOfSteps { get; set; }
+        public string? AxisMovementName { get; set; }
 
-    public GroupCalibration? GroupCalibration { get; set; }
-
-    // Relación 1-1 opcional con Tour (la FK vive en Tour)
-    public Tour? Tour { get; set; }
+        public virtual GroupCalibration GroupCailbration { get; set; } = null!;
+        public virtual ICollection<Tour> Tours { get; set; }
+    }
 }

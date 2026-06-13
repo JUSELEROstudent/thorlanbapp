@@ -1,12 +1,21 @@
-namespace GotsThorlabs.Database.EntityRepo.Entities;
+﻿using System;
+using System.Collections.Generic;
 
-public class Camera
+namespace GotsThorlabs.Database.EntityRepo.Entities
 {
-    public Guid CameraId { get; set; }
-    public string Name { get; set; } = default!;
-    public string LocalIdentifier { get; set; } = default!;
-    public string Features { get; set; } = default!;
-    public string DriverType { get; set; } = "generic";
+    public partial class Camera
+    {
+        public Camera()
+        {
+            GroupCalibrations = new HashSet<GroupCalibration>();
+        }
 
-    public ICollection<GroupCalibration> GroupCalibrations { get; set; } = new List<GroupCalibration>();
+        public string CameraId { get; set; } = null!;
+        public string Name { get; set; } = null!;
+        public string LocalIdentifier { get; set; } = null!;
+        public string Features { get; set; } = null!;
+        public string DriverType { get; set; } = null!;
+
+        public virtual ICollection<GroupCalibration> GroupCalibrations { get; set; }
+    }
 }

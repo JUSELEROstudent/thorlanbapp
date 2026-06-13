@@ -20,7 +20,7 @@ namespace GotsThorlabs.Services
             return await _db.GroupCalibrations.AsNoTracking().ToListAsync(ct);
         }
 
-        public async Task<GroupCalibration?> GetByIdAsync(Guid id, CancellationToken ct)
+        public async Task<GroupCalibration?> GetByIdAsync(string id, CancellationToken ct)
         {
             return await _db.GroupCalibrations.AsNoTracking().FirstOrDefaultAsync(g => g.GroupCailbrationId == id, ct);
         }
@@ -29,7 +29,7 @@ namespace GotsThorlabs.Services
         {
             var entity = new GroupCalibration
             {
-                GroupCailbrationId = dto.GroupCailbrationId == Guid.Empty ? Guid.NewGuid() : dto.GroupCailbrationId,
+                GroupCailbrationId = string.IsNullOrWhiteSpace(dto.GroupCailbrationId) ? Guid.NewGuid().ToString() : dto.GroupCailbrationId,
                 CameraId = dto.CameraId,
                 MicroscopeId = dto.MicroscopeId,
                 IncreaseId = dto.IncreaseId,
@@ -42,7 +42,7 @@ namespace GotsThorlabs.Services
             return entity;
         }
 
-        public async Task UpdateAsync(Guid id, GroupCalibrationDTO dto, CancellationToken ct)
+        public async Task UpdateAsync(string id, GroupCalibrationDTO dto, CancellationToken ct)
         {
             var existing = await _db.GroupCalibrations.FirstOrDefaultAsync(g => g.GroupCailbrationId == id, ct);
             if (existing is null) throw new KeyNotFoundException($"GroupCalibration {id} not found.");
@@ -56,7 +56,7 @@ namespace GotsThorlabs.Services
             await _db.SaveChangesAsync(ct);
         }
 
-        public async Task DeleteAsync(Guid id, CancellationToken ct)
+        public async Task DeleteAsync(string id, CancellationToken ct)
         {
             var group = await _db.GroupCalibrations.FirstOrDefaultAsync(g => g.GroupCailbrationId == id, ct);
             if (group is null) throw new KeyNotFoundException($"GroupCalibration {id} not found.");

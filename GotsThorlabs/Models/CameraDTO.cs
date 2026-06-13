@@ -2,7 +2,7 @@ namespace GotsThorlabs.Models
 {
     public class CameraDTO
     {
-        public Guid CameraId { get; set; }
+        public string CameraId { get; set; } = default!;
         public string Name { get; set; } = default!;
         public string LocalIdentifier { get; set; } = default!;
         public string Features { get; set; } = default!;

@@ -64,7 +64,7 @@ namespace GotsThorlabs.BLL
             finalimg = new Mat[columns];
         }
 
-        public dynamic Createimagemosaic(Guid picsCalibrationId)
+        public dynamic Createimagemosaic(string picsCalibrationId)
         {
             var listado = deviceslist();
             if (listado == null) { return false; }
@@ -179,7 +179,7 @@ namespace GotsThorlabs.BLL
         ///<remarks>
         ///devuelve la url de la ubicacion en el servidor de la imagen actual del mapeo
         ///</remarks>
-        public async IAsyncEnumerable<dynamic> Createmosaicstepbystep( int dimMove, string kimDeviceId, Guid picsCalibrationId)
+        public async IAsyncEnumerable<dynamic> Createmosaicstepbystep( int dimMove, string kimDeviceId, string picsCalibrationId)
         {
             var developerurl = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
             var listado = deviceslist();
@@ -342,7 +342,7 @@ namespace GotsThorlabs.BLL
             yield return urlstaticfiles;
 
         }
-        public async IAsyncEnumerable<dynamic> Createmosaicstepbystep2(int dimMove, string kimDeviceId, Guid picsCalibrationId)
+        public async IAsyncEnumerable<dynamic> Createmosaicstepbystep2(int dimMove, string kimDeviceId, string picsCalibrationId)
         {
             var developerurl = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
             var listado = deviceslist();
@@ -664,7 +664,7 @@ namespace GotsThorlabs.BLL
         /// </summary>
         /// <returns>retorna el nombre completo de la carpeta donde se va a guardar las imagenes </returns>
         /// <exception cref="NotImplementedException"></exception>
-        public string CreateTour(Guid picsCalibrationId)
+        public string CreateTour(string picsCalibrationId)
         {
             var currentPath = Directory.GetCurrentDirectory();
             string fullnamefolder = Path.Combine(currentPath, $"StaticFiles{Path.DirectorySeparatorChar}" + namefolder);

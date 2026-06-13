@@ -24,8 +24,8 @@ namespace GotsThorlabs.Controls
             return Ok(pics);
         }
 
-        [HttpGet("{id:guid}")]
-        public async Task<ActionResult<PicsCalibration>> GetByIdAsync(Guid id, CancellationToken ct)
+        [HttpGet("{id}")]
+        public async Task<ActionResult<PicsCalibration>> GetByIdAsync(string id, CancellationToken ct)
         {
             var pic = await _service.GetByIdAsync(id, ct);
             if (pic is null) return NotFound();
@@ -66,11 +66,11 @@ namespace GotsThorlabs.Controls
             }
         }
 
-        [HttpPut("{id:guid}")]
-        public async Task<IActionResult> UpdateAsync(Guid id, [FromBody] PicsCalibrationUpdateDTO dto, CancellationToken ct)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateAsync(string id, [FromBody] PicsCalibrationUpdateDTO dto, CancellationToken ct)
         {
             if (dto is null) return BadRequest();
-            if (id != dto.PicsCalibrationId && dto.PicsCalibrationId != Guid.Empty) return BadRequest("Id mismatch");
+            if (id != dto.PicsCalibrationId && !string.IsNullOrEmpty(dto.PicsCalibrationId)) return BadRequest("Id mismatch");
 
             try
             {
@@ -84,8 +84,8 @@ namespace GotsThorlabs.Controls
             return NoContent();
         }
 
-        [HttpDelete("{id:guid}")]
-        public async Task<IActionResult> DeleteAsync(Guid id, CancellationToken ct)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteAsync(string id, CancellationToken ct)
         {
             try
             {

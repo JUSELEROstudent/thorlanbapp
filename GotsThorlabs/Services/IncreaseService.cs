@@ -20,7 +20,7 @@ namespace GotsThorlabs.Services
             return await _db.Increases.AsNoTracking().ToListAsync(ct);
         }
 
-        public async Task<Increase?> GetByIdAsync(Guid id, CancellationToken ct)
+        public async Task<Increase?> GetByIdAsync(string id, CancellationToken ct)
         {
             return await _db.Increases.AsNoTracking().FirstOrDefaultAsync(i => i.IncreaseId == id, ct);
         }
@@ -29,7 +29,7 @@ namespace GotsThorlabs.Services
         {
             var entity = new Increase
             {
-                IncreaseId = dto.IncreaseId == Guid.Empty ? Guid.NewGuid() : dto.IncreaseId,
+                IncreaseId = string.IsNullOrWhiteSpace(dto.IncreaseId) ? Guid.NewGuid().ToString() : dto.IncreaseId,
                 Name = dto.Name,
                 Value = dto.Value,
                 AditionalInfo = dto.AditionalInfo
@@ -40,7 +40,7 @@ namespace GotsThorlabs.Services
             return entity;
         }
 
-        public async Task UpdateAsync(Guid id, IncreaseDTO dto, CancellationToken ct)
+        public async Task UpdateAsync(string id, IncreaseDTO dto, CancellationToken ct)
         {
             var existing = await _db.Increases.FirstOrDefaultAsync(i => i.IncreaseId == id, ct);
             if (existing is null) throw new KeyNotFoundException($"Increase {id} not found.");
@@ -52,7 +52,7 @@ namespace GotsThorlabs.Services
             await _db.SaveChangesAsync(ct);
         }
 
-        public async Task DeleteAsync(Guid id, CancellationToken ct)
+        public async Task DeleteAsync(string id, CancellationToken ct)
         {
             var increase = await _db.Increases.FirstOrDefaultAsync(i => i.IncreaseId == id, ct);
             if (increase is null) throw new KeyNotFoundException($"Increase {id} not found.");

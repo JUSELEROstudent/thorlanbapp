@@ -2,9 +2,9 @@ namespace GotsThorlabs.Models
 {
     public class IncreaseDTO
     {
-        public Guid IncreaseId { get; set; }
+        public string IncreaseId { get; set; } = default!;
         public string Name { get; set; } = default!;
-        public decimal Value { get; set; }
+        public string Value { get; set; } = default!;
         public string AditionalInfo { get; set; } = default!;
     }
 }

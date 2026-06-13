@@ -20,7 +20,7 @@ namespace GotsThorlabs.Services
             return await _db.Microscopes.AsNoTracking().ToListAsync(ct);
         }
 
-        public async Task<Microscope?> GetByIdAsync(Guid id, CancellationToken ct)
+        public async Task<Microscope?> GetByIdAsync(string id, CancellationToken ct)
         {
             return await _db.Microscopes.AsNoTracking().FirstOrDefaultAsync(m => m.MicroscopeId == id, ct);
         }
@@ -29,7 +29,7 @@ namespace GotsThorlabs.Services
         {
             var entity = new Microscope
             {
-                MicroscopeId = dto.MicroscopeId == Guid.Empty ? Guid.NewGuid() : dto.MicroscopeId,
+                MicroscopeId = string.IsNullOrWhiteSpace(dto.MicroscopeId) ? Guid.NewGuid().ToString() : dto.MicroscopeId,
                 Name = dto.Name,
                 Brand = dto.Brand,
                 Site = dto.Site,
@@ -41,7 +41,7 @@ namespace GotsThorlabs.Services
             return entity;
         }
 
-        public async Task UpdateAsync(Guid id, MicroscopeDTO dto, CancellationToken ct)
+        public async Task UpdateAsync(string id, MicroscopeDTO dto, CancellationToken ct)
         {
             var existing = await _db.Microscopes.FirstOrDefaultAsync(m => m.MicroscopeId == id, ct);
             if (existing is null) throw new KeyNotFoundException($"Microscope {id} not found.");
@@ -54,7 +54,7 @@ namespace GotsThorlabs.Services
             await _db.SaveChangesAsync(ct);
         }
 
-        public async Task DeleteAsync(Guid id, CancellationToken ct)
+        public async Task DeleteAsync(string id, CancellationToken ct)
         {
             var microscope = await _db.Microscopes.FirstOrDefaultAsync(m => m.MicroscopeId == id, ct);
             if (microscope is null) throw new KeyNotFoundException($"Microscope {id} not found.");

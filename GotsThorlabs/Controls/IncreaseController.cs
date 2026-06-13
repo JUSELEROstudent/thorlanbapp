@@ -23,8 +23,8 @@ namespace GotsThorlabs.Controls
             return Ok(increases);
         }
 
-        [HttpGet("{id:guid}")]
-        public async Task<ActionResult<Increase>> GetByIdAsync(Guid id, CancellationToken ct)
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Increase>> GetByIdAsync(string id, CancellationToken ct)
         {
             var increase = await _service.GetByIdAsync(id, ct);
             if (increase is null) return NotFound();
@@ -39,11 +39,11 @@ namespace GotsThorlabs.Controls
             return Ok(entity);
         }
 
-        [HttpPut("{id:guid}")]
-        public async Task<IActionResult> UpdateAsync(Guid id, [FromBody] IncreaseDTO dto, CancellationToken ct)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateAsync(string id, [FromBody] IncreaseDTO dto, CancellationToken ct)
         {
             if (dto is null) return BadRequest();
-            if (id != dto.IncreaseId && dto.IncreaseId != Guid.Empty) return BadRequest("Id mismatch");
+            if (id != dto.IncreaseId && !string.IsNullOrEmpty(dto.IncreaseId)) return BadRequest("Id mismatch");
 
             try
             {
@@ -53,8 +53,8 @@ namespace GotsThorlabs.Controls
             return NoContent();
         }
 
-        [HttpDelete("{id:guid}")]
-        public async Task<IActionResult> DeleteAsync(Guid id, CancellationToken ct)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteAsync(string id, CancellationToken ct)
         {
             try
             {

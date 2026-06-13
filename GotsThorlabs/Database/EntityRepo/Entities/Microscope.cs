@@ -1,12 +1,21 @@
-namespace GotsThorlabs.Database.EntityRepo.Entities;
+﻿using System;
+using System.Collections.Generic;
 
-public class Microscope
+namespace GotsThorlabs.Database.EntityRepo.Entities
 {
-    public Guid MicroscopeId { get; set; }
-    public string Name { get; set; } = default!;
-    public string Brand { get; set; } = default!;
-    public string Site { get; set; } = default!;
-    public string AditionalInfo { get; set; } = default!;
+    public partial class Microscope
+    {
+        public Microscope()
+        {
+            GroupCalibrations = new HashSet<GroupCalibration>();
+        }
 
-    public ICollection<GroupCalibration> GroupCalibrations { get; set; } = new List<GroupCalibration>();
+        public string MicroscopeId { get; set; } = null!;
+        public string Name { get; set; } = null!;
+        public string Brand { get; set; } = null!;
+        public string Site { get; set; } = null!;
+        public string AditionalInfo { get; set; } = null!;
+
+        public virtual ICollection<GroupCalibration> GroupCalibrations { get; set; }
+    }
 }

@@ -119,7 +119,7 @@ namespace GotsThorlabs.Hubs
           int indexcam,
           int rows,
           int columns,
-          Guid groupCalibrationId,
+          string groupCalibrationId,
           string device,
          [EnumeratorCancellation]
         CancellationToken cancellationToken)

@@ -1,15 +1,19 @@
-namespace GotsThorlabs.Database.EntityRepo.Entities;
+﻿using System;
+using System.Collections.Generic;
 
-public class Image
+namespace GotsThorlabs.Database.EntityRepo.Entities
 {
-    public int IdImage { get; set; }
-    public string Name { get; set; } = default!;
-    public double? GausianVal { get; set; }
-    public string Path { get; set; } = default!;
-    public int X { get; set; }
-    public int Y { get; set; }
-    public int Z { get; set; }
+    public partial class Image
+    {
+        public long IdImage { get; set; }
+        public string Name { get; set; } = null!;
+        public double? GausianVal { get; set; }
+        public string Path { get; set; } = null!;
+        public long X { get; set; }
+        public long Y { get; set; }
+        public long Z { get; set; }
+        public long IdTour { get; set; }
 
-    public int IdTour { get; set; }
-    public Tour? Tour { get; set; }
+        public virtual Tour IdTourNavigation { get; set; } = null!;
+    }
 }

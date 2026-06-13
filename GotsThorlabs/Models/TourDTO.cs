@@ -2,14 +2,14 @@ namespace GotsThorlabs.Models
 {
     public class TourDTO
     {
-        public int IdTour { get; set; }
-        public DateTime Date { get; set; }
+        public long IdTour { get; set; }
+        public string Date { get; set; } = default!;
         public string NameFolder { get; set; } = default!;
-        public int NumberX { get; set; }
-        public int NumberY { get; set; }
-        public int NumberZ { get; set; }
-        public int Camera { get; set; }
+        public long NumberX { get; set; }
+        public long NumberY { get; set; }
+        public long NumberZ { get; set; }
+        public long Camera { get; set; }
         public string? EndStatus { get; set; }
-        public Guid? PicsCalibrationId { get; set; }
+        public string PicsCalibrationId { get; set; } = default!;
     }
 }

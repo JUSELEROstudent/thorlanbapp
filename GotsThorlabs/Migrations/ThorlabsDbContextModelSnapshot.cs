@@ -19,33 +19,27 @@ namespace GotsThorlabs.Migrations
 
             modelBuilder.Entity("GotsThorlabs.Database.EntityRepo.Entities.Camera", b =>
                 {
-                    b.Property<Guid>("CameraId")
-                        .ValueGeneratedOnAdd()
+                    b.Property<string>("CameraId")
                         .HasColumnType("TEXT")
                         .HasColumnName("cameraId");
 
+                    b.Property<string>("DriverType")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("driverType");
+
                     b.Property<string>("Features")
                         .IsRequired()
-                        .HasMaxLength(250)
                         .HasColumnType("TEXT")
                         .HasColumnName("features");
 
-                    b.Property<string>("DriverType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT")
-                        .HasColumnName("driverType")
-                        .HasDefaultValue("generic");
-
                     b.Property<string>("LocalIdentifier")
                         .IsRequired()
-                        .HasMaxLength(250)
                         .HasColumnType("TEXT")
                         .HasColumnName("localIdentifier");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(50)
                         .HasColumnType("TEXT")
                         .HasColumnName("name");
 
@@ -56,30 +50,32 @@ namespace GotsThorlabs.Migrations
 
             modelBuilder.Entity("GotsThorlabs.Database.EntityRepo.Entities.GroupCalibration", b =>
                 {
-                    b.Property<Guid>("GroupCailbrationId")
-                        .ValueGeneratedOnAdd()
+                    b.Property<string>("GroupCailbrationId")
                         .HasColumnType("TEXT")
                         .HasColumnName("groupCailbrationId");
 
                     b.Property<string>("AditionalInfo")
                         .IsRequired()
-                        .HasMaxLength(250)
                         .HasColumnType("TEXT")
                         .HasColumnName("aditionalInfo");
 
-                    b.Property<Guid>("CameraId")
+                    b.Property<string>("CameraId")
+                        .IsRequired()
                         .HasColumnType("TEXT")
                         .HasColumnName("cameraId");
 
-                    b.Property<DateTime>("Date")
+                    b.Property<string>("Date")
+                        .IsRequired()
                         .HasColumnType("TEXT")
                         .HasColumnName("date");
 
-                    b.Property<Guid>("IncreaseId")
+                    b.Property<string>("IncreaseId")
+                        .IsRequired()
                         .HasColumnType("TEXT")
                         .HasColumnName("increaseId");
 
-                    b.Property<Guid>("MicroscopeId")
+                    b.Property<string>("MicroscopeId")
+                        .IsRequired()
                         .HasColumnType("TEXT")
                         .HasColumnName("microscopeId");
 
@@ -96,7 +92,7 @@ namespace GotsThorlabs.Migrations
 
             modelBuilder.Entity("GotsThorlabs.Database.EntityRepo.Entities.Image", b =>
                 {
-                    b.Property<int>("IdImage")
+                    b.Property<long>("IdImage")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER")
                         .HasColumnName("idImage");
@@ -105,7 +101,7 @@ namespace GotsThorlabs.Migrations
                         .HasColumnType("REAL")
                         .HasColumnName("gausianVal");
 
-                    b.Property<int>("IdTour")
+                    b.Property<long>("IdTour")
                         .HasColumnType("INTEGER")
                         .HasColumnName("idTour");
 
@@ -119,15 +115,15 @@ namespace GotsThorlabs.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("path");
 
-                    b.Property<int>("X")
+                    b.Property<long>("X")
                         .HasColumnType("INTEGER")
                         .HasColumnName("X");
 
-                    b.Property<int>("Y")
+                    b.Property<long>("Y")
                         .HasColumnType("INTEGER")
                         .HasColumnName("Y");
 
-                    b.Property<int>("Z")
+                    b.Property<long>("Z")
                         .HasColumnType("INTEGER")
                         .HasColumnName("Z");
 
@@ -140,25 +136,22 @@ namespace GotsThorlabs.Migrations
 
             modelBuilder.Entity("GotsThorlabs.Database.EntityRepo.Entities.Increase", b =>
                 {
-                    b.Property<Guid>("IncreaseId")
-                        .ValueGeneratedOnAdd()
+                    b.Property<string>("IncreaseId")
                         .HasColumnType("TEXT")
                         .HasColumnName("increaseId");
 
                     b.Property<string>("AditionalInfo")
                         .IsRequired()
-                        .HasMaxLength(250)
                         .HasColumnType("TEXT")
                         .HasColumnName("aditionalInfo");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(250)
                         .HasColumnType("TEXT")
                         .HasColumnName("name");
 
-                    b.Property<decimal>("Value")
-                        .HasPrecision(18, 6)
+                    b.Property<string>("Value")
+                        .IsRequired()
                         .HasColumnType("TEXT")
                         .HasColumnName("value");
 
@@ -169,32 +162,27 @@ namespace GotsThorlabs.Migrations
 
             modelBuilder.Entity("GotsThorlabs.Database.EntityRepo.Entities.Microscope", b =>
                 {
-                    b.Property<Guid>("MicroscopeId")
-                        .ValueGeneratedOnAdd()
+                    b.Property<string>("MicroscopeId")
                         .HasColumnType("TEXT")
                         .HasColumnName("microscopeId");
 
                     b.Property<string>("AditionalInfo")
                         .IsRequired()
-                        .HasMaxLength(250)
                         .HasColumnType("TEXT")
                         .HasColumnName("aditionalInfo");
 
                     b.Property<string>("Brand")
                         .IsRequired()
-                        .HasMaxLength(250)
                         .HasColumnType("TEXT")
                         .HasColumnName("brand");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(250)
                         .HasColumnType("TEXT")
                         .HasColumnName("name");
 
                     b.Property<string>("Site")
                         .IsRequired()
-                        .HasMaxLength(250)
                         .HasColumnType("TEXT")
                         .HasColumnName("site");
 
@@ -205,62 +193,66 @@ namespace GotsThorlabs.Migrations
 
             modelBuilder.Entity("GotsThorlabs.Database.EntityRepo.Entities.PicsCalibration", b =>
                 {
-                    b.Property<Guid>("PicsCalibrationId")
-                        .ValueGeneratedOnAdd()
+                    b.Property<string>("PicsCalibrationId")
                         .HasColumnType("TEXT")
                         .HasColumnName("picsCalibrationId");
 
-                    b.Property<bool>("Acepted")
+                    b.Property<long>("Acepted")
                         .HasColumnType("INTEGER")
                         .HasColumnName("acepted");
 
                     b.Property<string>("AxeDirectionCalibration")
                         .IsRequired()
-                        .HasMaxLength(2)
                         .HasColumnType("TEXT")
                         .HasColumnName("axeDirectionCalibration");
 
-                    b.Property<decimal>("Confidence")
-                        .HasPrecision(18, 6)
+                    b.Property<string>("AxisMovementName")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("axisMovementName");
+
+                    b.Property<string>("Confidence")
+                        .IsRequired()
                         .HasColumnType("TEXT")
                         .HasColumnName("confidence");
 
-                    b.Property<Guid>("GroupCailbrationId")
+                    b.Property<string>("Dx")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("dx");
+
+                    b.Property<string>("Dy")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("dy");
+
+                    b.Property<string>("GroupCailbrationId")
+                        .IsRequired()
                         .HasColumnType("TEXT")
                         .HasColumnName("groupCailbrationId");
 
                     b.Property<string>("MeasureUnit")
                         .IsRequired()
-                        .HasMaxLength(250)
                         .HasColumnType("TEXT")
                         .HasColumnName("measureUnit");
 
-                    b.Property<decimal>("MovementValue")
-                        .HasPrecision(18, 6)
+                    b.Property<string>("MovementValue")
+                        .IsRequired()
                         .HasColumnType("TEXT")
                         .HasColumnName("movementValue");
 
+                    b.Property<long?>("NumberOfSteps")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("numberOfSteps");
+
                     b.Property<string>("Pic1")
                         .IsRequired()
-                        .HasMaxLength(1200)
                         .HasColumnType("TEXT")
                         .HasColumnName("pic1");
 
                     b.Property<string>("Pic2")
                         .IsRequired()
-                        .HasMaxLength(1200)
                         .HasColumnType("TEXT")
                         .HasColumnName("pic2");
-
-                    b.Property<decimal>("dx")
-                        .HasPrecision(18, 6)
-                        .HasColumnType("TEXT")
-                        .HasColumnName("dx");
-
-                    b.Property<decimal>("dy")
-                        .HasPrecision(18, 6)
-                        .HasColumnType("TEXT")
-                        .HasColumnName("dy");
 
                     b.HasKey("PicsCalibrationId");
 
@@ -271,16 +263,17 @@ namespace GotsThorlabs.Migrations
 
             modelBuilder.Entity("GotsThorlabs.Database.EntityRepo.Entities.Tour", b =>
                 {
-                    b.Property<int>("IdTour")
+                    b.Property<long>("IdTour")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER")
                         .HasColumnName("idTour");
 
-                    b.Property<int>("Camera")
+                    b.Property<long>("Camera")
                         .HasColumnType("INTEGER")
                         .HasColumnName("Camera");
 
-                    b.Property<DateTime>("Date")
+                    b.Property<string>("Date")
+                        .IsRequired()
                         .HasColumnType("TEXT")
                         .HasColumnName("date");
 
@@ -293,26 +286,33 @@ namespace GotsThorlabs.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("nameFolder");
 
-                    b.Property<int>("NumberX")
+                    b.Property<long>("NumberX")
                         .HasColumnType("INTEGER")
                         .HasColumnName("NumberX");
 
-                    b.Property<int>("NumberY")
+                    b.Property<long>("NumberY")
                         .HasColumnType("INTEGER")
                         .HasColumnName("NumberY");
 
-                    b.Property<int>("NumberZ")
+                    b.Property<long>("NumberZ")
                         .HasColumnType("INTEGER")
                         .HasColumnName("NumberZ");
 
+                    b.Property<string>("PicsCalibrationId")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("picsCalibrationId");
+
                     b.HasKey("IdTour");
+
+                    b.HasIndex("PicsCalibrationId");
 
                     b.ToTable("tour", (string)null);
                 });
 
             modelBuilder.Entity("GotsThorlabs.Database.EntityRepo.Entities.User", b =>
                 {
-                    b.Property<int>("IdUser")
+                    b.Property<long>("IdUser")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER")
                         .HasColumnName("idUser");
@@ -386,6 +386,17 @@ namespace GotsThorlabs.Migrations
                     b.Navigation("GroupCalibration");
                 });
 
+            modelBuilder.Entity("GotsThorlabs.Database.EntityRepo.Entities.Tour", b =>
+                {
+                    b.HasOne("GotsThorlabs.Database.EntityRepo.Entities.PicsCalibration", "PicsCalibration")
+                        .WithMany("Tours")
+                        .HasForeignKey("PicsCalibrationId")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .IsRequired();
+
+                    b.Navigation("PicsCalibration");
+                });
+
             modelBuilder.Entity("GotsThorlabs.Database.EntityRepo.Entities.Camera", b =>
                 {
                     b.Navigation("GroupCalibrations");
@@ -409,6 +420,11 @@ namespace GotsThorlabs.Migrations
             modelBuilder.Entity("GotsThorlabs.Database.EntityRepo.Entities.Tour", b =>
                 {
                     b.Navigation("Images");
+                });
+
+            modelBuilder.Entity("GotsThorlabs.Database.EntityRepo.Entities.PicsCalibration", b =>
+                {
+                    b.Navigation("Tours");
                 });
 #pragma warning restore 612, 618
         }

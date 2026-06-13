@@ -24,8 +24,8 @@ namespace GotsThorlabs.Controls
             return Ok(groups);
         }
 
-        [HttpGet("{id:guid}")]
-        public async Task<ActionResult<GroupCalibration>> GetByIdAsync(Guid id, CancellationToken ct)
+        [HttpGet("{id}")]
+        public async Task<ActionResult<GroupCalibration>> GetByIdAsync(string id, CancellationToken ct)
         {
             var group = await _service.GetByIdAsync(id, ct);
             if (group is null) return NotFound();
@@ -47,11 +47,11 @@ namespace GotsThorlabs.Controls
             }
         }
 
-        [HttpPut("{id:guid}")]
-        public async Task<IActionResult> UpdateAsync(Guid id, [FromBody] GroupCalibrationDTO dto, CancellationToken ct)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateAsync(string id, [FromBody] GroupCalibrationDTO dto, CancellationToken ct)
         {
             if (dto is null) return BadRequest();
-            if (id != dto.GroupCailbrationId && dto.GroupCailbrationId != Guid.Empty) return BadRequest("Id mismatch");
+            if (id != dto.GroupCailbrationId && !string.IsNullOrEmpty(dto.GroupCailbrationId)) return BadRequest("Id mismatch");
 
             try
             {
@@ -65,8 +65,8 @@ namespace GotsThorlabs.Controls
             return NoContent();
         }
 
-        [HttpDelete("{id:guid}")]
-        public async Task<IActionResult> DeleteAsync(Guid id, CancellationToken ct)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteAsync(string id, CancellationToken ct)
         {
             try
             {
