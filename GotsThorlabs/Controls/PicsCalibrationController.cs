@@ -11,16 +11,31 @@ namespace GotsThorlabs.Controls
     public class PicsCalibrationController : ControllerBase
     {
         private readonly IPicsCalibrationService _service;
+        private readonly IPhaseCorrelationService _phaseCorrelationService;
+        private readonly ICameraService _cameraService;
 
-        public PicsCalibrationController(IPicsCalibrationService service)
+        public PicsCalibrationController(
+            IPicsCalibrationService service,
+            IPhaseCorrelationService phaseCorrelationService,
+            ICameraService cameraService)
         {
             _service = service;
+            _phaseCorrelationService = phaseCorrelationService;
+            _cameraService = cameraService;
         }
 
+        //[HttpGet]
+        //public async Task<ActionResult<IEnumerable<PicsCalibration>>> GetAllAsync( CancellationToken ct)
+        //{
+        //    var pics = await _service.GetAllAsync(ct);
+        //    return Ok(pics);
+        //}
+
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<PicsCalibration>>> GetAllAsync(CancellationToken ct)
+        public async Task<ActionResult<IEnumerable<PicsCalibration>>> GetByGroupCalibrationIdAsync([FromQuery] string groupCailbrationId, CancellationToken ct)
         {
-            var pics = await _service.GetAllAsync(ct);
+            if (string.IsNullOrWhiteSpace(groupCailbrationId)) return BadRequest("groupCailbrationId es requerido");
+            var pics = await _service.GetByGroupCalibrationIdAsync(groupCailbrationId, ct);
             return Ok(pics);
         }
 
@@ -66,6 +81,49 @@ namespace GotsThorlabs.Controls
             }
         }
 
+        [HttpPost("auto-calibration")]
+        public async Task<ActionResult<List<PicsCalibration>>> RunAutoCalibrationAsync(
+            [FromQuery] string kimDeviceId,
+            [FromQuery] string groupCalibrationId,
+            [FromQuery] string axis,
+            [FromQuery] string? localIdentifier,
+            CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(kimDeviceId) || 
+                string.IsNullOrWhiteSpace(groupCalibrationId) || 
+                string.IsNullOrWhiteSpace(axis))
+            {
+                return BadRequest("kimDeviceId, groupCalibrationId y axis son requeridos.");
+            }
+
+            if (axis.ToLower() != "x" && axis.ToLower() != "y")
+            {
+                return BadRequest("El eje debe ser 'x' o 'y'.");
+            }
+
+            try
+            {
+                var results = await _service.RunAutoCalibrationAsync(
+                    kimDeviceId,
+                    groupCalibrationId,
+                    axis,
+                    _cameraService,
+                    localIdentifier,
+                    _phaseCorrelationService,
+                    ct);
+
+                return Ok(results);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error durante la calibración automática: {ex.Message}");
+            }
+        }
+
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateAsync(string id, [FromBody] PicsCalibrationUpdateDTO dto, CancellationToken ct)
         {
@@ -93,6 +151,37 @@ namespace GotsThorlabs.Controls
             }
             catch (KeyNotFoundException) { return NotFound(); }
             return NoContent();
+        }
+
+        [HttpGet("image")]
+        [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> GetCalibrationImage([FromQuery] string filePath)
+        {
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                return BadRequest("El parámetro filePath es requerido");
+            }
+
+            if (!System.IO.File.Exists(filePath))
+            {
+                return NotFound($"Archivo no encontrado: {filePath}");
+            }
+
+            var extension = Path.GetExtension(filePath).ToLowerInvariant();
+            var contentType = extension switch
+            {
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".png" => "image/png",
+                ".bmp" => "image/bmp",
+                _ => "application/octet-stream"
+            };
+
+            var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+            var fileName = Path.GetFileName(filePath);
+
+            return File(fileBytes, contentType, fileName);
         }
     }
 }

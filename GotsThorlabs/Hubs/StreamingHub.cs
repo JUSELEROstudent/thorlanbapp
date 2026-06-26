@@ -15,11 +15,38 @@ namespace GotsThorlabs.Hubs
     {
         private readonly CameraServiceFactory _cameraFactory;
         private readonly ThorlabsDbContext _db;
+        private static readonly Dictionary<string, CancellationTokenSource> _activeStreams = new();
+        private static readonly object _lock = new();
 
         public StreamingHub(CameraServiceFactory cameraFactory, ThorlabsDbContext db)
         {
             _cameraFactory = cameraFactory;
             _db = db;
+        }
+
+        public override Task OnDisconnectedAsync(Exception? exception)
+        {
+            CancelStream(Context.ConnectionId);
+            return base.OnDisconnectedAsync(exception);
+        }
+
+        public void StopStream()
+        {
+            CancelStream(Context.ConnectionId);
+        }
+
+        private void CancelStream(string connectionId)
+        {
+            lock (_lock)
+            {
+                if (_activeStreams.TryGetValue(connectionId, out var cts))
+                {
+                    cts.Cancel();
+                    cts.Dispose();
+                    _activeStreams.Remove(connectionId);
+                    Console.WriteLine($"[StreamingHub] Stream cancelled for connection {connectionId}");
+                }
+            }
         }
 
         /// <summary>
@@ -35,13 +62,20 @@ namespace GotsThorlabs.Hubs
          [EnumeratorCancellation]
         CancellationToken cancellationToken)
         {
-            // Combine client cancellation with connection abort so the loop stops
-            // automatically when the SignalR connection drops.
+            var connectionId = Context.ConnectionId;
+            
+            CancelStream(connectionId);
+
+            var streamCts = new CancellationTokenSource();
+            lock (_lock)
+            {
+                _activeStreams[connectionId] = streamCts;
+            }
+
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
-                cancellationToken, Context.ConnectionAborted);
+                cancellationToken, Context.ConnectionAborted, streamCts.Token);
             var token = linkedCts.Token;
 
-            // Resolve driver and localIdentifier from DB once before the loop.
             var driverType = "generic";
             var localIdentifier = camera.ToString();
 
@@ -61,42 +95,45 @@ namespace GotsThorlabs.Hubs
 
             var cameraService = _cameraFactory.GetService(driverType);
 
-            Console.WriteLine($"[StreamingHub] Stream started — camera={cameraName ?? localIdentifier} driver={driverType}");
+            Console.WriteLine($"[StreamingHub] Stream started — camera={cameraName ?? localIdentifier} driver={driverType} connection={connectionId}");
 
-            // Loop runs until client cancels, connection drops, or camera switch.
-            // A failed/empty frame is skipped with a short backoff; it does NOT stop the stream.
-            while (!token.IsCancellationRequested)
+            try
             {
-                byte[]? frameBytes = null;
-                try
+                while (!token.IsCancellationRequested)
                 {
-                    using var image = cameraService.CaptureFrame(localIdentifier) ?? new Mat();
+                    byte[]? frameBytes = null;
+                    try
+                    {
+                        using var image = cameraService.CaptureFrame(localIdentifier) ?? new Mat();
 
-                    if (!image.Empty())
-                        frameBytes = image.ToBytes();
-                }
-                catch (OperationCanceledException)
-                {
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"[StreamingHub] Frame capture error: {ex.Message} — retrying...");
-                }
+                        if (!image.Empty())
+                            frameBytes = image.ToBytes();
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[StreamingHub] Frame capture error: {ex.Message} — retrying...");
+                    }
 
-                if (frameBytes != null)
-                {
-                    yield return frameBytes;
-                    await Task.Delay(delay, token).ConfigureAwait(false);
-                }
-                else
-                {
-                    // Short back-off on empty/failed frame — keeps stream alive.
-                    await Task.Delay(100, token).ConfigureAwait(false);
+                    if (frameBytes != null)
+                    {
+                        yield return frameBytes;
+                        await Task.Delay(delay, token).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await Task.Delay(100, token).ConfigureAwait(false);
+                    }
                 }
             }
-
-            Console.WriteLine($"[StreamingHub] Stream stopped — camera={cameraName ?? localIdentifier}");
+            finally
+            {
+                CancelStream(connectionId);
+                Console.WriteLine($"[StreamingHub] Stream stopped — camera={cameraName ?? localIdentifier} connection={connectionId}");
+            }
         }
     }
 

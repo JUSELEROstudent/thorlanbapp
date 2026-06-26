@@ -50,7 +50,7 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true
     };
 });
-SimulationManager.Instance.InitializeSimulations();
+//SimulationManager.Instance.InitializeSimulations();
 builder.Services.AddAuthorization((options) =>
 {
     options.AddPolicy("Jwtvalidator", (policy) =>

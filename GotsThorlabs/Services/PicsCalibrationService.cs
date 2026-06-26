@@ -4,6 +4,9 @@ using GotsThorlabs.Interfaces;
 using GotsThorlabs.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
+using OpenCvSharp;
+using Thorlabs.MotionControl.DeviceManagerCLI;
+using Thorlabs.MotionControl.KCube.InertialMotorCLI;
 
 namespace GotsThorlabs.Services
 {
@@ -97,6 +100,175 @@ namespace GotsThorlabs.Services
             return entity;
         }
 
+        public async Task<List<PicsCalibration>> RunAutoCalibrationAsync(
+            string kimDeviceId,
+            string groupCalibrationId,
+            string axis,
+            ICameraService cameraService,
+            string? localIdentifier,
+            IPhaseCorrelationService phaseCorrelationService,
+            CancellationToken ct)
+        {
+            var calibrationSteps = new[] { 1, 10, 1000 };
+            var results = new List<PicsCalibration>();
+
+            var device = KCubeInertialMotor.CreateKCubeInertialMotor(kimDeviceId);
+            try
+            {
+                device.Connect(kimDeviceId);
+            }
+            catch (Exception ex)
+            {
+                device.Disconnect(true);
+                throw new InvalidOperationException($"Error al conectar con el dispositivo KIM: {ex.Message}");
+            }
+
+            if (!device.IsSettingsInitialized())
+            {
+                try
+                {
+                    const int timeoutMs = 5000; // increased timeout
+                    const int attempts = 3;
+                    var ok = false;
+                    for (int i = 0; i < attempts && !ok; i++)
+                    {
+                        try
+                        {
+                            device.WaitForSettingsInitialized(timeoutMs);
+                            ok = device.IsSettingsInitialized();
+                        }
+                        catch (DeviceSettingsException dex)
+                        {
+                            // optional small delay before retry
+                            Thread.Sleep(200);
+                            if (i == attempts - 1)
+                            {
+                                device.Disconnect(true);
+                                throw new InvalidOperationException(
+                                    $"KIM settings failed to initialize after {attempts} attempts: {dex.Message}", dex);
+                            }
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                    device.Disconnect(true);
+                    throw;
+                }
+                //try
+                //{
+                //    device.WaitForSettingsInitialized(500);
+                //}
+                //catch
+                //{
+                //    device.Disconnect(true);
+                //    throw new InvalidOperationException("El dispositivo KIM no inicializó correctamente.");
+                //}
+            }
+            var currentGroupCalibration = _db.GroupCalibrations.Where(g => g.GroupCailbrationId == groupCalibrationId)
+                .Include(g=> g.Camera)
+                .FirstOrDefault();   
+
+            device.StartPolling(250);
+            Thread.Sleep(500);
+            device.EnableDevice();
+            Thread.Sleep(500);
+
+
+            var channel = axis.ToLower() == "x"
+                ? InertialMotorStatus.MotorChannels.Channel1
+                : InertialMotorStatus.MotorChannels.Channel2;
+
+            var calibrationFolderName = $"calibration_{DateTime.Now:yyyyMMdd_HHmmss}";
+            var calibrationFolderPath = Path.Combine(_imagesBasePath, calibrationFolderName);
+            Directory.CreateDirectory(calibrationFolderPath);
+
+            try
+            {
+                foreach (var step in calibrationSteps)
+                {
+                    ct.ThrowIfCancellationRequested();
+
+                    var moveSuccess = MoveMotor(device, channel, step);
+                    if (!moveSuccess)
+                    {
+                        device.StopPolling();
+                        device.Disconnect(true);
+                        throw new InvalidOperationException($"Error al mover el motor al paso {step}.");
+                    }
+
+                    Thread.Sleep(300);
+
+                    using var frame1 = cameraService.CaptureFrame(currentGroupCalibration.Camera.LocalIdentifier);
+                    if (frame1 == null || frame1.Empty())
+                        throw new InvalidOperationException($"Error al capturar la primera imagen en el paso {step}.");
+
+                    var pic1Path = Path.Combine(calibrationFolderPath, $"step_{step}_pic1.jpg");
+                    frame1.SaveImage(pic1Path);
+
+                    Thread.Sleep(200);
+
+                    using var frame2 = cameraService.CaptureFrame(currentGroupCalibration.Camera.LocalIdentifier);
+                    if (frame2 == null || frame2.Empty())
+                        throw new InvalidOperationException($"Error al capturar la segunda imagen en el paso {step}.");
+
+                    var pic2Path = Path.Combine(calibrationFolderPath, $"step_{step}_pic2.jpg");
+                    frame2.SaveImage(pic2Path);
+
+                    var phaseResult = phaseCorrelationService.DetectShiftFromPaths(pic1Path, pic2Path);
+
+                    var calibrationRecord = new PicsCalibration
+                    {
+                        PicsCalibrationId = Guid.NewGuid().ToString(),
+                        GroupCailbrationId = groupCalibrationId,
+                        Pic1 = pic1Path,
+                        Pic2 = pic2Path,
+                        AxeDirectionCalibration = axis,
+                        Acepted = 0,
+                        Dx = phaseResult.Dx.ToString("F6"),
+                        Dy = phaseResult.Dy.ToString("F6"),
+                        Confidence = phaseResult.Confidence.ToString("F6"),
+                        MeasureUnit = "pixels",
+                        MovementValue = step.ToString(),
+                        NumberOfSteps = step,
+                        AxisMovementName = axis
+                    };
+
+                    _db.PicsCalibrations.Add(calibrationRecord);
+                    results.Add(calibrationRecord);
+                }
+
+                await _db.SaveChangesAsync(ct);
+            }
+            catch (Exception e)
+            {
+                throw new Exception(e.Message, e);
+            }
+            finally
+            {
+                device.StopPolling();
+                device.Disconnect(true);
+            }
+
+            return results;
+        }
+
+        private static bool MoveMotor(KCubeInertialMotor device, InertialMotorStatus.MotorChannels channel, int position)
+        {
+            if (device.GetPosition(channel) == position)
+                return true;
+
+            try
+            {
+                device.MoveTo(channel, position, 6000);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         public async Task UpdateAsync(string id, PicsCalibrationUpdateDTO dto, CancellationToken ct)
         {
             var existing = await _db.PicsCalibrations.FirstOrDefaultAsync(p => p.PicsCalibrationId == id, ct);
@@ -132,6 +304,14 @@ namespace GotsThorlabs.Services
             using var stream = System.IO.File.Create(fullPath);
             file.CopyTo(stream);
             return fullPath;
+        }
+
+        public async Task<IEnumerable<PicsCalibration>> GetByGroupCalibrationIdAsync(string groupCalibrationId, CancellationToken ct)
+        {
+            var response= await _db.PicsCalibrations.AsNoTracking()
+                .Where(p => p.GroupCailbrationId == groupCalibrationId)
+                .ToListAsync(ct);
+            return response;
         }
     }
 }

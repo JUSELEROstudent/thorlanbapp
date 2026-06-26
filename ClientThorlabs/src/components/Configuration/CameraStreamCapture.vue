@@ -22,10 +22,28 @@ const hubConnection = new signalR.HubConnectionBuilder()
   .build();
 
 const stopStream = async () => {
-  streamSubscription?.dispose();
-  streamSubscription = null;
-  await hubConnection.stop().catch(() => undefined);
-  isStreaming.value = false;
+  try {
+    if (hubConnection.state === signalR.HubConnectionState.Connected) {
+      await hubConnection.invoke("StopStream");
+    }
+    
+    if (streamSubscription) {
+      streamSubscription.dispose();
+      streamSubscription = null;
+    }
+    
+    if (hubConnection.state !== signalR.HubConnectionState.Disconnected) {
+      await hubConnection.stop();
+    }
+    
+    isStreaming.value = false;
+    lastFrameUrl.value = null;
+    console.log("[CameraStreamCapture] Stream detenido, estado:", hubConnection.state);
+  } catch (error) {
+    console.error("[CameraStreamCapture] Error al detener stream:", error);
+    isStreaming.value = false;
+    lastFrameUrl.value = null;
+  }
 };
 
 const startStream = async () => {
@@ -198,8 +216,11 @@ onBeforeUnmount(async () => {
           </option>
         </select>
 
-        <button class="btn btn-sm btn-primary" @click="startStream" :disabled="!currentCamera">
-          Reconectar
+        <button class="btn btn-sm btn-primary" @click="startStream" :disabled="!currentCamera || isStreaming">
+          Conectar
+        </button>
+        <button class="btn btn-sm btn-error" @click="stopStream" :disabled="!isStreaming">
+          Desconectar
         </button>
       </div>
 

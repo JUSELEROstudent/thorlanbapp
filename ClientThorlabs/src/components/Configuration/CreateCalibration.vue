@@ -161,7 +161,19 @@
 
           <div v-if="isGroupExpanded(element.groupCailbrationId)" class="border-t border-gray-200 bg-white p-4 space-y-4">
             <div class="flex items-center justify-between">
-              <h4 class="text-sm font-semibold text-gray-800">Pics Calibration</h4>
+              <h4 class="text-sm font-semibold text-gray-800">Pics Calibration 2</h4>
+              <div class="flex gap-2">
+                <button
+                  class="btn btn-warning btn-xs"
+                  @click="openAutoCalibrationModal(element.groupCailbrationId)"
+                  :disabled="isRunningAutoCalibration[element.groupCailbrationId]"
+                >
+                  <span v-if="isRunningAutoCalibration[element.groupCailbrationId]" class="loading loading-spinner loading-xs"></span>
+                  <svg v-if="!isRunningAutoCalibration[element.groupCailbrationId]" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="5 3 19 12 5 21 5 3" />
+                  </svg>
+                  {{ isRunningAutoCalibration[element.groupCailbrationId] ? 'Ejecutando...' : 'Calibración Automática' }}
+                </button>
               <button
                 v-if="!picsAddingMode[element.groupCailbrationId]"
                 class="btn btn-primary btn-xs"
@@ -169,6 +181,7 @@
               >
                 Agregar
               </button>
+              </div>
             </div>
 
             <div v-if="picsLoading[element.groupCailbrationId]" class="text-sm text-gray-500">Cargando registros...</div>
@@ -199,14 +212,66 @@
                     Eliminar
                   </button>
                 </div>
-                <div v-if="pic.pic1 || pic.pic2" class="mt-2 grid gap-2 text-xs text-gray-500">
-                  <div v-if="pic.pic1">
-                    <span class="font-semibold">Pic1:</span>
-                    <span class="ml-1 break-all">{{ pic.pic1 }}</span>
+                <div v-if="pic.pic1 || pic.pic2" class="mt-3 grid grid-cols-2 gap-3">
+                  <div v-if="pic.pic1" class="flex flex-col">
+                    <span class="text-xs font-semibold text-gray-700 mb-1">Pic1:</span>
+                    <div class="border border-gray-300 rounded overflow-hidden bg-gray-100 aspect-video flex items-center justify-center">
+                      <img
+                        v-if="calibrationImages[`${pic.picsCalibrationId}_pic1`]"
+                        :src="calibrationImages[`${pic.picsCalibrationId}_pic1`]"
+                        alt="Calibration Pic1"
+                        class="w-full h-full object-contain"
+                      />
+                      <div v-else-if="imagesLoading[`${pic.picsCalibrationId}_pic1`]" class="flex flex-col items-center gap-1">
+                        <span class="loading loading-spinner loading-sm"></span>
+                        <span class="text-xs text-gray-500">Cargando...</span>
                   </div>
-                  <div v-if="pic.pic2">
-                    <span class="font-semibold">Pic2:</span>
-                    <span class="ml-1 break-all">{{ pic.pic2 }}</span>
+                      <div v-else-if="imagesErrors[`${pic.picsCalibrationId}_pic1`]" class="flex flex-col items-center gap-1 p-2 text-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500">
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="12" y1="8" x2="12" y2="12" />
+                          <line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg>
+                        <span class="text-xs text-red-600">{{ imagesErrors[`${pic.picsCalibrationId}_pic1`] }}</span>
+                        <button
+                          class="btn btn-ghost btn-xs text-blue-600"
+                          @click="loadCalibrationImage(pic.picsCalibrationId, pic.pic1, 'pic1')"
+                        >
+                          Reintentar
+                        </button>
+                  </div>
+                      <span v-else class="text-xs text-gray-400 p-2 text-center break-all">{{ pic.pic1 }}</span>
+                    </div>
+                  </div>
+                  <div v-if="pic.pic2" class="flex flex-col">
+                    <span class="text-xs font-semibold text-gray-700 mb-1">Pic2:</span>
+                    <div class="border border-gray-300 rounded overflow-hidden bg-gray-100 aspect-video flex items-center justify-center">
+                      <img
+                        v-if="calibrationImages[`${pic.picsCalibrationId}_pic2`]"
+                        :src="calibrationImages[`${pic.picsCalibrationId}_pic2`]"
+                        alt="Calibration Pic2"
+                        class="w-full h-full object-contain"
+                      />
+                      <div v-else-if="imagesLoading[`${pic.picsCalibrationId}_pic2`]" class="flex flex-col items-center gap-1">
+                        <span class="loading loading-spinner loading-sm"></span>
+                        <span class="text-xs text-gray-500">Cargando...</span>
+                      </div>
+                      <div v-else-if="imagesErrors[`${pic.picsCalibrationId}_pic2`]" class="flex flex-col items-center gap-1 p-2 text-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500">
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="12" y1="8" x2="12" y2="12" />
+                          <line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg>
+                        <span class="text-xs text-red-600">{{ imagesErrors[`${pic.picsCalibrationId}_pic2`] }}</span>
+                        <button
+                          class="btn btn-ghost btn-xs text-blue-600"
+                          @click="loadCalibrationImage(pic.picsCalibrationId, pic.pic2, 'pic2')"
+                        >
+                          Reintentar
+                        </button>
+                      </div>
+                      <span v-else class="text-xs text-gray-400 p-2 text-center break-all">{{ pic.pic2 }}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -302,6 +367,78 @@
                 </button>
               </div>
             </div>
+
+            <div
+              v-if="autoCalibrationModal[element.groupCailbrationId]"
+              class="rounded border border-amber-200 bg-amber-50 p-4"
+            >
+              <div class="flex items-center justify-between mb-3">
+                <h5 class="text-sm font-semibold text-amber-900">Calibración Automática</h5>
+                <button
+                  class="btn btn-outline btn-xs"
+                  @click="closeAutoCalibrationModal(element.groupCailbrationId)"
+                  :disabled="isRunningAutoCalibration[element.groupCailbrationId]"
+                >
+                  Cancelar
+                </button>
+          </div>
+              <div class="grid grid-cols-1 gap-3">
+                <div>
+                  <label class="block text-xs font-medium text-gray-700 mb-1">Dispositivo KIM *</label>
+                  <select
+                    v-model="autoCalibrationForms[element.groupCailbrationId].kimDeviceId"
+                    class="select select-bordered w-full"
+                    :disabled="isRunningAutoCalibration[element.groupCailbrationId] || isLoadingKimDevices"
+                  >
+                    <option value="" disabled>
+                      {{ isLoadingKimDevices ? 'Cargando dispositivos...' : 'Seleccione un dispositivo' }}
+                    </option>
+                    <option v-for="device in kimDevicesList" :key="device" :value="device">
+                      {{ device }}
+                    </option>
+                  </select>
+        </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-700 mb-1">Eje *</label>
+                  <select
+                    v-model="autoCalibrationForms[element.groupCailbrationId].axis"
+                    class="select select-bordered w-full"
+                    :disabled="isRunningAutoCalibration[element.groupCailbrationId]"
+                  >
+                    <option value="x">Eje X (Channel1)</option>
+                    <option value="y">Eje Y (Channel2)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-700 mb-1">Identificador Local de Cámara *</label>
+                  <input
+                    v-model="autoCalibrationForms[element.groupCailbrationId].localIdentifier"
+                    class="input input-bordered w-full"
+                    placeholder="Ej: /dev/video0"
+                    :disabled="isRunningAutoCalibration[element.groupCailbrationId]"
+                  />
+                </div>
+              </div>
+              <div class="mt-4">
+                <button
+                  class="btn btn-warning btn-sm"
+                  @click="runAutoCalibration(element.groupCailbrationId)"
+                  :disabled="isRunningAutoCalibration[element.groupCailbrationId]"
+                >
+                  <span v-if="isRunningAutoCalibration[element.groupCailbrationId]" class="loading loading-spinner loading-xs"></span>
+                  {{ isRunningAutoCalibration[element.groupCailbrationId] ? 'Ejecutando calibración...' : 'Iniciar Calibración Automática' }}
+                </button>
+              </div>
+              <div class="mt-3 text-xs text-amber-700">
+                <p class="font-semibold mb-1">El proceso realizará:</p>
+                <ul class="list-disc list-inside space-y-0.5">
+                  <li>4 iteraciones con pasos: 1, 10, 1000, 10000</li>
+                  <li>2 capturas por iteración</li>
+                  <li>Cálculo automático de PhaseCorrelation</li>
+                  <li>Los registros quedarán como "No aceptados" para revisión manual</li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -328,10 +465,27 @@ const microscopeList = ref<MicroscopeElement[]>([])
 const increaseList = ref<IncreaseElement[]>([])
 const expandedGroups = ref(new Set<string>())
 const picsByGroup = reactive<Record<string, PicsCalibrationElement[]>>({})
+const picsLoaded = reactive<Record<string, boolean>>({})
 const picsLoading = reactive<Record<string, boolean>>({})
 const picsAddingMode = reactive<Record<string, boolean>>({})
 const picsSaving = reactive<Record<string, boolean>>({})
 const picForms = reactive<Record<string, PicsCalibrationForm>>({})
+
+const autoCalibrationModal = reactive<Record<string, boolean>>({})
+const autoCalibrationForms = reactive<Record<string, AutoCalibrationForm>>({})
+const kimDevicesList = ref<string[]>([])
+const isLoadingKimDevices = ref(false)
+const isRunningAutoCalibration = reactive<Record<string, boolean>>({})
+
+const calibrationImages = reactive<Record<string, string>>({})
+const imagesLoading = reactive<Record<string, boolean>>({})
+const imagesErrors = reactive<Record<string, string>>({})
+
+interface AutoCalibrationForm {
+  kimDeviceId: string
+  axis: 'x' | 'y'
+  localIdentifier: string
+}
 
 interface CameraElement {
   cameraId: string
@@ -406,6 +560,147 @@ const createDefaultPicForm = (): PicsCalibrationForm => ({
   simulated: false
 })
 
+const createDefaultAutoCalibrationForm = (): AutoCalibrationForm => ({
+  kimDeviceId: '',
+  axis: 'x',
+  localIdentifier: ''
+})
+
+const fetchKimDevices = async () => {
+  try {
+    isLoadingKimDevices.value = true
+    const myHeaders = new Headers()
+    myHeaders.append('Authorization', 'Bearer ' + localStorage.getItem('stringjwt'))
+    const response = await fetch(`${config.public.apiUrl}/home/devices`, {
+      method: 'GET',
+      headers: myHeaders
+    })
+    if (response.ok) {
+      kimDevicesList.value = await response.json()
+    }
+  } catch (error) {
+    console.error('Error al obtener dispositivos KIM:', error)
+  } finally {
+    isLoadingKimDevices.value = false
+  }
+}
+
+const openAutoCalibrationModal = async (groupId: string) => {
+  if (!autoCalibrationForms[groupId]) {
+    autoCalibrationForms[groupId] = createDefaultAutoCalibrationForm()
+  }
+  autoCalibrationModal[groupId] = true
+  if (kimDevicesList.value.length === 0) {
+    await fetchKimDevices()
+  }
+}
+
+const closeAutoCalibrationModal = (groupId: string) => {
+  autoCalibrationModal[groupId] = false
+  autoCalibrationForms[groupId] = createDefaultAutoCalibrationForm()
+}
+
+const runAutoCalibration = async (groupId: string) => {
+  const form = autoCalibrationForms[groupId]
+  if (!form.kimDeviceId) {
+    alertStore.NewAlert({ type: 'error', tittle: 'Error', data: 'Seleccione un dispositivo KIM' })
+    return
+  }
+  if (!form.localIdentifier.trim()) {
+    alertStore.NewAlert({ type: 'error', tittle: 'Error', data: 'Ingrese el identificador local de la cámara' })
+    return
+  }
+
+  try {
+    isRunningAutoCalibration[groupId] = true
+    const response = await $fetch(`${config.public.apiUrl}/api/PicsCalibration/auto-calibration`, {
+      method: 'POST',
+      query: {
+        kimDeviceId: form.kimDeviceId,
+        groupCalibrationId: groupId,
+        axis: form.axis,
+        localIdentifier: form.localIdentifier.trim()
+      }
+    })
+
+    if (response) {
+      alertStore.NewAlert({ type: 'OK', tittle: 'Éxito', data: 'Calibración automática completada' })
+      closeAutoCalibrationModal(groupId)
+      await fetchPicsCalibration(groupId)
+    }
+  } catch (error) {
+    console.error('Error en calibración automática:', error)
+    alertStore.NewAlert({ type: 'error', tittle: 'Error', data: 'Error al ejecutar calibración automática' })
+  } finally {
+    isRunningAutoCalibration[groupId] = false
+  }
+}
+
+const loadCalibrationImage = async (picsCalibrationId: string, filePath: string, picType: 'pic1' | 'pic2') => {
+  const imageKey = `${picsCalibrationId}_${picType}`
+  if (calibrationImages[imageKey]) return
+
+  try {
+    imagesLoading[imageKey] = true
+    imagesErrors[imageKey] = ''
+    const response = await fetch(`${config.public.apiUrl}/api/PicsCalibration/image?filePath=${encodeURIComponent(filePath)}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': 'Bearer ' + localStorage.getItem('stringjwt')
+      }
+    })
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error('Archivo no encontrado en el servidor')
+      }
+      throw new Error(`Error ${response.status}: ${response.statusText}`)
+    }
+
+    const blob = await response.blob()
+    const objectUrl = URL.createObjectURL(blob)
+    calibrationImages[imageKey] = objectUrl
+  } catch (error) {
+    console.error(`Error al cargar imagen ${picType}:`, error)
+    imagesErrors[imageKey] = error instanceof Error ? error.message : 'Error desconocido'
+  } finally {
+    imagesLoading[imageKey] = false
+  }
+}
+
+const loadAllCalibrationImages = async (pics: PicsCalibrationElement[]) => {
+  const promises: Promise<void>[] = []
+  for (const pic of pics) {
+    if (pic.pic1) {
+      promises.push(loadCalibrationImage(pic.picsCalibrationId, pic.pic1, 'pic1'))
+    }
+    if (pic.pic2) {
+      promises.push(loadCalibrationImage(pic.picsCalibrationId, pic.pic2, 'pic2'))
+    }
+  }
+  await Promise.all(promises)
+}
+
+const clearGroupImagesCache = (groupId: string) => {
+  const pics = picsByGroup[groupId] || []
+  for (const pic of pics) {
+    const key1 = `${pic.picsCalibrationId}_pic1`
+    const key2 = `${pic.picsCalibrationId}_pic2`
+    if (calibrationImages[key1]) {
+      URL.revokeObjectURL(calibrationImages[key1])
+      delete calibrationImages[key1]
+    }
+    if (calibrationImages[key2]) {
+      URL.revokeObjectURL(calibrationImages[key2])
+      delete calibrationImages[key2]
+    }
+    delete imagesLoading[key1]
+    delete imagesLoading[key2]
+    delete imagesErrors[key1]
+    delete imagesErrors[key2]
+  }
+}
+
 const ensurePicForm = (groupId: string) => {
   if (!picForms[groupId]) {
     picForms[groupId] = createDefaultPicForm()
@@ -454,6 +749,7 @@ const isGroupExpanded = (groupId: string) => expandedGroups.value.has(groupId)
 const fetchPicsCalibration = async (groupId: string) => {
   try {
     picsLoading[groupId] = true
+    clearGroupImagesCache(groupId)
     const response = await $fetch(`${config.public.apiUrl}/api/PicsCalibration`, {
       method: 'GET',
       query: {
@@ -465,6 +761,8 @@ const fetchPicsCalibration = async (groupId: string) => {
     }) as PicsCalibrationElement[]
 
     picsByGroup[groupId] = response ?? []
+    picsLoaded[groupId] = true
+    await loadAllCalibrationImages(picsByGroup[groupId])
   } catch (error) {
     console.error('Error al obtener pics calibration:', error)
     alertStore.NewAlert({
@@ -473,6 +771,7 @@ const fetchPicsCalibration = async (groupId: string) => {
       data: 'Error al cargar Pics Calibration'
     })
     picsByGroup[groupId] = []
+    picsLoaded[groupId] = true
   } finally {
     picsLoading[groupId] = false
   }
@@ -487,7 +786,7 @@ const toggleGroup = async (groupId: string) => {
 
   setGroupExpanded(groupId, true)
   ensurePicForm(groupId)
-  if (!picsByGroup[groupId]) {
+  if (!picsLoaded[groupId]) {
     await fetchPicsCalibration(groupId)
   }
 }
@@ -637,6 +936,21 @@ const savePicCalibration = async (groupId: string) => {
 
 const deletePicCalibration = async (picsCalibrationId: string, groupId: string) => {
   try {
+    const key1 = `${picsCalibrationId}_pic1`
+    const key2 = `${picsCalibrationId}_pic2`
+    if (calibrationImages[key1]) {
+      URL.revokeObjectURL(calibrationImages[key1])
+      delete calibrationImages[key1]
+    }
+    if (calibrationImages[key2]) {
+      URL.revokeObjectURL(calibrationImages[key2])
+      delete calibrationImages[key2]
+    }
+    delete imagesLoading[key1]
+    delete imagesLoading[key2]
+    delete imagesErrors[key1]
+    delete imagesErrors[key2]
+
     await $fetch(`${config.public.apiUrl}/api/PicsCalibration/${picsCalibrationId}`, {
       method: 'DELETE',
       headers: {
