@@ -210,11 +210,11 @@ namespace GotsThorlabs.Services
 
                     try
                     {
-                        MoveMotor(device, channel, step);
+                        MoveMotor(device, channel, 0);
                     }
                     catch (Exception ex)
                     {
-                        throw new InvalidOperationException($"Error al mover el motor KIM al paso {step}. El motor no alcanzó la posición requerida: {ex.Message}", ex);
+                        throw new InvalidOperationException($"Error al mover el motor KIM a la posición 0 antes del paso {step}: {ex.Message}", ex);
                     }
 
                     Thread.Sleep(300);
@@ -225,7 +225,7 @@ namespace GotsThorlabs.Services
                         frame1 = resolvedCameraService.CaptureFrame(currentGroupCalibration.Camera.LocalIdentifier);
                         if (frame1 == null || frame1.Empty())
                         {
-                            throw new InvalidOperationException($"Error al capturar la primera imagen en el paso {step}. La cámara (driver: {driverType}, identifier: {currentGroupCalibration.Camera.LocalIdentifier}) devolvió un frame vacío.");
+                            throw new InvalidOperationException($"Error al capturar la imagen de referencia (posición 0) para el paso {step}. La cámara (driver: {driverType}, identifier: {currentGroupCalibration.Camera.LocalIdentifier}) devolvió un frame vacío.");
                         }
 
                         var pic1Path = Path.Combine(calibrationFolderPath, $"step_{step}_pic1.jpg");
@@ -233,7 +233,7 @@ namespace GotsThorlabs.Services
                     }
                     catch (Exception ex) when (ex is not InvalidOperationException)
                     {
-                        throw new InvalidOperationException($"Error al capturar la primera imagen en el paso {step} con la cámara (driver: {driverType}, identifier: {currentGroupCalibration.Camera.LocalIdentifier}): {ex.Message}", ex);
+                        throw new InvalidOperationException($"Error al capturar la imagen de referencia (posición 0) para el paso {step} con la cámara (driver: {driverType}, identifier: {currentGroupCalibration.Camera.LocalIdentifier}): {ex.Message}", ex);
                     }
                     finally
                     {
@@ -242,13 +242,24 @@ namespace GotsThorlabs.Services
 
                     Thread.Sleep(200);
 
+                    try
+                    {
+                        MoveMotor(device, channel, step);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new InvalidOperationException($"Error al mover el motor KIM al paso {step} desde posición 0: {ex.Message}", ex);
+                    }
+
+                    Thread.Sleep(300);
+
                     Mat frame2 = null;
                     try
                     {
                         frame2 = resolvedCameraService.CaptureFrame(currentGroupCalibration.Camera.LocalIdentifier);
                         if (frame2 == null || frame2.Empty())
                         {
-                            throw new InvalidOperationException($"Error al capturar la segunda imagen en el paso {step}. La cámara (driver: {driverType}, identifier: {currentGroupCalibration.Camera.LocalIdentifier}) devolvió un frame vacío.");
+                            throw new InvalidOperationException($"Error al capturar la imagen después del movimiento al paso {step}. La cámara (driver: {driverType}, identifier: {currentGroupCalibration.Camera.LocalIdentifier}) devolvió un frame vacío.");
                         }
 
                         var pic2Path = Path.Combine(calibrationFolderPath, $"step_{step}_pic2.jpg");
@@ -256,7 +267,7 @@ namespace GotsThorlabs.Services
                     }
                     catch (Exception ex) when (ex is not InvalidOperationException)
                     {
-                        throw new InvalidOperationException($"Error al capturar la segunda imagen en el paso {step} con la cámara (driver: {driverType}, identifier: {currentGroupCalibration.Camera.LocalIdentifier}): {ex.Message}", ex);
+                        throw new InvalidOperationException($"Error al capturar la imagen después del movimiento al paso {step} con la cámara (driver: {driverType}, identifier: {currentGroupCalibration.Camera.LocalIdentifier}): {ex.Message}", ex);
                     }
                     finally
                     {
