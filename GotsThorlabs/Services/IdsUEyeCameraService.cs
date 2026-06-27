@@ -47,7 +47,7 @@ namespace GotsThorlabs.Services
         //  UEyeProfile.SceneSports    → SceneMode.Sports
         //  UEyeProfile.SceneLandscape → SceneMode.Landscape
         //
-        private const UEyeProfile ActiveProfile = UEyeProfile.SceneAutomatic;
+        private const UEyeProfile ActiveProfile = UEyeProfile.Default;
 
         // Path to .ini file — only used when ActiveProfile = UEyeProfile.FromFile
         private const string ProfileFilePath = @"C:\Users\cocuy\Pictures\Feedback\camera_profile.ini";
@@ -111,15 +111,19 @@ namespace GotsThorlabs.Services
 
             try
             {
-                // Force BGR8 output so CopyToArray always delivers 3-channel packed bytes.
+                // Apply the selected profile FIRST — ResetToDefault()/Load() can change
+                // the pixel format, so any PixelFormat.Set() done before this would be
+                // overwritten (causing raw-Bayer output → black/white, torn images).
+                ApplyProfile(camera);
+
+                // Force BGR8 output AFTER the profile so it is not reset to raw Bayer.
+                // BGR8Packed makes CopyToArray deliver 3-channel packed bytes (color).
                 camera.PixelFormat.Set(ColorMode.BGR8Packed);
 
-                // Allocate a single capture buffer sized for BGR8 (3 bytes/pixel).
+                // Allocate the capture buffer AFTER the pixel format is locked, so it
+                // is sized correctly for BGR8 (3 bytes/pixel).
                 int memId;
                 camera.Memory.Allocate(out memId, true);
-
-                // Apply the selected profile before auto-exposure convergence.
-                ApplyProfile(camera);
 
                 // Always ensure freerun mode (TriggerMode.Off) regardless of what the profile loaded.
                 // In freerun the camera captures continuously and Freeze() takes the next ready frame.
@@ -127,8 +131,7 @@ namespace GotsThorlabs.Services
                 camera.Trigger.Set(TriggerMode.Off);
                 Console.WriteLine("[IdsUEye] Trigger set to Off (freerun)");
 
-                // Enable auto-shutter + auto-gain
-                // Then feed frames until the image is no longer overexposed, then lock the values.
+                // Converge exposure (auto-shutter only, no auto-gain) and white balance.
                 ApplyAutoExposure(camera);
 
                 // Real capture.
@@ -267,32 +270,70 @@ namespace GotsThorlabs.Services
         }
         // ── END Profile loading ──────────────────────────────────────
 
-        // ── Auto-exposure convergence ────────────────────────────────
-        // is no longer overexposed (mean brightness < threshold), then disables auto
-        // so the final capture uses the settled values.
+        // ── Auto-exposure + white balance convergence ────────────────
+        // Overexposure ("quemado") fix: auto-GAIN is the main culprit because it
+        // amplifies the sensor signal and pushes brightness far above mid-gray,
+        // adding noise and washing out colors. We therefore:
+        //   1. Disable auto-gain entirely and zero the hardware master gain.
+        //   2. Disable the gain boost (prevents analog amplification).
+        //   3. Let ONLY auto-shutter (exposure time) converge brightness — this is
+        //      the natural, noise-free way to control exposure.
+        //   4. Enable auto white balance once (ActivateMode.Once) so the camera
+        //      computes a faithful color balance and then auto-disables itself.
         private static void ApplyAutoExposure(Camera camera)
         {
-            const double TargetBrightnessMean = 128.0;  // 0-255; aim for mid-gray average
-            const double OverexposedThreshold = 200.0;  // above this the image is considered blown
-            const int    MaxConvergeFrames     = 30;
-            const int    MinConvergeFrames     = 5;      // always run at least this many
+            const double OverexposedThreshold = 170.0;   // lower than before: 170/255 is already too bright
+            const int    MaxConvergeFrames   = 40;
+            const int    MinConvergeFrames   = 8;        // give shutter time to settle
 
-            // Enable sensor-level auto-shutter and auto-gain.
-            bool shutterSupported = false, gainSupported = false;
-            camera.AutoFeatures.Sensor.Shutter.GetSupported(out shutterSupported);
+            // ── 1. Kill AGC (auto gain) so the image is not "quemada". ──
+            bool gainSupported = false;
             camera.AutoFeatures.Sensor.Gain.GetSupported(out gainSupported);
+            if (gainSupported) camera.AutoFeatures.Sensor.Gain.SetEnable(false);
 
+            bool swGainSupported = false;
+            camera.AutoFeatures.Software.Gain.GetSupported(out swGainSupported);
+            if (swGainSupported) camera.AutoFeatures.Software.Gain.SetEnable(false);
+
+            // Zero the hardware master gain and turn off gain boost (no analog amplification).
+            try { camera.Gain.Hardware.Scaled.SetMaster(0); } catch (Exception ex) { Console.WriteLine($"[IdsUEye] SetMaster(0) failed: {ex.Message}"); }
+            try { camera.Gain.Hardware.Boost.SetEnable(false); } catch (Exception ex) { Console.WriteLine($"[IdsUEye] Boost disable failed: {ex.Message}"); }
+
+            // ── 2. Enable auto-white-balance ONCE for faithful colors. ──
+            // RunOnce converges the WB gains then auto-disables, locking the color balance.
+            bool swWhiteSupported = false;
+            camera.AutoFeatures.Software.WhiteBalance.GetSupported(out swWhiteSupported);
+            if (swWhiteSupported)
+            {
+                try { camera.AutoFeatures.Software.WhiteBalance.SetEnable(uEye.Defines.ActivateMode.Once); }
+                catch (Exception ex) { Console.WriteLine($"[IdsUEye] AWB Once failed: {ex.Message}"); }
+            }
+
+bool sensorWhiteSupported = false;
+            camera.AutoFeatures.Sensor.Whitebalance.GetSupported(out sensorWhiteSupported);
+            if (sensorWhiteSupported)
+            {
+                // Sensor white balance uses WhiteBalanceMode (Enable/Disable), not ActivateMode.
+                // The software AWB above (Once) handles the one-shot color convergence;
+                // for the sensor path we simply enable it and disable it after convergence.
+                try { camera.AutoFeatures.Sensor.Whitebalance.SetEnable(uEye.Defines.Whitebalance.WhiteBalanceMode.Automatic); } // se supone que era enable pero no lo tiene incluido 
+                catch (Exception ex) { Console.WriteLine($"[IdsUEye] Sensor AWB Enable failed: {ex.Message}"); }
+            }
+
+            Console.WriteLine($"[IdsUEye] AutoExposure setup: gainAutoSensor={gainSupported} gainAutoSW={swGainSupported} awbSW={swWhiteSupported} awbSensor={sensorWhiteSupported}");
+
+            // ── 3. Enable auto-shutter (exposure time) only — the natural exposure control. ──
+            bool shutterSupported = false;
+            camera.AutoFeatures.Sensor.Shutter.GetSupported(out shutterSupported);
             if (shutterSupported) camera.AutoFeatures.Sensor.Shutter.SetEnable(true);
-            if (gainSupported)    camera.AutoFeatures.Sensor.Gain.SetEnable(true);
 
-            // Also enable software auto-shutter as fallback for cameras that lack sensor-level control.
             bool swShutterSupported = false;
             camera.AutoFeatures.Software.Shutter.GetSupported(out swShutterSupported);
             if (swShutterSupported) camera.AutoFeatures.Software.Shutter.SetEnable(true);
 
-            Console.WriteLine($"[IdsUEye] AutoExposure: sensorShutter={shutterSupported} sensorGain={gainSupported} swShutter={swShutterSupported}");
+            Console.WriteLine($"[IdsUEye] AutoExposure: sensorShutter={shutterSupported} swShutter={swShutterSupported}");
 
-            // Feed frames, checking mean brightness, until converged or max attempts.
+            // ── 4. Feed frames until the shutter converges brightness below the threshold. ──
             double lastMean = double.MaxValue;
             for (int i = 0; i < MaxConvergeFrames; i++)
             {
@@ -327,10 +368,20 @@ namespace GotsThorlabs.Services
                 }
             }
 
-            // Lock exposure/gain to the converged values by disabling auto.
-            if (shutterSupported) camera.AutoFeatures.Sensor.Shutter.SetEnable(false);
-            if (gainSupported)    camera.AutoFeatures.Sensor.Gain.SetEnable(false);
+            // ── 5. Lock the converged shutter (and any AWB that did not auto-disable) by disabling auto. ──
+            if (shutterSupported)   camera.AutoFeatures.Sensor.Shutter.SetEnable(false);
             if (swShutterSupported) camera.AutoFeatures.Software.Shutter.SetEnable(false);
+            if (swWhiteSupported)
+            {
+                try { camera.AutoFeatures.Software.WhiteBalance.SetEnable(false); } catch { }
+            }
+            if (sensorWhiteSupported)
+            {
+                try { camera.AutoFeatures.Sensor.Whitebalance.SetEnable(uEye.Defines.Whitebalance.WhiteBalanceMode.Disable); } catch { }
+            }
+
+            // Settle: let the locked exposure/white-balance stabilize before the real Freeze().
+            Thread.Sleep(100);
 
             Console.WriteLine($"[IdsUEye] AutoExposure done. Final meanBrightness={lastMean:F1}");
         }
