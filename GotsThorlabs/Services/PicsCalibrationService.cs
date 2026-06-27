@@ -14,12 +14,14 @@ namespace GotsThorlabs.Services
     {
         private readonly ThorlabsDbContext _db;
         private readonly string _imagesBasePath;
+        private readonly CameraServiceFactory _cameraFactory;
 
-        public PicsCalibrationService(ThorlabsDbContext db, IWebHostEnvironment env, IConfiguration configuration)
+        public PicsCalibrationService(ThorlabsDbContext db, IWebHostEnvironment env, IConfiguration configuration, CameraServiceFactory cameraFactory)
         {
             _db = db;
             _imagesBasePath = configuration["CalibrationImagesPath"]
                 ?? Path.Combine(env.ContentRootPath, "StaticFiles", "pics-calibrations");
+            _cameraFactory = cameraFactory;
         }
 
         public async Task<IEnumerable<PicsCalibration>> GetAllAsync(CancellationToken ct)
@@ -109,7 +111,7 @@ namespace GotsThorlabs.Services
             IPhaseCorrelationService phaseCorrelationService,
             CancellationToken ct)
         {
-            var calibrationSteps = new[] { 1, 10, 1000 };
+            var calibrationSteps = new[] { 0, 1, 10, 100,1000 };
             var results = new List<PicsCalibration>();
 
             var device = KCubeInertialMotor.CreateKCubeInertialMotor(kimDeviceId);
@@ -167,13 +169,29 @@ namespace GotsThorlabs.Services
             }
             var currentGroupCalibration = _db.GroupCalibrations.Where(g => g.GroupCailbrationId == groupCalibrationId)
                 .Include(g=> g.Camera)
-                .FirstOrDefault();   
+                .FirstOrDefault();
+
+            if (currentGroupCalibration == null)
+            {
+                device.StopPolling();
+                device.Disconnect(true);
+                throw new InvalidOperationException($"No se encontró el grupo de calibración con ID {groupCalibrationId}.");
+            }
+
+            if (currentGroupCalibration.Camera == null)
+            {
+                device.StopPolling();
+                device.Disconnect(true);
+                throw new InvalidOperationException($"El grupo de calibración {groupCalibrationId} no tiene una cámara asociada.");
+            }
+
+            var driverType = currentGroupCalibration.Camera.DriverType ?? "generic";
+            var resolvedCameraService = _cameraFactory.GetService(driverType);
 
             device.StartPolling(250);
             Thread.Sleep(500);
             device.EnableDevice();
             Thread.Sleep(500);
-
 
             var channel = axis.ToLower() == "x"
                 ? InertialMotorStatus.MotorChannels.Channel1
@@ -183,46 +201,78 @@ namespace GotsThorlabs.Services
             var calibrationFolderPath = Path.Combine(_imagesBasePath, calibrationFolderName);
             Directory.CreateDirectory(calibrationFolderPath);
 
+            var deviceConnected = true;
             try
             {
                 foreach (var step in calibrationSteps)
                 {
                     ct.ThrowIfCancellationRequested();
 
-                    var moveSuccess = MoveMotor(device, channel, step);
-                    if (!moveSuccess)
+                    try
                     {
-                        device.StopPolling();
-                        device.Disconnect(true);
-                        throw new InvalidOperationException($"Error al mover el motor al paso {step}.");
+                        MoveMotor(device, channel, step);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new InvalidOperationException($"Error al mover el motor KIM al paso {step}. El motor no alcanzó la posición requerida: {ex.Message}", ex);
                     }
 
                     Thread.Sleep(300);
 
-                    using var frame1 = cameraService.CaptureFrame(currentGroupCalibration.Camera.LocalIdentifier);
-                    if (frame1 == null || frame1.Empty())
-                        throw new InvalidOperationException($"Error al capturar la primera imagen en el paso {step}.");
+                    Mat frame1 = null;
+                    try
+                    {
+                        frame1 = resolvedCameraService.CaptureFrame(currentGroupCalibration.Camera.LocalIdentifier);
+                        if (frame1 == null || frame1.Empty())
+                        {
+                            throw new InvalidOperationException($"Error al capturar la primera imagen en el paso {step}. La cámara (driver: {driverType}, identifier: {currentGroupCalibration.Camera.LocalIdentifier}) devolvió un frame vacío.");
+                        }
 
-                    var pic1Path = Path.Combine(calibrationFolderPath, $"step_{step}_pic1.jpg");
-                    frame1.SaveImage(pic1Path);
+                        var pic1Path = Path.Combine(calibrationFolderPath, $"step_{step}_pic1.jpg");
+                        frame1.SaveImage(pic1Path);
+                    }
+                    catch (Exception ex) when (ex is not InvalidOperationException)
+                    {
+                        throw new InvalidOperationException($"Error al capturar la primera imagen en el paso {step} con la cámara (driver: {driverType}, identifier: {currentGroupCalibration.Camera.LocalIdentifier}): {ex.Message}", ex);
+                    }
+                    finally
+                    {
+                        frame1?.Dispose();
+                    }
 
                     Thread.Sleep(200);
 
-                    using var frame2 = cameraService.CaptureFrame(currentGroupCalibration.Camera.LocalIdentifier);
-                    if (frame2 == null || frame2.Empty())
-                        throw new InvalidOperationException($"Error al capturar la segunda imagen en el paso {step}.");
+                    Mat frame2 = null;
+                    try
+                    {
+                        frame2 = resolvedCameraService.CaptureFrame(currentGroupCalibration.Camera.LocalIdentifier);
+                        if (frame2 == null || frame2.Empty())
+                        {
+                            throw new InvalidOperationException($"Error al capturar la segunda imagen en el paso {step}. La cámara (driver: {driverType}, identifier: {currentGroupCalibration.Camera.LocalIdentifier}) devolvió un frame vacío.");
+                        }
 
-                    var pic2Path = Path.Combine(calibrationFolderPath, $"step_{step}_pic2.jpg");
-                    frame2.SaveImage(pic2Path);
+                        var pic2Path = Path.Combine(calibrationFolderPath, $"step_{step}_pic2.jpg");
+                        frame2.SaveImage(pic2Path);
+                    }
+                    catch (Exception ex) when (ex is not InvalidOperationException)
+                    {
+                        throw new InvalidOperationException($"Error al capturar la segunda imagen en el paso {step} con la cámara (driver: {driverType}, identifier: {currentGroupCalibration.Camera.LocalIdentifier}): {ex.Message}", ex);
+                    }
+                    finally
+                    {
+                        frame2?.Dispose();
+                    }
 
-                    var phaseResult = phaseCorrelationService.DetectShiftFromPaths(pic1Path, pic2Path);
+                    var phaseResult = phaseCorrelationService.DetectShiftFromPaths(
+                        Path.Combine(calibrationFolderPath, $"step_{step}_pic1.jpg"),
+                        Path.Combine(calibrationFolderPath, $"step_{step}_pic2.jpg"));
 
                     var calibrationRecord = new PicsCalibration
                     {
                         PicsCalibrationId = Guid.NewGuid().ToString(),
                         GroupCailbrationId = groupCalibrationId,
-                        Pic1 = pic1Path,
-                        Pic2 = pic2Path,
+                        Pic1 = Path.Combine(calibrationFolderPath, $"step_{step}_pic1.jpg"),
+                        Pic2 = Path.Combine(calibrationFolderPath, $"step_{step}_pic2.jpg"),
                         AxeDirectionCalibration = axis,
                         Acepted = 0,
                         Dx = phaseResult.Dx.ToString("F6"),
@@ -239,34 +289,48 @@ namespace GotsThorlabs.Services
                 }
 
                 await _db.SaveChangesAsync(ct);
+
+                foreach (var record in results)
+                {
+                    record.GroupCailbration = null;
+                }
             }
-            catch (Exception e)
+            catch (OperationCanceledException)
             {
-                throw new Exception(e.Message, e);
+                throw new InvalidOperationException("La calibración automática fue cancelada.");
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error inesperado durante la calibración automática en el paso actual: {ex.Message}", ex);
             }
             finally
             {
-                device.StopPolling();
-                device.Disconnect(true);
+                if (deviceConnected)
+                {
+                    try
+                    {
+                        device.StopPolling();
+                        device.Disconnect(true);
+                    }
+                    catch
+                    {
+                    }
+                }
             }
 
             return results;
         }
 
-        private static bool MoveMotor(KCubeInertialMotor device, InertialMotorStatus.MotorChannels channel, int position)
+        private static void MoveMotor(KCubeInertialMotor device, InertialMotorStatus.MotorChannels channel, int position)
         {
             if (device.GetPosition(channel) == position)
-                return true;
+                return;
 
-            try
-            {
-                device.MoveTo(channel, position, 6000);
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            device.MoveTo(channel, position, 0);
         }
 
         public async Task UpdateAsync(string id, PicsCalibrationUpdateDTO dto, CancellationToken ct)
