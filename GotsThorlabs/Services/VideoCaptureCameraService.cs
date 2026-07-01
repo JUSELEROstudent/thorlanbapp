@@ -43,6 +43,10 @@ namespace GotsThorlabs.Services
             //return CaptureFrame(3);
         }
 
+        // DirectShow opens/closes per capture, so there is no persistent
+        // connection to release. No-op to satisfy the interface contract.
+        public void ReleaseConnection() { }
+
         public IEnumerable<DeviceInfo> EnumerateDevices()
         {
             var result = new List<DeviceInfo>();

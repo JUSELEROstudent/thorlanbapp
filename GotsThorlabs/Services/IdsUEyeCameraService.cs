@@ -4,6 +4,7 @@ using uEye.Types;
 using GotsThorlabs.Interfaces;
 using GotsThorlabs.Models;
 using OpenCvSharp;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace GotsThorlabs.Services
@@ -24,6 +25,20 @@ namespace GotsThorlabs.Services
     public class IdsUEyeCameraService : ICameraService, ICameraDiscoveryService, IDisposable
     {
         private bool _disposed;
+
+        // ── PERSISTENT SESSION ────────────────────────────────────────
+        // The camera is opened & calibrated ONCE per identifier, then reused
+        // for every subsequent Freeze() capture. This avoids re-running the
+        // ~30-frame auto-exposure/AWB convergence on every single image and
+        // keeps the calibration stable across the whole calibration flow.
+        private readonly SemaphoreSlim _sessionLock = new SemaphoreSlim(1, 1);
+        private Camera? _sessionCamera;
+        private string? _sessionIdentifier;   // identifier the live session is bound to
+        private int    _sessionMemoryId;        // capture buffer of the live session
+
+        // How long to let the camera settle after calibration before the first
+        // real capture (lets the locked exposure/WB fully stabilize).
+        private const int SettleAfterCalibrationMs = 3000;
 
         // ═══════════════════════════════════════════════════════════════
         //  PROFILE SELECTOR — change this value to switch capture profile
@@ -59,10 +74,26 @@ namespace GotsThorlabs.Services
         // ── ICameraService ────────────────────────────────────────────
 
         public Mat CaptureFrame(int cameraId)
-            => CaptureInternal(cameraId.ToString());
+            => CaptureFrame(cameraId.ToString());
 
         public Mat CaptureFrame(string localIdentifier)
-            => CaptureInternal(localIdentifier);
+        {
+            if (string.IsNullOrWhiteSpace(localIdentifier))
+                return new Mat();
+
+            // Serialize all captures through the single live session. The first call
+            // for an identifier opens+calibrates the camera (heavy), every later call
+            // just does a fast Freeze(). Different identifiers re-open the session.
+            _sessionLock.Wait();
+            try
+            {
+                return CaptureWithPersistentSession(localIdentifier);
+            }
+            finally
+            {
+                _sessionLock.Release();
+            }
+        }
 
         // ── ICameraDiscoveryService ───────────────────────────────────
 
@@ -87,105 +118,231 @@ namespace GotsThorlabs.Services
             return result;
         }
 
-        // ── Internal capture ─────────────────────────────────────────
-
-        private Mat CaptureInternal(string localIdentifier)
+        // ── Persistent-session capture ────────────────────────────────
+        // Opens & calibrates the camera the first time an identifier is seen,
+        // then reuses the live connection for every subsequent Freeze().
+        private Mat CaptureWithPersistentSession(string localIdentifier)
         {
+            // If the requested identifier differs from the live session, rebuild it.
+            if (_sessionCamera == null || !string.Equals(_sessionIdentifier, localIdentifier, StringComparison.OrdinalIgnoreCase))
+            {
+                if (!OpenAndCalibrate(localIdentifier))
+                    return new Mat();
+            }
+
+            var camera = _sessionCamera!;
+            try
+            {
+                return FreezeAndCopy(camera);
+            }
+            catch (Exception ex)
+            {
+                // The session is probably stale (camera unplugged / cable glitch).
+                // Tear it down so the next call re-initializes cleanly.
+                Console.WriteLine($"[IdsUEye] Freeze/copy failed, will re-open session next call: {ex.Message}");
+                CloseSession();
+                return new Mat();
+            }
+        }
+
+        /// <summary>
+        /// Opens the uEye device for <paramref name="localIdentifier"/>, applies the profile,
+        /// locks the BGR8 pixel format, converges exposure + white balance and lets the
+        /// camera settle. The live <see cref="Camera"/> + buffer are cached as the active
+        /// session so later captures skip all of this and just Freeze().
+        /// </summary>
+        private bool OpenAndCalibrate(string localIdentifier)
+        {
+            // Close any previously held session first (different camera).
+            CloseSession();
+
             CameraInformation[]? cameraList;
             uEye.Info.Camera.GetCameraList(out cameraList);
-
             if (cameraList == null || cameraList.Length == 0)
-                return new Mat();
+            {
+                Console.WriteLine("[IdsUEye] No uEye cameras found.");
+                return false;
+            }
 
             int deviceId = ResolveDeviceId(cameraList, localIdentifier);
             if (deviceId < 0)
-                return new Mat();
+            {
+                Console.WriteLine($"[IdsUEye] Could not resolve device for identifier '{localIdentifier}'.");
+                return false;
+            }
 
             var camera = new Camera();
             Status status = camera.Init(deviceId);
             if (status != Status.Success)
             {
                 Console.WriteLine($"[IdsUEye] Init failed for deviceId={deviceId}: {status}");
-                return new Mat();
+                return false;
             }
 
             try
             {
-                // Apply the selected profile FIRST — ResetToDefault()/Load() can change
-                // the pixel format, so any PixelFormat.Set() done before this would be
-                // overwritten (causing raw-Bayer output → black/white, torn images).
+                // Apply profile FIRST (it can change the pixel format).
                 ApplyProfile(camera);
 
-                // Force BGR8 output AFTER the profile so it is not reset to raw Bayer.
-                // BGR8Packed makes CopyToArray deliver 3-channel packed bytes (color).
+                // Lock BGR8 output AFTER the profile so the color conversion persists.
                 camera.PixelFormat.Set(ColorMode.BGR8Packed);
 
-                // Allocate the capture buffer AFTER the pixel format is locked, so it
-                // is sized correctly for BGR8 (3 bytes/pixel).
-                int memId;
-                camera.Memory.Allocate(out memId, true);
+                // Allocate a small RING BUFFER (3 buffers) and build a sequence.
+                // Capture() (live mode) requires a sequence of multiple buffers;
+                // a single buffer only works for bare Freeze(). We use Capture()
+                // briefly before each Freeze() in FreezeAndCopy to guarantee the
+                // sensor streams a fresh frame rather than returning a stale one.
+                const int ringBufferCount = 3;
+                var memIds = new List<int>();
+                for (int i = 0; i < ringBufferCount; i++)
+                {
+                    int id;
+                    var allocStatus = camera.Memory.Allocate(out id, true);
+                    if (allocStatus != Status.Success)
+                    {
+                        Console.WriteLine($"[IdsUEye] Memory.Allocate[{i}] failed: {allocStatus}");
+                        camera.Exit();
+                        return false;
+                    }
+                    memIds.Add(id);
+                }
+                camera.Memory.Sequence.Add(memIds.ToArray());
+                int memId = memIds[0];
 
-                // Always ensure freerun mode (TriggerMode.Off) regardless of what the profile loaded.
-                // In freerun the camera captures continuously and Freeze() takes the next ready frame.
-                // If a trigger mode is active, Freeze() would block indefinitely waiting for an external signal.
+                // Freerun so Freeze() returns the next ready frame instead of blocking.
                 camera.Trigger.Set(TriggerMode.Off);
                 Console.WriteLine("[IdsUEye] Trigger set to Off (freerun)");
 
-                // Converge exposure (auto-shutter only, no auto-gain) and white balance.
+                // Converge exposure (auto-shutter only, no auto-gain) + white balance.
                 ApplyAutoExposure(camera);
 
-                // Real capture.
-                status = camera.Acquisition.Freeze(DeviceParameter.Wait);
-                if (status != Status.Success)
-                {
-                    Console.WriteLine($"[IdsUEye] Freeze failed: {status}");
-                    return new Mat();
-                }
+                // Let the locked exposure / AWB stabilize before the first real capture.
+                Console.WriteLine($"[IdsUEye] Calibrated. Settling {SettleAfterCalibrationMs} ms before first capture...");
+                Thread.Sleep(SettleAfterCalibrationMs);
 
-                // Always read from the LAST completed buffer, not the allocated memId,
-                // because the SDK may have used a different slot internally.
-                int lastMemId;
-                camera.Memory.GetLast(out lastMemId);
-                camera.Memory.Lock(lastMemId);
+                _sessionCamera     = camera;
+                _sessionIdentifier = localIdentifier;
+                _sessionMemoryId   = memId;
+                Console.WriteLine($"[IdsUEye] Session opened & calibrated for '{localIdentifier}'.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[IdsUEye] Calibration failed for '{localIdentifier}': {ex.Message}");
+                try { camera.Exit(); } catch { }
+                return false;
+            }
+        }
 
-                int width = 0, height = 0, pitch = 0;
-                camera.Memory.GetWidth(lastMemId, out width);
-                camera.Memory.GetHeight(lastMemId, out height);
-                camera.Memory.GetPitch(lastMemId, out pitch);
+        /// <summary>Fast-path: takes one frame from the already-open session and copies it to a Mat.</summary>
+        private Mat FreezeAndCopy(Camera camera)
+        {
+            // After a previous Freeze() the camera is STOPPED and the buffer holds
+            // the last frame. A bare Freeze() on a stopped camera can return that
+            // same stale buffer instead of triggering a fresh capture.
+            //
+            // Fix: briefly start live capture so the sensor begins streaming fresh
+            // frames, wait for one to arrive, then Freeze() to stop and grab it.
+            camera.Acquisition.Capture();
+            Thread.Sleep(150);  // let at least one fresh frame fill the buffer
 
-                if (width == 0 || height == 0)
-                {
-                    camera.Memory.Unlock(lastMemId);
-                    return new Mat();
-                }
+            var status = camera.Acquisition.Freeze(DeviceParameter.Wait);
+            if (status != Status.Success)
+            {
+                Console.WriteLine($"[IdsUEye] Freeze failed: {status}");
+                return new Mat();
+            }
 
-                // Get a native pointer to the buffer and copy using stride (pitch).
-                IntPtr bufPtr;
-                camera.Memory.ToIntPtr(lastMemId, out bufPtr);
+            // Always read from the LAST completed buffer (SDK may use an internal slot).
+            int lastMemId;
+            camera.Memory.GetLast(out lastMemId);
+            camera.Memory.Lock(lastMemId);
 
-                Console.WriteLine($"[IdsUEye] Captured width={width} height={height} pitch={pitch}");
+            int width = 0, height = 0, pitch = 0;
+            camera.Memory.GetWidth(lastMemId, out width);
+            camera.Memory.GetHeight(lastMemId, out height);
+            camera.Memory.GetPitch(lastMemId, out pitch);
 
-                var mat = new Mat(height, width, MatType.CV_8UC3);
-                unsafe
-                {
-                    byte* src = (byte*)bufPtr.ToPointer();
-                    byte* dst = (byte*)mat.Data.ToPointer();
-                    int rowBytes = width * 3;
-                    for (int row = 0; row < height; row++)
-                        System.Buffer.MemoryCopy(src + row * pitch, dst + row * rowBytes, rowBytes, rowBytes);
-                }
-
+            if (width == 0 || height == 0)
+            {
                 camera.Memory.Unlock(lastMemId);
+                return new Mat();
+            }
 
-                // DEBUG: save both the raw uEye bytes and the resulting OpenCV Mat for visual comparison.
-                // TODO: remove this block once color/capture issues are resolved.
-                ////////////SaveDebugFrames(bufPtr, width, height, pitch, mat);//descomentar cuandose quiera ver la imagen en ambios casos cv y peak
+            IntPtr bufPtr;
+            camera.Memory.ToIntPtr(lastMemId, out bufPtr);
 
-                return mat;
+            var mat = new Mat(height, width, MatType.CV_8UC3);
+            unsafe
+            {
+                byte* src = (byte*)bufPtr.ToPointer();
+                byte* dst = (byte*)mat.Data.ToPointer();
+                int rowBytes = width * 3;
+                for (int row = 0; row < height; row++)
+                    System.Buffer.MemoryCopy(src + row * pitch, dst + row * rowBytes, rowBytes, rowBytes);
+            }
+
+            camera.Memory.Unlock(lastMemId);
+            return mat;
+        }
+
+        private void CloseSession()
+        {
+            if (_sessionCamera != null)
+            {
+                var cam = _sessionCamera;
+
+                // 1) Stop any live acquisition that FreezeAndCopy may have left running.
+                try
+                {
+                    bool started;
+                    cam.Acquisition.HasStarted(out started);
+                    if (started) cam.Acquisition.Stop();
+                }
+                catch (Exception ex) { Console.WriteLine($"[IdsUEye] CloseSession Stop: {ex.Message}"); }
+
+                // 2) Clear the ring-buffer sequence and free each allocated buffer,
+                //    mirroring MemoryHelper.ClearSequence + FreeImageMems from the SDK sample.
+                try { cam.Memory.Sequence.Clear(); } catch { }
+                try
+                {
+                    int[] idList;
+                    if (cam.Memory.GetList(out idList) == Status.Success && idList != null)
+                    {
+                        foreach (var memId in idList)
+                        {
+                            try { cam.Memory.Free(memId); } catch { }
+                        }
+                    }
+                }
+                catch (Exception ex) { Console.WriteLine($"[IdsUEye] CloseSession Free: {ex.Message}"); }
+
+                // 3) Release the device handle so IDS Cockpit / other apps can use it.
+                try { cam.Exit(); } catch { }
+
+                _sessionCamera = null;
+            }
+            _sessionIdentifier = null;
+            _sessionMemoryId   = 0;
+        }
+
+        /// <summary>
+        /// Releases the live uEye session so the camera is free for use by other
+        /// software (e.g. IDS Cockpit). Call this when a capture flow finishes.
+        /// Safe to call even if no session is open.
+        /// </summary>
+        public void ReleaseConnection()
+        {
+            _sessionLock.Wait();
+            try
+            {
+                if (_sessionCamera != null)
+                    Console.WriteLine($"[IdsUEye] Releasing connection for '{_sessionIdentifier}'.");
+                CloseSession();
             }
             finally
             {
-                camera.Exit();
+                _sessionLock.Release();
             }
         }
 
@@ -309,7 +466,7 @@ namespace GotsThorlabs.Services
                 catch (Exception ex) { Console.WriteLine($"[IdsUEye] AWB Once failed: {ex.Message}"); }
             }
 
-bool sensorWhiteSupported = false;
+            bool sensorWhiteSupported = false;
             camera.AutoFeatures.Sensor.Whitebalance.GetSupported(out sensorWhiteSupported);
             if (sensorWhiteSupported)
             {
@@ -449,7 +606,11 @@ bool sensorWhiteSupported = false;
 
         public void Dispose()
         {
+            if (_disposed) return;
             _disposed = true;
+
+            CloseSession();
+            _sessionLock.Dispose();
         }
     }
 

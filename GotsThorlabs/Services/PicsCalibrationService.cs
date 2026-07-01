@@ -331,6 +331,19 @@ namespace GotsThorlabs.Services
                     {
                     }
                 }
+
+                // Release the camera connection so the device is free for the
+                // vendor's own software (e.g. IDS Cockpit). For drivers that
+                // open/close per capture (generic / ids_peak) this is a no-op;
+                // for the persistent uEye session it closes the live connection.
+                try
+                {
+                    resolvedCameraService?.ReleaseConnection();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[PicsCalibration] ReleaseConnection failed: {ex.Message}");
+                }
             }
 
             return results;
@@ -341,7 +354,31 @@ namespace GotsThorlabs.Services
             if (device.GetPosition(channel) == position)
                 return;
 
+            // Start the move (timeout 0 = non-blocking, returns immediately).
             device.MoveTo(channel, position, 0);
+
+            // Poll the actual position until the motor reaches the target.
+            // The inertial motor moves by applying vibration pulses; the position
+            // counter only increments as the stage physically moves. We wait
+            // however long it takes — no fixed timeout — so the camera never
+            // captures before the stage has arrived.
+            const int pollIntervalMs = 100;
+            const int settleMs       = 500;  // extra settle after arriving (let vibrations damp)
+            const int safetyMaxMs    = 120_000; // 2 min safety valve
+
+            var elapsed = 0;
+            while (device.GetPosition(channel) != position)
+            {
+                Thread.Sleep(pollIntervalMs);
+                elapsed += pollIntervalMs;
+                if (elapsed >= safetyMaxMs)
+                    throw new InvalidOperationException(
+                        $"El motor no alcanzó la posición {position} tras {safetyMaxMs / 1000}s " +
+                        $"(posición actual: {device.GetPosition(channel)}).");
+            }
+
+            // The stage arrived — let any residual vibration dampen before capture.
+            Thread.Sleep(settleMs);
         }
 
         public async Task UpdateAsync(string id, PicsCalibrationUpdateDTO dto, CancellationToken ct)

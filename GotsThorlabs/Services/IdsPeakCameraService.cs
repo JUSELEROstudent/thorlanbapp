@@ -291,6 +291,10 @@ namespace GotsThorlabs.Services
             return result;
         }
 
+        // Peak acquisition opens/closes per capture, so there is no persistent
+        // connection to release. No-op to satisfy the interface contract.
+        public void ReleaseConnection() { }
+
         public void Dispose()
         {
             if (_disposed) return;
