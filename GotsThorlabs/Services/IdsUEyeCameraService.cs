@@ -126,8 +126,12 @@ namespace GotsThorlabs.Services
             // If the requested identifier differs from the live session, rebuild it.
             if (_sessionCamera == null || !string.Equals(_sessionIdentifier, localIdentifier, StringComparison.OrdinalIgnoreCase))
             {
+                Console.WriteLine($"[IdsUEye] No active session for '{localIdentifier}', opening...");
                 if (!OpenAndCalibrate(localIdentifier))
+                {
+                    Console.WriteLine($"[IdsUEye] OpenAndCalibrate FAILED for '{localIdentifier}'. Returning empty Mat.");
                     return new Mat();
+                }
             }
 
             var camera = _sessionCamera!;
@@ -137,9 +141,7 @@ namespace GotsThorlabs.Services
             }
             catch (Exception ex)
             {
-                // The session is probably stale (camera unplugged / cable glitch).
-                // Tear it down so the next call re-initializes cleanly.
-                Console.WriteLine($"[IdsUEye] Freeze/copy failed, will re-open session next call: {ex.Message}");
+                Console.WriteLine($"[IdsUEye] FreezeAndCopy threw exception, will re-open next call: {ex.Message}");
                 CloseSession();
                 return new Mat();
             }
@@ -173,9 +175,10 @@ namespace GotsThorlabs.Services
 
             var camera = new Camera();
             Status status = camera.Init(deviceId);
+            Console.WriteLine($"[IdsUEye] Init(deviceId={deviceId}) = {status}");
             if (status != Status.Success)
             {
-                Console.WriteLine($"[IdsUEye] Init failed for deviceId={deviceId}: {status}");
+                Console.WriteLine($"[IdsUEye] Init failed — camera may be in use by another application (e.g. IDS Cockpit). Close it and retry.");
                 return false;
             }
 
@@ -185,35 +188,26 @@ namespace GotsThorlabs.Services
                 ApplyProfile(camera);
 
                 // Lock BGR8 output AFTER the profile so the color conversion persists.
-                camera.PixelFormat.Set(ColorMode.BGR8Packed);
+                var pixStatus = camera.PixelFormat.Set(ColorMode.BGR8Packed);
+                Console.WriteLine($"[IdsUEye] PixelFormat.Set(BGR8Packed) = {pixStatus}");
 
-                // Allocate a small RING BUFFER (3 buffers) and build a sequence.
-                // Capture() (live mode) requires a sequence of multiple buffers;
-                // a single buffer only works for bare Freeze(). We use Capture()
-                // briefly before each Freeze() in FreezeAndCopy to guarantee the
-                // sensor streams a fresh frame rather than returning a stale one.
-                const int ringBufferCount = 3;
-                var memIds = new List<int>();
-                for (int i = 0; i < ringBufferCount; i++)
+                // Allocate a SINGLE capture buffer for snapshot (Freeze) mode.
+                int memId;
+                var allocStatus = camera.Memory.Allocate(out memId, true);
+                Console.WriteLine($"[IdsUEye] Memory.Allocate = {allocStatus}, memId = {memId}");
+                if (allocStatus != Status.Success)
                 {
-                    int id;
-                    var allocStatus = camera.Memory.Allocate(out id, true);
-                    if (allocStatus != Status.Success)
-                    {
-                        Console.WriteLine($"[IdsUEye] Memory.Allocate[{i}] failed: {allocStatus}");
-                        camera.Exit();
-                        return false;
-                    }
-                    memIds.Add(id);
+                    Console.WriteLine($"[IdsUEye] Memory.Allocate failed: {allocStatus}");
+                    camera.Exit();
+                    return false;
                 }
-                camera.Memory.Sequence.Add(memIds.ToArray());
-                int memId = memIds[0];
 
                 // Freerun so Freeze() returns the next ready frame instead of blocking.
-                camera.Trigger.Set(TriggerMode.Off);
-                Console.WriteLine("[IdsUEye] Trigger set to Off (freerun)");
+                var triggerStatus = camera.Trigger.Set(TriggerMode.Off);
+                Console.WriteLine($"[IdsUEye] Trigger.Set(Off) = {triggerStatus}");
 
                 // Converge exposure (auto-shutter only, no auto-gain) + white balance.
+                Console.WriteLine("[IdsUEye] Starting auto-exposure/AWB convergence...");
                 ApplyAutoExposure(camera);
 
                 // Let the locked exposure / AWB stabilize before the first real capture.
@@ -229,6 +223,7 @@ namespace GotsThorlabs.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"[IdsUEye] Calibration failed for '{localIdentifier}': {ex.Message}");
+                Console.WriteLine($"[IdsUEye] Stack: {ex.StackTrace}");
                 try { camera.Exit(); } catch { }
                 return false;
             }
@@ -237,25 +232,26 @@ namespace GotsThorlabs.Services
         /// <summary>Fast-path: takes one frame from the already-open session and copies it to a Mat.</summary>
         private Mat FreezeAndCopy(Camera camera)
         {
-            // After a previous Freeze() the camera is STOPPED and the buffer holds
-            // the last frame. A bare Freeze() on a stopped camera can return that
-            // same stale buffer instead of triggering a fresh capture.
-            //
-            // Fix: briefly start live capture so the sensor begins streaming fresh
-            // frames, wait for one to arrive, then Freeze() to stop and grab it.
-            camera.Acquisition.Capture();
-            Thread.Sleep(150);  // let at least one fresh frame fill the buffer
-
-            var status = camera.Acquisition.Freeze(DeviceParameter.Wait);
-            if (status != Status.Success)
+            // Simple snapshot approach: Freeze(DeviceParameter.Wait) captures ONE
+            // fresh frame and blocks until complete. This is the pattern used by
+            // the SDK cockpit sample for "snapshot" mode and is the most reliable
+            // way to get a single frame. No Capture()/Stop() dance needed.
+            var freezeStatus = camera.Acquisition.Freeze(DeviceParameter.Wait);
+            if (freezeStatus != Status.Success)
             {
-                Console.WriteLine($"[IdsUEye] Freeze failed: {status}");
+                Console.WriteLine($"[IdsUEye] FreezeAndCopy: Freeze() failed = {freezeStatus}");
                 return new Mat();
             }
 
-            // Always read from the LAST completed buffer (SDK may use an internal slot).
+            // Read the completed buffer.
             int lastMemId;
-            camera.Memory.GetLast(out lastMemId);
+            var getLastStatus = camera.Memory.GetLast(out lastMemId);
+            if (getLastStatus != Status.Success || lastMemId <= 0)
+            {
+                Console.WriteLine($"[IdsUEye] FreezeAndCopy: GetLast failed = {getLastStatus}, memId = {lastMemId}");
+                return new Mat();
+            }
+
             camera.Memory.Lock(lastMemId);
 
             int width = 0, height = 0, pitch = 0;
@@ -266,11 +262,14 @@ namespace GotsThorlabs.Services
             if (width == 0 || height == 0)
             {
                 camera.Memory.Unlock(lastMemId);
+                Console.WriteLine($"[IdsUEye] FreezeAndCopy: Empty dimensions (w={width} h={height}).");
                 return new Mat();
             }
 
             IntPtr bufPtr;
             camera.Memory.ToIntPtr(lastMemId, out bufPtr);
+
+            Console.WriteLine($"[IdsUEye] FreezeAndCopy: w={width} h={height} pitch={pitch}");
 
             var mat = new Mat(height, width, MatType.CV_8UC3);
             unsafe
@@ -283,6 +282,12 @@ namespace GotsThorlabs.Services
             }
 
             camera.Memory.Unlock(lastMemId);
+
+            if (mat.Empty())
+                Console.WriteLine($"[IdsUEye] FreezeAndCopy: Mat empty after copy!");
+            else
+                Console.WriteLine($"[IdsUEye] FreezeAndCopy: OK {width}x{height}.");
+
             return mat;
         }
 
@@ -292,7 +297,7 @@ namespace GotsThorlabs.Services
             {
                 var cam = _sessionCamera;
 
-                // 1) Stop any live acquisition that FreezeAndCopy may have left running.
+                // 1) Stop any active acquisition.
                 try
                 {
                     bool started;
@@ -301,9 +306,7 @@ namespace GotsThorlabs.Services
                 }
                 catch (Exception ex) { Console.WriteLine($"[IdsUEye] CloseSession Stop: {ex.Message}"); }
 
-                // 2) Clear the ring-buffer sequence and free each allocated buffer,
-                //    mirroring MemoryHelper.ClearSequence + FreeImageMems from the SDK sample.
-                try { cam.Memory.Sequence.Clear(); } catch { }
+                // 2) Free all allocated memory buffers.
                 try
                 {
                     int[] idList;
@@ -457,7 +460,9 @@ namespace GotsThorlabs.Services
             try { camera.Gain.Hardware.Boost.SetEnable(false); } catch (Exception ex) { Console.WriteLine($"[IdsUEye] Boost disable failed: {ex.Message}"); }
 
             // ── 2. Enable auto-white-balance ONCE for faithful colors. ──
-            // RunOnce converges the WB gains then auto-disables, locking the color balance.
+            // The software AWB (ActivateMode.Once) converges the WB gains then
+            // auto-disables, locking the color balance. We rely solely on the
+            // software path — it is the one confirmed working by the SDK sample.
             bool swWhiteSupported = false;
             camera.AutoFeatures.Software.WhiteBalance.GetSupported(out swWhiteSupported);
             if (swWhiteSupported)
@@ -466,18 +471,7 @@ namespace GotsThorlabs.Services
                 catch (Exception ex) { Console.WriteLine($"[IdsUEye] AWB Once failed: {ex.Message}"); }
             }
 
-            bool sensorWhiteSupported = false;
-            camera.AutoFeatures.Sensor.Whitebalance.GetSupported(out sensorWhiteSupported);
-            if (sensorWhiteSupported)
-            {
-                // Sensor white balance uses WhiteBalanceMode (Enable/Disable), not ActivateMode.
-                // The software AWB above (Once) handles the one-shot color convergence;
-                // for the sensor path we simply enable it and disable it after convergence.
-                try { camera.AutoFeatures.Sensor.Whitebalance.SetEnable(uEye.Defines.Whitebalance.WhiteBalanceMode.Automatic); } // se supone que era enable pero no lo tiene incluido 
-                catch (Exception ex) { Console.WriteLine($"[IdsUEye] Sensor AWB Enable failed: {ex.Message}"); }
-            }
-
-            Console.WriteLine($"[IdsUEye] AutoExposure setup: gainAutoSensor={gainSupported} gainAutoSW={swGainSupported} awbSW={swWhiteSupported} awbSensor={sensorWhiteSupported}");
+            Console.WriteLine($"[IdsUEye] AutoExposure setup: gainAutoSensor={gainSupported} gainAutoSW={swGainSupported} awbSW={swWhiteSupported}");
 
             // ── 3. Enable auto-shutter (exposure time) only — the natural exposure control. ──
             bool shutterSupported = false;
@@ -495,10 +489,18 @@ namespace GotsThorlabs.Services
             for (int i = 0; i < MaxConvergeFrames; i++)
             {
                 var st = camera.Acquisition.Freeze(DeviceParameter.Wait);
-                if (st != Status.Success) break;
+                if (i == 0)
+                    Console.WriteLine($"[IdsUEye] AutoExposure: first Freeze() = {st}");
+                if (st != Status.Success)
+                {
+                    Console.WriteLine($"[IdsUEye] AutoExposure: Freeze() failed at frame {i + 1}: {st}");
+                    break;
+                }
 
                 int lastId;
                 camera.Memory.GetLast(out lastId);
+                if (i == 0)
+                    Console.WriteLine($"[IdsUEye] AutoExposure: first GetLast() memId = {lastId}");
                 if (lastId <= 0) continue;
 
                 camera.Memory.Lock(lastId);
@@ -532,13 +534,20 @@ namespace GotsThorlabs.Services
             {
                 try { camera.AutoFeatures.Software.WhiteBalance.SetEnable(false); } catch { }
             }
-            if (sensorWhiteSupported)
-            {
-                try { camera.AutoFeatures.Sensor.Whitebalance.SetEnable(uEye.Defines.Whitebalance.WhiteBalanceMode.Disable); } catch { }
-            }
 
             // Settle: let the locked exposure/white-balance stabilize before the real Freeze().
             Thread.Sleep(100);
+
+            // Stop any active acquisition so the session starts from a clean state.
+            // The Freeze() calls above leave the camera STOPPED, but calling Stop()
+            // explicitly guarantees a clean transition to Capture() later.
+            try
+            {
+                bool started;
+                camera.Acquisition.HasStarted(out started);
+                if (started) camera.Acquisition.Stop();
+            }
+            catch { }
 
             Console.WriteLine($"[IdsUEye] AutoExposure done. Final meanBrightness={lastMean:F1}");
         }

@@ -154,8 +154,8 @@ namespace GotsThorlabs.Hubs
         /// </summary>
         public async IAsyncEnumerable<dynamic> Imgupdate(
           int indexcam,
-          int rows,
-          int columns,
+          decimal areaX_mm,
+          decimal areaY_mm,
           string groupCalibrationId,
           string device,
          [EnumeratorCancellation]
@@ -172,8 +172,8 @@ namespace GotsThorlabs.Hubs
                 ?? throw new HubException("No se encontró la cámara asociada a la calibración.");
             var cameraService = _cameraFactory.GetService(driverType);
 
-            var controlmotor = new TakeTour(resolvedLocalIdentifier, rows, columns, _db, cameraService);
-            var processimgs = controlmotor.Createmosaicstepbystep(2, device.Trim(), groupCalibrationId);
+            var controlmotor = new TakeTour(resolvedLocalIdentifier, _db, cameraService);
+            var processimgs = controlmotor.Createmosaicstepbystep(areaX_mm, areaY_mm, device.Trim(), groupCalibrationId);
             await foreach (var url in processimgs)
             {
                 yield return url;

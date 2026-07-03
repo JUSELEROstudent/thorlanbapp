@@ -9,6 +9,6 @@ namespace GotsThorlabs.Interfaces
         public void EndStatus(string statusOfTour);
 
         public string TakeAPic(string nameFile, string path,int x,int y,int z);
-        public IAsyncEnumerable<dynamic> Createmosaicstepbystep( int dimMove, string kimDeviceId, string picsCalibrationId);
+        public IAsyncEnumerable<dynamic> Createmosaicstepbystep(decimal areaX_mm, decimal areaY_mm, string kimDeviceId, string groupCalibrationId);
     }
 }

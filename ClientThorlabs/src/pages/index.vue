@@ -28,15 +28,15 @@
                     {{ lg.aditionalInfo }}
                 </option>
             </select>
-            <span class="text-black pl-3" title="defina la tamaño en medida  de columnas y filas "> Grid X * Y</span>
+            <span class="text-black pl-3" title="defina el tamaño del área a rastrear en milímetros"> Area X * Y (mm)</span>
             <label>
                 <div class="flex items-center w-32">
-                <input type="number" v-model="rows" class="input input-bordered w-full ml-2" name="fname" placeholder="X" title="Numero de Filas" >
+                <input type="number" step="0.1" v-model="areaX" class="input input-bordered w-full ml-2" name="fname" placeholder="X mm" title="Tamaño X en milímetros" >
                 </div>
             </label>
             <label>
                 <div class="flex items-center w-32">
-                <input type="number" v-model="columns" class="input input-bordered w-full ml-2" name="fname" placeholder="Y" title="Numero de Columnas"  >
+                <input type="number" step="0.1" v-model="areaY" class="input input-bordered w-full ml-2" name="fname" placeholder="Y mm" title="Tamaño Y en milímetros"  >
                 </div>
             </label>
             <div class="flex-1 " > 
@@ -69,8 +69,8 @@ const currentGroup = ref<string>("");
 const isendrequest = ref<boolean>(false);
 const imgRef = ref<HTMLImageElement | null>(null);
 const statusstreamimg = ref<boolean>(false);
-const rows = ref<number>(5);
-const columns = ref<number>(5);
+const areaX = ref<number>(10.0);
+const areaY = ref<number>(8.0);
 const canStartStream = computed(() => {
     const hasCamera = `${currentCamera.value ?? ""}`.trim().length > 0;
     const hasDevice = `${currentDevice.value ?? ""}`.trim().length > 0;
@@ -146,7 +146,7 @@ onMounted( async () => {
         // debugger;
         await hubConnection.stop();
         await hubConnection.start();
-        hubConnection.stream("Imgupdate", currentCamera.value,rows.value,columns.value,currentGroup.value,currentDevice.value).subscribe({
+        hubConnection.stream("Imgupdate", currentCamera.value,areaX.value,areaY.value,currentGroup.value,currentDevice.value).subscribe({
             next: (item: string) => {
                 if (imgRef.value) { imgRef.value.src = `${item}` }
             },

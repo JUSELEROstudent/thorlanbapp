@@ -38,48 +38,37 @@ namespace GotsThorlabs.BLL
         private readonly GotsThorlabs.Interfaces.ICameraService _cameraService;
         private long? _currentTourId;
 
-        public int rows; //= i
-        public int columns; // = j
+        /// <summary>Número de imágenes a lo largo del eje Y (filas). Se calcula dinámicamente.</summary>
+        public int rows; //= i  (eje Y / Channel2)
+        /// <summary>Número de imágenes a lo largo del eje X (columnas). Se calcula dinámicamente.</summary>
+        public int columns; // = j  (eje X / Channel1)
         /// <summary>LocalIdentifier of the camera resolved from GroupCalibration → Camera in the DB.</summary>
         public string localIdentifier;
         string namefolder;
+        private decimal _areaX_mm;
+        private decimal _areaY_mm;
 
         public Mat[] image;
         public Mat[] finalimg;
         public Mat mosaic;// imagen general ya con el tamaño completo para la imagen final que laverga a todas las sub imagenes
 
-        public TakeTour(string LocalIdentifier, int Rows, int Columns, ThorlabsDbContext db, GotsThorlabs.Interfaces.ICameraService cameraService)
+        public TakeTour(string LocalIdentifier, ThorlabsDbContext db, GotsThorlabs.Interfaces.ICameraService cameraService)
         {
-            rows = Rows;
-            columns = Columns;
             localIdentifier = LocalIdentifier;
             namefolder = Utilities.getTimeInString();
             _db = db;
             _cameraService = cameraService;
-
-            int framewidth;
-            int frameheight;
-
-            // try to obtain frame size using camera service; fallback to defaults
-            try
-            {
-                using var frame = _cameraService?.CaptureFrame(localIdentifier);
-                frameheight = frame?.Rows ?? 1080;
-                framewidth = frame?.Cols ?? 1920;
-            }
-            catch
-            {
-                frameheight = 1080;
-                framewidth = 1920;
-            }
-            mosaic = new Mat(rows * frameheight, columns * framewidth, MatType.CV_8UC3);//mosaico final
-            image = new Mat[rows];
-            finalimg = new Mat[columns];
+            // rows, columns, image, finalimg, mosaic se inicializan en Createmosaicstepbystep
+            // una vez calculado el grid a partir del área (mm) y la calibración.
+            mosaic = new Mat();
         }
 
        
-        public async IAsyncEnumerable<dynamic> Createmosaicstepbystep(int dimMove, string kimDeviceId, string groupCalibrationId)
+        public async IAsyncEnumerable<dynamic> Createmosaicstepbystep(decimal areaX_mm, decimal areaY_mm, string kimDeviceId, string groupCalibrationId)
         {
+            _areaX_mm = areaX_mm;
+            _areaY_mm = areaY_mm;
+
             var developerurl = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
             var listado = deviceslist();
             string path = Environment.CurrentDirectory;
@@ -133,50 +122,78 @@ namespace GotsThorlabs.BLL
 
             Decimal newPos = deviceconnect.GetPosition(InertialMotorStatus.MotorChannels.Channel1);
             var rand = new Random();
-            
-            //seccion validacion de groupcalibration 
+
+            // SECCIÓN CALCULO DE GRID BASADO EN CALIBRACIÓN
+            // Se obtienen todas las calibraciones del grupo y se calculan los parámetros
+            // del grid (número de imágenes, espaciado del motor, overlap) en base al área
+            // deseada (mm) y a la mejor calibración disponible por eje.
             var allCalibrations = _db.PicsCalibrations.AsNoTracking().Where(x => x.GroupCailbrationId == groupCalibrationId).ToList();
-            var mostAcurateCalibration = allCalibrations.OrderBy(item => Math.Abs(double.Parse(item.Dx))).ThenBy(item2 => Math.Abs(double.Parse(item2.Dy))).FirstOrDefault();
-            if (mostAcurateCalibration == null)
+
+            int frameWidth;
+            int frameHeight;
+            try
             {
-                throw new Exception("No se encontró una calibración válida para el tour.");
+                using var probeFrame = _cameraService?.CaptureFrame(localIdentifier);
+                frameHeight = probeFrame?.Rows ?? 1080;
+                frameWidth = probeFrame?.Cols ?? 1920;
             }
-            //fin validacion groupcalibration 
-
-            string fullnamefolder = CreateTour(mostAcurateCalibration.PicsCalibrationId);
-
-            for (int j = 0; j < columns; j++)// posiblemente son las columnas 
+            catch
             {
-                bool estatusMovementA = Move_Method1(deviceconnect, chanelsDevice[1], j * 100);
+                frameHeight = 1080;
+                frameWidth = 1920;
+            }
+
+            var grid = MosaicGridCalculator.Calculate(areaX_mm, areaY_mm, allCalibrations, frameWidth, frameHeight);
+
+            // Inicializar arrays dinámicamente con el grid calculado.
+            // columns = eje X (Channel1), rows = eje Y (Channel2)
+            columns = grid.ImagesX;
+            rows = grid.ImagesY;
+            image = new Mat[rows];
+            finalimg = new Mat[grid.ImagesX];
+            mosaic = new Mat();
+            // fin inicialización grid
+
+            string fullnamefolder = CreateTour(grid.CalibrationX.PicsCalibrationId);
+
+            // RECORRIDO EN PATRÓN "S":
+            // - El eje X (Channel1) siempre avanza (j * MotorStepX).
+            // - El eje Y (Channel2) alterna dirección por columna:
+            //      columnas pares   → sube  (i_motor: 0 → ImagesY-1)
+            //      columnas impares → baja  (i_motor: ImagesY-1 → 0)
+            //   El almacenamiento en image[] siempre usa el índice espacial k
+            //   para que VConcat preserve el orden espacial correcto.
+            for (int j = 0; j < grid.ImagesX; j++)
+            {
+                bool estatusMovementA = Move_Method1(deviceconnect, chanelsDevice[1], j * grid.MotorStepX);
                 if (!estatusMovementA)
                 {
                     deviceconnect.StopPolling();
                     deviceconnect.Disconnect(true);
-                    throw new Exception("Error al mover el dispositivo, revisar la coneccion [ES]");
-                    //yield return false;
+                    throw new Exception("Error al mover el dispositivo (eje X), revisar la coneccion [ES]");
                 }
 
-                for (int i = 0; i < rows; i++)
+                for (int k = 0; k < grid.ImagesY; k++)
                 {
+                    // Índice lógico del motor en Y según el patrón S
+                    int i_motor = (j % 2 == 0) ? k : (grid.ImagesY - 1 - k);
 
                     Mat frame = new Mat();
 
-                    bool estatusMovement = Move_Method1(deviceconnect, chanelsDevice[2], i * 100);
+                    bool estatusMovement = Move_Method1(deviceconnect, chanelsDevice[2], i_motor * grid.MotorStepY);
                     if (!estatusMovement)
                     {
                         deviceconnect.StopPolling();
                         deviceconnect.Disconnect(true);
-                        throw new Exception("Error al mover el dispositivo, revisar la coneccion [ES]");
-                        //yield return false;
+                        throw new Exception("Error al mover el dispositivo (eje Y), revisar la coneccion [ES]");
                     }
-                    string pathsave = TakeAPic("unitofpics", fullnamefolder, j, i, 0);
-                    /////mosaic.SaveImage(pathsave);
+                    // Tomar imagen guardando en el índice espacial k (orden vertical correcto)
+                    string pathsave = TakeAPic("unitofpics", fullnamefolder, j, k, 0);
                     var splitpathdir = pathsave.Split($"{Path.DirectorySeparatorChar}");
                     int dimpath = splitpathdir.Length;
                     var namephotounits = splitpathdir[dimpath - 1];
                     var urlunitpi = urlslocals[2] + $"/SouerceStaticFiles/{namefolder}/" + namephotounits + "?ranmd=" + rand.Next().ToString();
                     yield return urlunitpi;
-                    //var imgretonr = image.ToBytes(); COMENTADA PORQUE NO SE NECESITA COMBERTIR A FRAMES
                 }
                 Mat mosaicv = new Mat();
                 Cv2.VConcat(image, mosaicv);
@@ -374,8 +391,8 @@ namespace GotsThorlabs.BLL
             {
                 Date = DateTime.Now.ToString("o"),
                 NameFolder = namefolder,
-                NumberX = columns,
-                NumberY = rows,
+                NumberX = (long)(_areaX_mm * 1000m),
+                NumberY = (long)(_areaY_mm * 1000m),
                 NumberZ = 0,
                 Camera = 0, // camera identified by LocalIdentifier; int index no longer used
                 PicsCalibrationId = picsCalibrationId,

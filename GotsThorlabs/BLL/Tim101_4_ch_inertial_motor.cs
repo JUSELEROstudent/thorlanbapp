@@ -162,185 +162,26 @@ namespace GotsThorlabs.BLL
             return true;
         }
         ///<summary>
-        ///Metodo encargado de devolver paso a paso la creacion del mosaico 
+        ///Metodo encargado de devolver paso a paso la creacion del mosaico.
+        ///IMPLEMENTACION LEGACY (DirectShow) - NO USA EL CALCULO DE GRID BASADO EN CALIBRACION.
+        ///Usar TakeTour.Createmosaicstepbystep para el flujo activo.
         ///</summary>
-        ///<param name="indexCam">
-        ///indice de camara que se desea usar en el mapeado
-        ///</param>
-        ///<param name="dimMove">
-        ///tipo de movimiento que se desea ejecutar sea 1D, 2D, 3D  se usa para validarse que la cantidad de motores permita el tipo de recorrido deseado
-        ///</param>
-        ///<param name="rows">
-        ///cantidad de filas que va a tener el mapeo
-        ///</param>
-        ///<param name="columns">
-        ///cantidad de columnas que va a tener el mapeo
-        ///</param>
+        ///<param name="areaX_mm">Tamaño del área a rastrear en X (milímetros).</param>
+        ///<param name="areaY_mm">Tamaño del área a rastrear en Y (milímetros).</param>
+        ///<param name="kimDeviceId">Identificador del dispositivo KIM.</param>
+        ///<param name="groupCalibrationId">Identificador del grupo de calibración.</param>
         ///<remarks>
         ///devuelve la url de la ubicacion en el servidor de la imagen actual del mapeo
         ///</remarks>
-        public async IAsyncEnumerable<dynamic> Createmosaicstepbystep( int dimMove, string kimDeviceId, string picsCalibrationId)
+        public IAsyncEnumerable<dynamic> Createmosaicstepbystep(decimal areaX_mm, decimal areaY_mm, string kimDeviceId, string groupCalibrationId)
         {
-            var developerurl = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
-            var listado = deviceslist();
-            string path = Environment.CurrentDirectory;
-            if (listado == null) { yield return false; }
-            if (!listado.Contains(kimDeviceId)) { yield return false; }
-            var developerurl2 = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
-            var urlslocals = developerurl2.Split(";");
-            //KCubeInertialMotor deviceconnect = await Getobjdevicekim(listado[0]);
-            //List<KCubeInertialMotor> inertialdevicesconnections = new List<KCubeInertialMotor>();
-
-            KCubeInertialMotor deviceconnect = KCubeInertialMotor.CreateKCubeInertialMotor(kimDeviceId);
-            try
-            {
-                // Open a connection to  devices.
-                deviceconnect.Connect(kimDeviceId);
-            }
-            catch (Exception)
-            {
-                deviceconnect.Disconnect();
-            }
-            if (!deviceconnect.IsSettingsInitialized())
-            {
-                try
-                {
-                    deviceconnect.WaitForSettingsInitialized(500);
-                }
-                catch (Exception)
-                {
-                }
-            }
-            deviceconnect.StartPolling(250);
-            Thread.Sleep(500);
-            deviceconnect.EnableDevice();
-            Thread.Sleep(500);
-
-            InertialMotorConfiguration InertialMotorConfiguration = deviceconnect.GetInertialMotorConfiguration(kimDeviceId);
-            ThorlabsInertialMotorSettings currentDeviceSettings = ThorlabsInertialMotorSettings.GetSettings(InertialMotorConfiguration);
-
-            // Set the 'Step' paramaters for the Inertia Motor and download to device
-            currentDeviceSettings.Drive.Channel(chanelsDevice[1]).StepRate = 200;
-            currentDeviceSettings.Drive.Channel(chanelsDevice[1]).StepAcceleration = 100;
-            deviceconnect.SetSettings(currentDeviceSettings, true, true);
-
-            // or
-            // Move_Method2(device, InertialMotorStatus.MotorChannels.Channel1, position);
-
-            Decimal newPos = deviceconnect.GetPosition(InertialMotorStatus.MotorChannels.Channel1);
-            // SECCION TOMA DE IMAGENES
-            var currentPath = Directory.GetCurrentDirectory();
-            var rowshmosaic = rows;
-            var columnmosaic = columns;
-            var acptationvalue = true;
-            using var capture = new VideoCapture(indexCam, VideoCaptureAPIs.DSHOW);
-            var frameheight = capture.FrameHeight;
-            var framewidth = capture.FrameWidth;
-            Mat mosaic = new Mat(rowshmosaic*frameheight, columnmosaic*framewidth, MatType.CV_8UC3);
-            Mat[] image = new Mat[rowshmosaic];
-            Mat[] finalimg = new Mat[columnmosaic];
-            var rand = new Random();
-
-            // Creacion de carpeta y nombre de archivo CSV con la clase encargada de gestionar el archivo
-            string namefolder = Utilities.getTimeInString();
-            string fullnamefolder = Path.Combine( currentPath , $"StaticFiles{Path.DirectorySeparatorChar}" + namefolder);
-            bool createfolder = Utilities.createFolder(fullnamefolder);
-            //CollageGestor recordTrackCollage = new CollageGestor(namefolder, fullnamefolder);
-
-            for (int j = 0; j < finalimg.Length; j++)// all of the FOR statment is one of the dimensions of the movement
-            {
-                bool estatusMovementA = Move_Method1(deviceconnect, chanelsDevice[1], j * 100);
-                if (!estatusMovementA)
-                {
-                    deviceconnect.StopPolling();
-                    deviceconnect.Disconnect(true);
-                    yield return false;
-                }
-
-                for (int i = 0; i < image.Length; i++)
-                {
-
-                    Mat frame = new Mat();
-
-                    bool estatusMovement = Move_Method1(deviceconnect, chanelsDevice[2], i * 100);
-                    if (!estatusMovement)
-                    {
-                        deviceconnect.StopPolling();
-                        deviceconnect.Disconnect(true);
-                        yield return false;
-                    }
-
-                    //recordTrackCollage.saveStepDeviceInCsv((j * 100).ToString(), (i * 100).ToString());//vestigio de la idea de CSV ahora se usara la base de datos SQLite
-
-                    if (!capture.IsOpened())
-                    {
-                        acptationvalue = false;
-                        capture.FrameWidth = 1920;
-                        capture.FrameHeight = 1080;
-                        capture.AutoFocus = true;
-
-                        const int sleepTime = 10;
-                    }
-
-                    capture.Read(frame);
-                    image[i] = frame;
-                    Mat copyofFrame = new Mat();
-                    copyofFrame = frame;
-                        // se hcae el calculo de la place para el estado del blur 
-                    Mat grayresult = new Mat();
-                    Mat shaperesult = new Mat();
-                    Cv2.CvtColor(copyofFrame, grayresult, ColorConversionCodes.BGR2GRAY);
-                    Cv2.Laplacian(grayresult, shaperesult, MatType.CV_64F); 
-                    //Cv2.ImShow("Imagen", shaperesult);
-                    //Cv2.WaitKey(0);
-                    Cv2.MeanStdDev(copyofFrame, out var mean, out var stddev);
-                    var resultadolaplace = (stddev.Val0 * stddev.Val0).ToString();
-
-                    //Cv2.PutText(frame, "laplacian :" + resultadolaplace, new Point(20, 30), HersheyFonts.Italic, 0.8,1); /// inscripcion de laplaciona en la imagen 
-
-
-                    Rect region = new Rect(frame.Cols*j, frame.Rows * i, frame.Cols, frame.Rows);
-                    frame.CopyTo(mosaic.SubMat(region));
-                    string pathsave = Path.Combine(fullnamefolder, $"unitofpics{j}_{i}.jpg");
-                    mosaic.SaveImage(pathsave);
-                    var splitpathdir = pathsave.Split($"{Path.DirectorySeparatorChar}");
-                    int dimpath = splitpathdir.Length;
-                    var namephotounits = splitpathdir[dimpath - 1];
-                    var urlunitpi = urlslocals[2] + $"/SouerceStaticFiles/{namefolder}/" + namephotounits + "?ranmd=" + rand.Next().ToString();
-                    yield return urlunitpi;
-                    //var imgretonr = image.ToBytes(); COMENTADA PORQUE NO SE NECESITA COMBERTIR A FRAMES
-                }
-                Mat mosaicv = new Mat();
-                Cv2.VConcat(image, mosaicv);
-                finalimg[j] = mosaicv;
-                Point pts1 = new Point(100,27);
-                Point pts2 = new Point(350,600);
-                Cv2.Rectangle(mosaicv, pts1, pts2,new Scalar(0, 0, 255), 10);
-
-                string mosaicpathv = Path.Combine(fullnamefolder, $"columnpic{j}.jpg"); 
-                //string mosaicpathv = string.Format("{0}\\camtakedV{1}.jpg", currentPath + "\\StaticFiles", j);
-                mosaicv.SaveImage(mosaicpathv);
-                var namephoto1 = mosaicpathv.Split($"{Path.DirectorySeparatorChar}");
-                int lengtpicpath1 = namephoto1.Length;
-                var namepicstream1 = namephoto1[lengtpicpath1 - 1];
-                var urlstaticfiles1 = urlslocals[2] + $"/SouerceStaticFiles/{namefolder}/" + namepicstream1 + "?ranmd=" + rand.Next().ToString();
-                yield return urlstaticfiles1;
-            }
-
-            Cv2.HConcat(finalimg, mosaic);
-            string mosaicpath = Path.Combine(fullnamefolder, $"HxV.jpg");
-            //string mosaicpath = string.Format("{0}\\HxV{1}.jpg", currentPath + "\\StaticFiles", "mosaic");
-            mosaic.SaveImage(mosaicpath);
-            var namephoto = mosaicpath.Split($"{Path.DirectorySeparatorChar}");
-            int lengtpicpath = namephoto.Length;
-            var namepicstream = namephoto[lengtpicpath - 1];
-
-            // Tidy up and exit
-            deviceconnect.StopPolling();
-            deviceconnect.Disconnect(true);
-            var urlstaticfiles = urlslocals[2] + $"/SouerceStaticFiles/{namefolder}/" + namepicstream + "?ranmd=" + rand.Next().ToString();
-            yield return urlstaticfiles;
-
+            // Este motor legacy no soporta el cálculo de grid basado en calibración.
+            // La nueva firma se mantiene para cumplir con ITakeTour, pero el cálculo
+            // dinámico se debe realizar con TakeTour (flujo activo).
+            throw new NotImplementedException(
+                "Tim101_4_ch_inertial_motor.Createmosaicstepbystep es una implementación legacy " +
+                "que no soporta el cálculo de grid basado en calibración. " +
+                "Use TakeTour.Createmosaicstepbystep en su lugar.");
         }
         public async IAsyncEnumerable<dynamic> Createmosaicstepbystep2(int dimMove, string kimDeviceId, string picsCalibrationId)
         {
