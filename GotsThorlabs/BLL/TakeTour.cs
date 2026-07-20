@@ -358,7 +358,7 @@ namespace GotsThorlabs.BLL
             if (device.GetPosition(channel) == position) { return true; }
             try
             {
-                device.MoveTo(channel, position, 6000);
+                device.MoveTo(channel, position,0);
             }
             catch (Exception)
             {

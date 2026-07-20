@@ -1,3 +1,4 @@
+using System.Globalization;
 using GotsThorlabs.Database.EntityRepo;
 using GotsThorlabs.Database.EntityRepo.Entities;
 using GotsThorlabs.Interfaces;
@@ -286,9 +287,9 @@ namespace GotsThorlabs.Services
                         Pic2 = Path.Combine(calibrationFolderPath, $"step_{step}_pic2.jpg"),
                         AxeDirectionCalibration = axis,
                         Acepted = 0,
-                        Dx = phaseResult.Dx.ToString("F6"),
-                        Dy = phaseResult.Dy.ToString("F6"),
-                        Confidence = phaseResult.Confidence.ToString("F6"),
+                        Dx = phaseResult.Dx.ToString("F6", CultureInfo.InvariantCulture),
+                        Dy = phaseResult.Dy.ToString("F6", CultureInfo.InvariantCulture),
+                        Confidence = phaseResult.Confidence.ToString("F6", CultureInfo.InvariantCulture),
                         MeasureUnit = "pixels",
                         MovementValue = step.ToString(),
                         NumberOfSteps = step,
