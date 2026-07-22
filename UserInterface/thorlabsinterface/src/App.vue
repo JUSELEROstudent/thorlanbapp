@@ -47,6 +47,7 @@ export default defineComponent({
         { title: 'Thorlabs', icon: 'mdi-seesaw', dir: 'playground' },
         { title: 'EdicionLive', icon: 'mdi-check', dir: 'currentstate' },
         { title: 'Automaticmove', icon: 'mdi-car', dir: 'automatic' },
+        { title: 'Stitching', icon: 'mdi-image-multiple', dir: 'stitching' },
         { title: 'Exit', icon: 'mdi-exit-run', dir: 'login' }]
     }
   },

@@ -194,6 +194,23 @@ namespace GotsThorlabs.Services
             device.EnableDevice();
             Thread.Sleep(500);
 
+            // Se fuerza la MISMA configuración de movimiento (StepRate=200,
+            // StepAcceleration=100) en ambos canales que usa
+            // TakeTour.Createmosaicstepbystep para el tour real. Antes la calibración
+            // no tocaba estos valores y dependía de lo que ya estuviera guardado en el
+            // dispositivo (de Kinesis, de un tour previo que solo configuraba el canal
+            // X, o de un movimiento manual desde /movedevice). Si esa configuración no
+            // coincidía con la que el tour usa al moverse, la relación píxeles/step
+            // medida aquí quedaba calculada para un comportamiento del motor distinto
+            // al que realmente se usa después — la calibración dejaba de ser válida.
+            var calibrationMotorConfig = device.GetInertialMotorConfiguration(kimDeviceId);
+            var calibrationDeviceSettings = ThorlabsInertialMotorSettings.GetSettings(calibrationMotorConfig);
+            calibrationDeviceSettings.Drive.Channel(InertialMotorStatus.MotorChannels.Channel1).StepRate = 200;
+            calibrationDeviceSettings.Drive.Channel(InertialMotorStatus.MotorChannels.Channel1).StepAcceleration = 100;
+            calibrationDeviceSettings.Drive.Channel(InertialMotorStatus.MotorChannels.Channel2).StepRate = 200;
+            calibrationDeviceSettings.Drive.Channel(InertialMotorStatus.MotorChannels.Channel2).StepAcceleration = 100;
+            device.SetSettings(calibrationDeviceSettings, true, true);
+
             var channel = axis.ToLower() == "x"
                 ? InertialMotorStatus.MotorChannels.Channel1
                 : InertialMotorStatus.MotorChannels.Channel2;

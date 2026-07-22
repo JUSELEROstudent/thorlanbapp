@@ -113,9 +113,22 @@ namespace GotsThorlabs.BLL
             InertialMotorConfiguration InertialMotorConfiguration = deviceconnect.GetInertialMotorConfiguration(kimDeviceId);
             ThorlabsInertialMotorSettings currentDeviceSettings = ThorlabsInertialMotorSettings.GetSettings(InertialMotorConfiguration);
 
-            // Set the 'Step' paramaters for the Inertia Motor and download to device
+            // Set the 'Step' paramaters for the Inertia Motor and download to device.
+            // IMPORTANTE: se configuran AMBOS canales (X=Channel1, Y=Channel2) con los
+            // MISMOS valores. Antes solo se tocaba el canal 1 (X); el canal 2 (Y) se
+            // quedaba con lo que tuviera guardado el dispositivo (de Kinesis, de una
+            // calibración anterior, o de un movimiento manual hecho desde /movedevice
+            // en NodeHomepage.cs), pudiendo tener un StepRate/StepAcceleration distinto
+            // al de X sin que nadie lo notara — eso hace que el eje Y se mueva con un
+            // comportamiento diferente (velocidad/aceleración/overshoot) al eje X.
+            // Estos valores DEBEN coincidir con los que usa
+            // PicsCalibrationService.RunAutoCalibrationAsync: si el motor se mueve aquí
+            // con una configuración distinta a la que se usó al calibrar, la relación
+            // píxeles/step medida en la calibración deja de ser válida para el tour real.
             currentDeviceSettings.Drive.Channel(chanelsDevice[1]).StepRate = 200;
             currentDeviceSettings.Drive.Channel(chanelsDevice[1]).StepAcceleration = 100;
+            currentDeviceSettings.Drive.Channel(chanelsDevice[2]).StepRate = 200;
+            currentDeviceSettings.Drive.Channel(chanelsDevice[2]).StepAcceleration = 100;
             deviceconnect.SetSettings(currentDeviceSettings, true, true);
 
 
@@ -358,7 +371,37 @@ namespace GotsThorlabs.BLL
             if (device.GetPosition(channel) == position) { return true; }
             try
             {
-                device.MoveTo(channel, position,0);
+                // timeout 0 = no bloqueante: MoveTo retorna de inmediato, antes de que
+                // la platina termine de moverse. El motor inercial avanza aplicando
+                // pulsos de vibración y el contador de posición solo sube a medida que
+                // se mueve físicamente, así que hay que esperar a que GetPosition()
+                // reporte la posición pedida (y dejar que amortigüe la vibración
+                // residual) antes de dejar tomar la foto. Antes esta función retornaba
+                // "true" apenas se enviaba el comando, sin esperar nada, por lo que
+                // TakeAPic podía capturar con la platina todavía en movimiento —
+                // mismo patrón que ya se corrigió para la calibración automática en
+                // PicsCalibrationService.MoveMotor, replicado aquí para la toma real.
+                device.MoveTo(channel, position, 0);
+
+                const int pollIntervalMs = 100;
+                const int settleMs = 500;        // deja amortiguar la vibración residual tras llegar
+                const int safetyMaxMs = 120_000; // 2 min, válvula de seguridad ante un motor trabado
+
+                var elapsed = 0;
+                while (device.GetPosition(channel) != position)
+                {
+                    Thread.Sleep(pollIntervalMs);
+                    elapsed += pollIntervalMs;
+                    if (elapsed >= safetyMaxMs)
+                    {
+                        // El motor no llegó a la posición esperada dentro del tiempo de
+                        // seguridad: se reporta como movimiento fallido (igual que antes
+                        // cuando MoveTo lanzaba excepción) en vez de tomar la foto a ciegas.
+                        return false;
+                    }
+                }
+
+                Thread.Sleep(settleMs);
             }
             catch (Exception)
             {

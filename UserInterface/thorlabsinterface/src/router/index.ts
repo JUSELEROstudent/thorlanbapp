@@ -7,6 +7,7 @@ import LoginForm from '@/components/Login.vue'
 import CurrentState from '@/views/CurrentState.vue'
 import AutoMove from '@/views/AutomaticMovement.vue'
 import ShareAll from '@/views/ShareAll.vue'
+import Stitching from '@/views/Stitching.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -56,6 +57,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/automatic',
     name: 'atomatic',
     component: AutoMove
+  },
+  {
+    path: '/stitching',
+    name: 'stitching',
+    component: Stitching
   }
 ]
 

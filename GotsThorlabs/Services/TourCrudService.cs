@@ -68,8 +68,28 @@ namespace GotsThorlabs.Services
             var tour = await _db.Tours.FirstOrDefaultAsync(t => t.IdTour == id, ct);
             if (tour is null) throw new KeyNotFoundException($"Tour {id} not found.");
 
+            // Las imágenes (tabla Images, FK IdTour) se borran en cascada por EF Core
+            // automáticamente al borrar el Tour (relación requerida, sin OnDelete
+            // explícito → Cascade por defecto), así que no hace falta borrarlas a mano.
             _db.Tours.Remove(tour);
             await _db.SaveChangesAsync(ct);
+
+            // Borrado best-effort de la carpeta de imágenes en disco del tour
+            // (StaticFiles/<NameFolder>), que hasta ahora quedaba huérfana: el registro
+            // desaparecía de la base pero las fotos y el mosaico seguían ocupando disco
+            // para siempre. Si falla (permisos, carpeta en uso, etc.) NO se revierte el
+            // borrado del tour — solo se registra el error, para que "borrar el tour"
+            // desde el front nunca falle por un problema de archivos.
+            try
+            {
+                var folder = Path.Combine(Directory.GetCurrentDirectory(), "StaticFiles", tour.NameFolder);
+                if (Directory.Exists(folder))
+                    Directory.Delete(folder, recursive: true);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[TourCrudService] No se pudo borrar la carpeta de imágenes del tour {id} ('{tour.NameFolder}'): {ex.Message}");
+            }
         }
     }
 }
