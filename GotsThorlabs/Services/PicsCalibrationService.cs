@@ -110,9 +110,21 @@ namespace GotsThorlabs.Services
             ICameraService cameraService,
             string? localIdentifier,
             IPhaseCorrelationService phaseCorrelationService,
-            CancellationToken ct)
+            CancellationToken ct,
+            int[]? magnitudes = null,
+            int repetitions = 1)
         {
-            var calibrationSteps = new[] { 0, 1, 10, 100,1000 };
+            // Se permiten pasos negativos para poder medir también la dirección de
+            // retroceso (backlash/histéresis), además del avance. Si no se especifican
+            // magnitudes se conserva el comportamiento histórico (0, 1, 10, 100, 1000,
+            // solo avance), para no romper llamadas existentes que no envíen este parámetro.
+            var calibrationSteps = (magnitudes != null && magnitudes.Length > 0)
+                ? magnitudes
+                : new[] { 0, 1, 10, 100, 1000 };
+
+            if (repetitions < 1)
+                repetitions = 1;
+
             var results = new List<PicsCalibration>();
 
             var device = KCubeInertialMotor.CreateKCubeInertialMotor(kimDeviceId);
@@ -222,9 +234,16 @@ namespace GotsThorlabs.Services
             var deviceConnected = true;
             try
             {
+                for (int rep = 1; rep <= repetitions; rep++)
+                {
                 foreach (var step in calibrationSteps)
                 {
                     ct.ThrowIfCancellationRequested();
+
+                    // Identificador único por archivo: incluye la réplica para que, al pedir
+                    // varias repeticiones en la misma llamada, no se sobreescriban las
+                    // imágenes de la misma magnitud entre una repetición y otra.
+                    var stepTag = $"step_{step}_rep_{rep}";
 
                     try
                     {
@@ -232,7 +251,7 @@ namespace GotsThorlabs.Services
                     }
                     catch (Exception ex)
                     {
-                        throw new InvalidOperationException($"Error al mover el motor KIM a la posición 0 antes del paso {step}: {ex.Message}", ex);
+                        throw new InvalidOperationException($"Error al mover el motor KIM a la posición 0 antes del paso {step} (repetición {rep}): {ex.Message}", ex);
                     }
 
                     Thread.Sleep(300);
@@ -243,15 +262,15 @@ namespace GotsThorlabs.Services
                         frame1 = resolvedCameraService.CaptureFrame(currentGroupCalibration.Camera.LocalIdentifier);
                         if (frame1 == null || frame1.Empty())
                         {
-                            throw new InvalidOperationException($"Error al capturar la imagen de referencia (posición 0) para el paso {step}. La cámara (driver: {driverType}, identifier: {currentGroupCalibration.Camera.LocalIdentifier}) devolvió un frame vacío.");
+                            throw new InvalidOperationException($"Error al capturar la imagen de referencia (posición 0) para el paso {step} (repetición {rep}). La cámara (driver: {driverType}, identifier: {currentGroupCalibration.Camera.LocalIdentifier}) devolvió un frame vacío.");
                         }
 
-                        var pic1Path = Path.Combine(calibrationFolderPath, $"step_{step}_pic1.jpg");
+                        var pic1Path = Path.Combine(calibrationFolderPath, $"{stepTag}_pic1.jpg");
                         frame1.SaveImage(pic1Path);
                     }
                     catch (Exception ex) when (ex is not InvalidOperationException)
                     {
-                        throw new InvalidOperationException($"Error al capturar la imagen de referencia (posición 0) para el paso {step} con la cámara (driver: {driverType}, identifier: {currentGroupCalibration.Camera.LocalIdentifier}): {ex.Message}", ex);
+                        throw new InvalidOperationException($"Error al capturar la imagen de referencia (posición 0) para el paso {step} (repetición {rep}) con la cámara (driver: {driverType}, identifier: {currentGroupCalibration.Camera.LocalIdentifier}): {ex.Message}", ex);
                     }
                     finally
                     {
@@ -266,7 +285,7 @@ namespace GotsThorlabs.Services
                     }
                     catch (Exception ex)
                     {
-                        throw new InvalidOperationException($"Error al mover el motor KIM al paso {step} desde posición 0: {ex.Message}", ex);
+                        throw new InvalidOperationException($"Error al mover el motor KIM al paso {step} (repetición {rep}) desde posición 0: {ex.Message}", ex);
                     }
 
                     Thread.Sleep(300);
@@ -277,15 +296,15 @@ namespace GotsThorlabs.Services
                         frame2 = resolvedCameraService.CaptureFrame(currentGroupCalibration.Camera.LocalIdentifier);
                         if (frame2 == null || frame2.Empty())
                         {
-                            throw new InvalidOperationException($"Error al capturar la imagen después del movimiento al paso {step}. La cámara (driver: {driverType}, identifier: {currentGroupCalibration.Camera.LocalIdentifier}) devolvió un frame vacío.");
+                            throw new InvalidOperationException($"Error al capturar la imagen después del movimiento al paso {step} (repetición {rep}). La cámara (driver: {driverType}, identifier: {currentGroupCalibration.Camera.LocalIdentifier}) devolvió un frame vacío.");
                         }
 
-                        var pic2Path = Path.Combine(calibrationFolderPath, $"step_{step}_pic2.jpg");
+                        var pic2Path = Path.Combine(calibrationFolderPath, $"{stepTag}_pic2.jpg");
                         frame2.SaveImage(pic2Path);
                     }
                     catch (Exception ex) when (ex is not InvalidOperationException)
                     {
-                        throw new InvalidOperationException($"Error al capturar la imagen después del movimiento al paso {step} con la cámara (driver: {driverType}, identifier: {currentGroupCalibration.Camera.LocalIdentifier}): {ex.Message}", ex);
+                        throw new InvalidOperationException($"Error al capturar la imagen después del movimiento al paso {step} (repetición {rep}) con la cámara (driver: {driverType}, identifier: {currentGroupCalibration.Camera.LocalIdentifier}): {ex.Message}", ex);
                     }
                     finally
                     {
@@ -293,15 +312,15 @@ namespace GotsThorlabs.Services
                     }
 
                     var phaseResult = phaseCorrelationService.DetectShiftFromPaths(
-                        Path.Combine(calibrationFolderPath, $"step_{step}_pic1.jpg"),
-                        Path.Combine(calibrationFolderPath, $"step_{step}_pic2.jpg"));
+                        Path.Combine(calibrationFolderPath, $"{stepTag}_pic1.jpg"),
+                        Path.Combine(calibrationFolderPath, $"{stepTag}_pic2.jpg"));
 
                     var calibrationRecord = new PicsCalibration
                     {
                         PicsCalibrationId = Guid.NewGuid().ToString(),
                         GroupCailbrationId = groupCalibrationId,
-                        Pic1 = Path.Combine(calibrationFolderPath, $"step_{step}_pic1.jpg"),
-                        Pic2 = Path.Combine(calibrationFolderPath, $"step_{step}_pic2.jpg"),
+                        Pic1 = Path.Combine(calibrationFolderPath, $"{stepTag}_pic1.jpg"),
+                        Pic2 = Path.Combine(calibrationFolderPath, $"{stepTag}_pic2.jpg"),
                         AxeDirectionCalibration = axis,
                         Acepted = 0,
                         Dx = phaseResult.Dx.ToString("F6", CultureInfo.InvariantCulture),
@@ -315,6 +334,7 @@ namespace GotsThorlabs.Services
 
                     _db.PicsCalibrations.Add(calibrationRecord);
                     results.Add(calibrationRecord);
+                }
                 }
 
                 await _db.SaveChangesAsync(ct);

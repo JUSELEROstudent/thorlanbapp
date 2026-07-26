@@ -70,6 +70,30 @@ namespace GotsThorlabs.BLL
         public const double MinTotalDisplacementPx = 2.0;
 
         /// <summary>
+        /// Límite máximo de imágenes permitidas por eje. Es una válvula de
+        /// seguridad adicional (además de <see cref="MaxMosaicBytes"/>) para
+        /// detectar de inmediato un grid absurdo (p.ej. producto de un
+        /// PxPerStep mal calculado) antes de intentar reservar memoria.
+        /// </summary>
+        public const int MaxImagesPerAxis = 500;
+
+        /// <summary>
+        /// Tamaño máximo (en bytes) que se permite para el mosaico completo
+        /// (ImagesX * frameWidth) x (ImagesY * frameHeight) x 3 canales.
+        /// Antes de este guard, un cálculo de grid erróneo (p.ej. porque
+        /// MotorStepX/Y quedó forzado al mínimo de 1 step por un PxPerStep
+        /// anómalo) terminaba en TakeTour.TakeAPic intentando reservar un
+        /// Mat de decenas de petabytes y OpenCvSharp lanzaba
+        /// "Failed to allocate ... bytes" sin ninguna pista de la causa real.
+        /// Con este guard se detecta apenas se calcula el grid, con un
+        /// mensaje que apunta al origen (calibración / área solicitada).
+        /// 2 GB es un límite conservador: un mosaico razonable (decenas de
+        /// imágenes) queda muy por debajo; un mosaico de cientos de miles de
+        /// imágenes lo supera de inmediato.
+        /// </summary>
+        public const long MaxMosaicBytes = 2_000_000_000L;
+
+        /// <summary>
         /// Resultado del cálculo del grid de mosaico.
         /// </summary>
         public class GridResult
@@ -228,6 +252,32 @@ namespace GotsThorlabs.BLL
 
             if (imagesX < 1) imagesX = 1;
             if (imagesY < 1) imagesY = 1;
+
+            // Guard 1: número de imágenes por eje fuera de todo rango razonable.
+            // Esto ya delata el problema (grid absurdo) antes de gastar tiempo
+            // calculando el resto o de intentar reservar memoria para el mosaico.
+            if (imagesX > MaxImagesPerAxis || imagesY > MaxImagesPerAxis)
+                throw new InvalidOperationException(
+                    $"Grid calculado fuera de rango: ImagesX={imagesX}, ImagesY={imagesY} " +
+                    $"(máximo permitido por eje: {MaxImagesPerAxis}). " +
+                    $"StepMmX={stepMmX:G6} mm, StepMmY={stepMmY:G6} mm, " +
+                    $"MotorStepX={motorStepX}, MotorStepY={motorStepY}, " +
+                    $"PxPerStepX={fitX.PxPerStep:G6}, PxPerStepY={fitY.PxPerStep:G6}. " +
+                    $"Es casi seguro que la calibración del grupo está dando un PxPerStep " +
+                    $"anómalo (posiblemente porque MotorStepX/Y quedó forzado al mínimo de 1 " +
+                    $"step) — revise las calibraciones del GroupCalibration antes de reintentar.");
+
+            // Guard 2: tamaño total del mosaico (bytes) que se intentará reservar
+            // en TakeTour.TakeAPic (rows*frameHeight) x (columns*frameWidth) x 3.
+            // Se usa 'long' explícitamente para evitar overflow de int en el cálculo.
+            long estimatedMosaicBytes = (long)imagesX * frameWidth * (long)imagesY * frameHeight * 3L;
+            if (estimatedMosaicBytes > MaxMosaicBytes)
+                throw new InvalidOperationException(
+                    $"El mosaico calculado ({imagesX}x{imagesY} imágenes de {frameWidth}x{frameHeight}px) " +
+                    $"pesaría ~{estimatedMosaicBytes / 1_000_000_000.0:F2} GB, por encima del límite " +
+                    $"de seguridad ({MaxMosaicBytes / 1_000_000_000.0:F1} GB). " +
+                    $"Revise el área solicitada (X={areaX_mm}mm, Y={areaY_mm}mm) y la calibración " +
+                    $"del grupo antes de reintentar.");
 
             return new GridResult
             {

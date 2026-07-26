@@ -87,10 +87,12 @@ namespace GotsThorlabs.Controls
             [FromQuery] string groupCalibrationId,
             [FromQuery] string axis,
             [FromQuery] string? localIdentifier,
-            CancellationToken ct)
+            CancellationToken ct,
+            [FromQuery] string? magnitudes = null,
+            [FromQuery] int repetitions = 1)
         {
-            if (string.IsNullOrWhiteSpace(kimDeviceId) || 
-                string.IsNullOrWhiteSpace(groupCalibrationId) || 
+            if (string.IsNullOrWhiteSpace(kimDeviceId) ||
+                string.IsNullOrWhiteSpace(groupCalibrationId) ||
                 string.IsNullOrWhiteSpace(axis))
             {
                 return BadRequest("kimDeviceId, groupCalibrationId y axis son requeridos.");
@@ -99,6 +101,34 @@ namespace GotsThorlabs.Controls
             if (axis.ToLower() != "x" && axis.ToLower() != "y")
             {
                 return BadRequest("El eje debe ser 'x' o 'y'.");
+            }
+
+            // magnitudes: lista de pasos separados por coma, admite negativos, p. ej.
+            // "-1000,-100,-10,-1,1,10,100,1000". Si se omite, el servicio usa el valor
+            // histórico (0, 1, 10, 100, 1000, solo avance).
+            int[]? parsedMagnitudes = null;
+            if (!string.IsNullOrWhiteSpace(magnitudes))
+            {
+                var parts = magnitudes.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                var parsedList = new List<int>();
+                foreach (var part in parts)
+                {
+                    if (!int.TryParse(part, out var value))
+                    {
+                        return BadRequest($"magnitudes contiene un valor no numérico: '{part}'. Use enteros separados por coma, p. ej. -1000,-10,10,1000.");
+                    }
+                    parsedList.Add(value);
+                }
+                if (parsedList.Count == 0)
+                {
+                    return BadRequest("magnitudes no puede quedar vacío si se especifica.");
+                }
+                parsedMagnitudes = parsedList.ToArray();
+            }
+
+            if (repetitions < 1)
+            {
+                return BadRequest("repetitions debe ser al menos 1.");
             }
 
             try
@@ -110,7 +140,9 @@ namespace GotsThorlabs.Controls
                     _cameraService,
                     localIdentifier,
                     _phaseCorrelationService,
-                    ct);
+                    ct,
+                    parsedMagnitudes,
+                    repetitions);
 
                 return Ok(results);
             }

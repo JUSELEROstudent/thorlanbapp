@@ -84,6 +84,8 @@ namespace GotsThorlabs.BLL
                 if (!deviceconnect.IsConnected)
                 {
                     deviceconnect.Disconnect(true);
+                    //agregaun delay para esperar a qeu este desconectad 
+
                 }
                     // Open a connection to  devices.
                 deviceconnect.Connect(kimDeviceId);
@@ -140,15 +142,47 @@ namespace GotsThorlabs.BLL
             // Se obtienen todas las calibraciones del grupo y se calculan los parámetros
             // del grid (número de imágenes, espaciado del motor, overlap) en base al área
             // deseada (mm) y a la mejor calibración disponible por eje.
-            var allCalibrations = _db.PicsCalibrations.AsNoTracking().Where(x => x.GroupCailbrationId == groupCalibrationId).ToList();
+            // .Trim() defensivo (igual que se hace con 'device' más abajo): evita que un
+            // espacio en blanco accidental en el valor recibido del cliente SignalR haga
+            // que el filtro no matchee ningún registro.
+            var groupCalibrationIdTrimmed = groupCalibrationId?.Trim() ?? groupCalibrationId;
+            var allCalibrations = _db.PicsCalibrations.AsNoTracking().Where(x => x.GroupCailbrationId == groupCalibrationIdTrimmed).ToList();
+
+            // Diagnóstico: deja registro explícito de con qué GroupCalibrationId llegó la
+            // petición y cuántas calibraciones se encontraron para ese grupo. Sirve para
+            // validar en logs, ante cualquier duda, que el filtro está usando el valor
+            // correcto (el que mandó el cliente) y no está trayendo datos de otro grupo.
+            Console.WriteLine($"[TakeTour] Tour solicitado con groupCalibrationId='{groupCalibrationIdTrimmed}' " +
+                $"(area {areaX_mm}x{areaY_mm} mm) -> {allCalibrations.Count} registros de calibración encontrados " +
+                $"para ese grupo: [{string.Join(", ", allCalibrations.Select(c => $"{c.AxisMovementName}/{c.MovementValue}steps/dx={c.Dx}/dy={c.Dy}"))}]");
 
             int frameWidth;
             int frameHeight;
             try
             {
                 using var probeFrame = _cameraService?.CaptureFrame(localIdentifier);
-                frameHeight = probeFrame?.Rows ?? 1080;
-                frameWidth = probeFrame?.Cols ?? 1920;
+                // BUG ORIGINAL: 'probeFrame?.Rows ?? 1080' solo cae al valor por defecto
+                // cuando probeFrame ES NULL. Si la cámara devuelve un Mat válido pero
+                // VACÍO (Rows=0, Cols=0) — típico cuando el driver falla al capturar pero
+                // no retorna null — 'probeFrame?.Rows' se evalúa a 0 (no a null), así que
+                // el '??' nunca se dispara y frameHeight/frameWidth quedan en 0. Con
+                // frameWidth=frameHeight=0, el avance entre imágenes (30% del frame) es 0,
+                // MotorStepX/Y se redondean a 0 y quedan forzados al mínimo de 1 step, y
+                // con el nominal de 30 nm/step eso dispara ImagesX/Y a decenas de miles
+                // para cubrir el área pedida — exactamente el grid de 66668x66668 que
+                // reventó la asignación de memoria en TakeAPic.
+                // Fix: se exige explícitamente Rows/Cols > 0, igual que ya se hace
+                // correctamente más abajo en TakeAPic (línea 'ownedFrame.Rows > 0 ? ... ').
+                bool probeFrameValido = probeFrame != null && probeFrame.Rows > 0 && probeFrame.Cols > 0;
+                frameHeight = probeFrameValido ? probeFrame.Rows : 1080;
+                frameWidth = probeFrameValido ? probeFrame.Cols : 1920;
+                if (!probeFrameValido)
+                {
+                    Console.WriteLine($"[TakeTour] ADVERTENCIA: el frame de prueba de la cámara vino nulo o vacío " +
+                        $"(localIdentifier='{localIdentifier}'). Se usará resolución por defecto {frameWidth}x{frameHeight}px " +
+                        $"para calcular el grid — si la cámara real tiene otra resolución, el grid calculado no será preciso. " +
+                        $"Revise que la cámara esté disponible/no esté ocupada por otro proceso antes de iniciar el tour.");
+                }
             }
             catch
             {
@@ -157,6 +191,11 @@ namespace GotsThorlabs.BLL
             }
 
             var grid = MosaicGridCalculator.Calculate(areaX_mm, areaY_mm, allCalibrations, frameWidth, frameHeight);
+
+            Console.WriteLine($"[TakeTour] Grid calculado: ImagesX={grid.ImagesX}, ImagesY={grid.ImagesY}, " +
+                $"frame={frameWidth}x{frameHeight}px, MotorStepX={grid.MotorStepX}, MotorStepY={grid.MotorStepY}, " +
+                $"PxPerStepX={grid.PxPerStepX:G6}, PxPerStepY={grid.PxPerStepY:G6}, " +
+                $"StepMmX={grid.StepMmX:G6}, StepMmY={grid.StepMmY:G6}.");
 
             // Inicializar arrays dinámicamente con el grid calculado.
             // columns = eje X (Channel1), rows = eje Y (Channel2)
@@ -484,6 +523,23 @@ namespace GotsThorlabs.BLL
 
                 var frameheight = ownedFrame.Rows > 0 ? ownedFrame.Rows : 1080;
                 var framewidth = ownedFrame.Cols > 0 ? ownedFrame.Cols : 1920;
+
+                // Guard de última línea de defensa: MosaicGridCalculator.Calculate ya
+                // valida el tamaño del grid antes de llegar aquí, pero se revalida con
+                // el tamaño de frame real (puede diferir del usado en el cálculo del
+                // grid si la cámara respondió distinto entre el probe y esta captura).
+                // Sin este guard, un rows/columns inflado termina en OpenCvSharp
+                // lanzando "Failed to allocate ... bytes" sin contexto de la causa.
+                long mosaicBytesNeeded = (long)rows * frameheight * (long)columns * framewidth * 3L;
+                if (mosaicBytesNeeded > MosaicGridCalculator.MaxMosaicBytes)
+                {
+                    throw new InvalidOperationException(
+                        $"TakeAPic: el mosaico ({columns}x{rows} imágenes de {framewidth}x{frameheight}px) " +
+                        $"pesaría ~{mosaicBytesNeeded / 1_000_000_000.0:F2} GB, por encima del límite de " +
+                        $"seguridad ({MosaicGridCalculator.MaxMosaicBytes / 1_000_000_000.0:F1} GB). " +
+                        $"Revise la calibración del grupo y el área solicitada antes de reintentar.");
+                }
+
                 using (var mosaic = new Mat(rows * frameheight, columns * framewidth, MatType.CV_8UC3))
                 {
                     // Dispose any previous stored frame at this slot to avoid leaks

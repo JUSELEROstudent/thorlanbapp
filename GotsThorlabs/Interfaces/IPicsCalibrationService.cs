@@ -22,6 +22,14 @@ namespace GotsThorlabs.Interfaces
         /// <param name="localIdentifier">identificador local de la camara pero no debe ser  usados se debe incluir desde la camara </param>
         /// <param name="phaseCorrelationService">servicio de correlación de fase a utilizar</param>
         /// <param name="ct">token de cancelación</param>
+        /// <param name="magnitudes">
+        /// pasos a probar (pueden ser negativos, para medir también la dirección de retroceso).
+        /// Si es null o vacío, se usa el valor histórico { 0, 1, 10, 100, 1000 } (solo avance).
+        /// </param>
+        /// <param name="repetitions">
+        /// número de veces que se repite la lista completa de magnitudes, para poder estimar
+        /// repetibilidad. Mínimo 1.
+        /// </param>
         /// <returns>lista de calibraciones realizadas</returns>
         Task<List<PicsCalibration>> RunAutoCalibrationAsync(
             string kimDeviceId,
@@ -30,6 +38,8 @@ namespace GotsThorlabs.Interfaces
             ICameraService cameraService,
             string? localIdentifier,
             IPhaseCorrelationService phaseCorrelationService,
-            CancellationToken ct);
+            CancellationToken ct,
+            int[]? magnitudes = null,
+            int repetitions = 1);
     }
 }
