@@ -165,7 +165,7 @@
               <div class="flex gap-2">
                 <button
                   class="btn btn-warning btn-xs"
-                  @click="openAutoCalibrationModal(element.groupCailbrationId)"
+                  @click="openAutoCalibrationModal(element)"
                   :disabled="isRunningAutoCalibration[element.groupCailbrationId]"
                 >
                   <span v-if="isRunningAutoCalibration[element.groupCailbrationId]" class="loading loading-spinner loading-xs"></span>
@@ -181,101 +181,19 @@
               >
                 Agregar
               </button>
+              <NuxtLink :href="`/calibraciones?group=${element.groupCailbrationId}`" class="btn btn-outline btn-xs">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+                Detalle
+              </NuxtLink>
               </div>
             </div>
 
-            <div v-if="picsLoading[element.groupCailbrationId]" class="text-sm text-gray-500">Cargando registros...</div>
-
-            <div v-else class="space-y-3">
-              <div v-if="(picsByGroup[element.groupCailbrationId] || []).length === 0" class="text-xs text-gray-400">
-                No hay registros de Pics Calibration
-              </div>
-
-              <div
-                v-for="pic in picsByGroup[element.groupCailbrationId] || []"
-                :key="pic.picsCalibrationId"
-                class="rounded border border-gray-200 p-3"
-              >
-                <div class="flex items-center justify-between">
-                  <div>
-                    <p class="text-sm font-medium text-gray-800">
-                      Eje: {{ pic.axeDirectionCalibration }} · Aceptado: {{ pic.acepted ? 'Sí' : 'No' }}
-                    </p>
-                    <p class="text-xs text-gray-500">
-                      dx: {{ pic.dx }} · dy: {{ pic.dy }} · Confianza: {{ pic.confidence }}
-                    </p>
-                    <p class="text-xs text-gray-500">
-                      Unidad: {{ pic.measureUnit }} · Movimiento: {{ pic.movementValue }}
-                    </p>
-                  </div>
-                  <button @click="deletePicCalibration(pic.picsCalibrationId, element.groupCailbrationId)" class="btn btn-error btn-xs">
-                    Eliminar
-                  </button>
-                </div>
-                <div v-if="pic.pic1 || pic.pic2" class="mt-3 grid grid-cols-2 gap-3">
-                  <div v-if="pic.pic1" class="flex flex-col">
-                    <span class="text-xs font-semibold text-gray-700 mb-1">Pic1:</span>
-                    <div class="border border-gray-300 rounded overflow-hidden bg-gray-100 aspect-video flex items-center justify-center">
-                      <img
-                        v-if="calibrationImages[`${pic.picsCalibrationId}_pic1`]"
-                        :src="calibrationImages[`${pic.picsCalibrationId}_pic1`]"
-                        alt="Calibration Pic1"
-                        class="w-full h-full object-contain"
-                      />
-                      <div v-else-if="imagesLoading[`${pic.picsCalibrationId}_pic1`]" class="flex flex-col items-center gap-1">
-                        <span class="loading loading-spinner loading-sm"></span>
-                        <span class="text-xs text-gray-500">Cargando...</span>
-                  </div>
-                      <div v-else-if="imagesErrors[`${pic.picsCalibrationId}_pic1`]" class="flex flex-col items-center gap-1 p-2 text-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500">
-                          <circle cx="12" cy="12" r="10" />
-                          <line x1="12" y1="8" x2="12" y2="12" />
-                          <line x1="12" y1="16" x2="12.01" y2="16" />
-                        </svg>
-                        <span class="text-xs text-red-600">{{ imagesErrors[`${pic.picsCalibrationId}_pic1`] }}</span>
-                        <button
-                          class="btn btn-ghost btn-xs text-blue-600"
-                          @click="loadCalibrationImage(pic.picsCalibrationId, pic.pic1, 'pic1')"
-                        >
-                          Reintentar
-                        </button>
-                  </div>
-                      <span v-else class="text-xs text-gray-400 p-2 text-center break-all">{{ pic.pic1 }}</span>
-                    </div>
-                  </div>
-                  <div v-if="pic.pic2" class="flex flex-col">
-                    <span class="text-xs font-semibold text-gray-700 mb-1">Pic2:</span>
-                    <div class="border border-gray-300 rounded overflow-hidden bg-gray-100 aspect-video flex items-center justify-center">
-                      <img
-                        v-if="calibrationImages[`${pic.picsCalibrationId}_pic2`]"
-                        :src="calibrationImages[`${pic.picsCalibrationId}_pic2`]"
-                        alt="Calibration Pic2"
-                        class="w-full h-full object-contain"
-                      />
-                      <div v-else-if="imagesLoading[`${pic.picsCalibrationId}_pic2`]" class="flex flex-col items-center gap-1">
-                        <span class="loading loading-spinner loading-sm"></span>
-                        <span class="text-xs text-gray-500">Cargando...</span>
-                      </div>
-                      <div v-else-if="imagesErrors[`${pic.picsCalibrationId}_pic2`]" class="flex flex-col items-center gap-1 p-2 text-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500">
-                          <circle cx="12" cy="12" r="10" />
-                          <line x1="12" y1="8" x2="12" y2="12" />
-                          <line x1="12" y1="16" x2="12.01" y2="16" />
-                        </svg>
-                        <span class="text-xs text-red-600">{{ imagesErrors[`${pic.picsCalibrationId}_pic2`] }}</span>
-                        <button
-                          class="btn btn-ghost btn-xs text-blue-600"
-                          @click="loadCalibrationImage(pic.picsCalibrationId, pic.pic2, 'pic2')"
-                        >
-                          Reintentar
-                        </button>
-                      </div>
-                      <span v-else class="text-xs text-gray-400 p-2 text-center break-all">{{ pic.pic2 }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <!-- Ya no se listan aquí los registros de tomas (eje, dx, dy, aceptada...):
+                 eso se ve completo en /calibraciones (botón "Detalle" arriba). Esta
+                 sección se queda solo con las acciones para ejecutar una toma nueva. -->
 
             <div
               v-if="picsAddingMode[element.groupCailbrationId]"
@@ -419,6 +337,47 @@
                   />
                 </div>
               </div>
+              <!-- Verificación de enfoque: se dispara sola al abrir este panel. No bloquea
+                   la calibración (se puede continuar igual), solo advierte cuando la
+                   nitidez medida está por debajo del umbral configurado para la cámara. -->
+              <div class="mt-3 rounded border p-3" :class="focusChecks[element.groupCailbrationId]?.isAcceptable === false ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-white'">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-xs font-semibold text-gray-700">Enfoque de la cámara</span>
+                  <button
+                    class="btn btn-ghost btn-xs"
+                    @click="checkFocus(element.groupCailbrationId, getCameraName(element))"
+                    :disabled="focusChecks[element.groupCailbrationId]?.loading"
+                  >
+                    Reevaluar
+                  </button>
+                </div>
+                <div v-if="focusChecks[element.groupCailbrationId]?.loading" class="text-xs text-gray-500 mt-1 flex items-center gap-2">
+                  <span class="loading loading-spinner loading-xs"></span> Verificando enfoque...
+                </div>
+                <template v-else-if="focusChecks[element.groupCailbrationId]">
+                  <p v-if="focusChecks[element.groupCailbrationId].error" class="text-xs text-gray-500 mt-1">
+                    {{ focusChecks[element.groupCailbrationId].error }}
+                  </p>
+                  <template v-else>
+                    <p class="text-xs mt-1" :class="focusChecks[element.groupCailbrationId].isAcceptable ? 'text-green-700' : 'text-red-700'">
+                      Nitidez: {{ focusChecks[element.groupCailbrationId].score }}
+                      <span v-if="focusChecks[element.groupCailbrationId].threshold != null">(umbral: {{ focusChecks[element.groupCailbrationId].threshold }})</span>
+                      — {{ focusChecks[element.groupCailbrationId].isAcceptable ? 'Enfocada' : 'Desenfocada' }}
+                    </p>
+                    <p v-if="focusChecks[element.groupCailbrationId].message" class="text-xs text-red-600 mt-1">
+                      {{ focusChecks[element.groupCailbrationId].message }}
+                    </p>
+                    <label
+                      v-if="focusChecks[element.groupCailbrationId].isAcceptable === false"
+                      class="flex items-center gap-2 mt-2 text-xs text-red-700"
+                    >
+                      <input type="checkbox" class="checkbox checkbox-xs" v-model="focusChecks[element.groupCailbrationId].acknowledged" />
+                      Entiendo, continuar de todas formas
+                    </label>
+                  </template>
+                </template>
+              </div>
+
               <div class="mt-4">
                 <button
                   class="btn btn-warning btn-sm"
@@ -464,9 +423,6 @@ const cameraList = ref<CameraElement[]>([])
 const microscopeList = ref<MicroscopeElement[]>([])
 const increaseList = ref<IncreaseElement[]>([])
 const expandedGroups = ref(new Set<string>())
-const picsByGroup = reactive<Record<string, PicsCalibrationElement[]>>({})
-const picsLoaded = reactive<Record<string, boolean>>({})
-const picsLoading = reactive<Record<string, boolean>>({})
 const picsAddingMode = reactive<Record<string, boolean>>({})
 const picsSaving = reactive<Record<string, boolean>>({})
 const picForms = reactive<Record<string, PicsCalibrationForm>>({})
@@ -477,9 +433,24 @@ const kimDevicesList = ref<string[]>([])
 const isLoadingKimDevices = ref(false)
 const isRunningAutoCalibration = reactive<Record<string, boolean>>({})
 
-const calibrationImages = reactive<Record<string, string>>({})
-const imagesLoading = reactive<Record<string, boolean>>({})
-const imagesErrors = reactive<Record<string, string>>({})
+// Las imágenes de las mediciones ya no se cargan ni se muestran aquí: se ven
+// desde la vista dedicada /calibraciones (botón "Detalle" de cada grupo), que
+// las trae bajo demanda con su propio visor. Mantenerlas también aquí era la
+// duplicación que hacía larga esta lista.
+
+// ── Verificación de enfoque antes de calibrar ───────────────────
+// Se advierte si la nitidez está bajo el umbral configurado para la cámara,
+// pero no bloquea: el usuario puede marcar "continuar de todas formas".
+interface FocusCheckState {
+  loading: boolean
+  score?: number
+  threshold?: number | null
+  isAcceptable?: boolean
+  message?: string | null
+  error?: string
+  acknowledged: boolean
+}
+const focusChecks = reactive<Record<string, FocusCheckState>>({})
 
 interface AutoCalibrationForm {
   kimDeviceId: string
@@ -513,20 +484,6 @@ interface GroupCalibrationElement {
   camera?: CameraElement | null
   microscope?: MicroscopeElement | null
   increase?: IncreaseElement | null
-}
-
-interface PicsCalibrationElement {
-  picsCalibrationId: string
-  groupCailbrationId: string
-  pic1?: string
-  pic2?: string
-  axeDirectionCalibration: string
-  acepted: boolean
-  dx: number
-  dy: number
-  confidence: number
-  measureUnit: string
-  movementValue: number
 }
 
 interface PicsCalibrationForm {
@@ -585,7 +542,50 @@ const fetchKimDevices = async () => {
   }
 }
 
-const openAutoCalibrationModal = async (groupId: string) => {
+const getCameraName = (element: GroupCalibrationElement): string | undefined => {
+  if (element.camera?.name) return element.camera.name
+  return cameraList.value.find((item) => item.cameraId === element.cameraId)?.name
+}
+
+const checkFocus = async (groupId: string, cameraName?: string) => {
+  focusChecks[groupId] = { loading: true, acknowledged: false }
+
+  if (!cameraName) {
+    focusChecks[groupId] = {
+      loading: false,
+      acknowledged: true,
+      error: 'No se pudo determinar la cámara del grupo para verificar el enfoque; se omite la comprobación.'
+    }
+    return
+  }
+
+  try {
+    const result = await $fetch(`${config.public.apiUrl}/api/Focus/evaluate`, {
+      method: 'POST',
+      query: { cameraName }
+    }) as { score: number; threshold: number | null; isAcceptable: boolean; message?: string | null }
+
+    focusChecks[groupId] = {
+      loading: false,
+      score: result.score,
+      threshold: result.threshold,
+      isAcceptable: result.isAcceptable,
+      message: result.message,
+      // Si ya está enfocada no hace falta que el usuario marque nada.
+      acknowledged: result.isAcceptable
+    }
+  } catch (error) {
+    console.error('Error al verificar el enfoque:', error)
+    focusChecks[groupId] = {
+      loading: false,
+      acknowledged: true,
+      error: 'No se pudo verificar el enfoque (la cámara puede estar ocupada por el streaming u otro proceso). Puede continuar de todas formas.'
+    }
+  }
+}
+
+const openAutoCalibrationModal = async (element: GroupCalibrationElement) => {
+  const groupId = element.groupCailbrationId
   if (!autoCalibrationForms[groupId]) {
     autoCalibrationForms[groupId] = createDefaultAutoCalibrationForm()
   }
@@ -593,11 +593,13 @@ const openAutoCalibrationModal = async (groupId: string) => {
   if (kimDevicesList.value.length === 0) {
     await fetchKimDevices()
   }
+  await checkFocus(groupId, getCameraName(element))
 }
 
 const closeAutoCalibrationModal = (groupId: string) => {
   autoCalibrationModal[groupId] = false
   autoCalibrationForms[groupId] = createDefaultAutoCalibrationForm()
+  delete focusChecks[groupId]
 }
 
 const runAutoCalibration = async (groupId: string) => {
@@ -608,6 +610,16 @@ const runAutoCalibration = async (groupId: string) => {
   }
   if (!form.localIdentifier.trim()) {
     alertStore.NewAlert({ type: 'error', tittle: 'Error', data: 'Ingrese el identificador local de la cámara' })
+    return
+  }
+
+  const focus = focusChecks[groupId]
+  if (focus && focus.isAcceptable === false && !focus.acknowledged) {
+    alertStore.NewAlert({
+      type: 'error',
+      tittle: 'Enfoque bajo',
+      data: 'Marque "Entiendo, continuar de todas formas" en la sección de enfoque, o mejore el enfoque del microscopio antes de calibrar.'
+    })
     return
   }
 
@@ -626,78 +638,12 @@ const runAutoCalibration = async (groupId: string) => {
     if (response) {
       alertStore.NewAlert({ type: 'OK', tittle: 'Éxito', data: 'Calibración automática completada' })
       closeAutoCalibrationModal(groupId)
-      await fetchPicsCalibration(groupId)
     }
   } catch (error) {
     console.error('Error en calibración automática:', error)
     alertStore.NewAlert({ type: 'error', tittle: 'Error', data: 'Error al ejecutar calibración automática' })
   } finally {
     isRunningAutoCalibration[groupId] = false
-  }
-}
-
-const loadCalibrationImage = async (picsCalibrationId: string, filePath: string, picType: 'pic1' | 'pic2') => {
-  const imageKey = `${picsCalibrationId}_${picType}`
-  if (calibrationImages[imageKey]) return
-
-  try {
-    imagesLoading[imageKey] = true
-    imagesErrors[imageKey] = ''
-    const response = await fetch(`${config.public.apiUrl}/api/PicsCalibration/image?filePath=${encodeURIComponent(filePath)}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': 'Bearer ' + localStorage.getItem('stringjwt')
-      }
-    })
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        throw new Error('Archivo no encontrado en el servidor')
-      }
-      throw new Error(`Error ${response.status}: ${response.statusText}`)
-    }
-
-    const blob = await response.blob()
-    const objectUrl = URL.createObjectURL(blob)
-    calibrationImages[imageKey] = objectUrl
-  } catch (error) {
-    console.error(`Error al cargar imagen ${picType}:`, error)
-    imagesErrors[imageKey] = error instanceof Error ? error.message : 'Error desconocido'
-  } finally {
-    imagesLoading[imageKey] = false
-  }
-}
-
-const loadAllCalibrationImages = async (pics: PicsCalibrationElement[]) => {
-  const promises: Promise<void>[] = []
-  for (const pic of pics) {
-    if (pic.pic1) {
-      promises.push(loadCalibrationImage(pic.picsCalibrationId, pic.pic1, 'pic1'))
-    }
-    if (pic.pic2) {
-      promises.push(loadCalibrationImage(pic.picsCalibrationId, pic.pic2, 'pic2'))
-    }
-  }
-  await Promise.all(promises)
-}
-
-const clearGroupImagesCache = (groupId: string) => {
-  const pics = picsByGroup[groupId] || []
-  for (const pic of pics) {
-    const key1 = `${pic.picsCalibrationId}_pic1`
-    const key2 = `${pic.picsCalibrationId}_pic2`
-    if (calibrationImages[key1]) {
-      URL.revokeObjectURL(calibrationImages[key1])
-      delete calibrationImages[key1]
-    }
-    if (calibrationImages[key2]) {
-      URL.revokeObjectURL(calibrationImages[key2])
-      delete calibrationImages[key2]
-    }
-    delete imagesLoading[key1]
-    delete imagesLoading[key2]
-    delete imagesErrors[key1]
-    delete imagesErrors[key2]
   }
 }
 
@@ -746,38 +692,7 @@ const setGroupExpanded = (groupId: string, expanded: boolean) => {
 
 const isGroupExpanded = (groupId: string) => expandedGroups.value.has(groupId)
 
-const fetchPicsCalibration = async (groupId: string) => {
-  try {
-    picsLoading[groupId] = true
-    clearGroupImagesCache(groupId)
-    const response = await $fetch(`${config.public.apiUrl}/api/PicsCalibration`, {
-      method: 'GET',
-      query: {
-        groupCailbrationId: groupId
-      },
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }) as PicsCalibrationElement[]
-
-    picsByGroup[groupId] = response ?? []
-    picsLoaded[groupId] = true
-    await loadAllCalibrationImages(picsByGroup[groupId])
-  } catch (error) {
-    console.error('Error al obtener pics calibration:', error)
-    alertStore.NewAlert({
-      type: 'error',
-      tittle: 'Error',
-      data: 'Error al cargar Pics Calibration'
-    })
-    picsByGroup[groupId] = []
-    picsLoaded[groupId] = true
-  } finally {
-    picsLoading[groupId] = false
-  }
-}
-
-const toggleGroup = async (groupId: string) => {
+const toggleGroup = (groupId: string) => {
   const isExpanded = isGroupExpanded(groupId)
   if (isExpanded) {
     setGroupExpanded(groupId, false)
@@ -786,9 +701,6 @@ const toggleGroup = async (groupId: string) => {
 
   setGroupExpanded(groupId, true)
   ensurePicForm(groupId)
-  if (!picsLoaded[groupId]) {
-    await fetchPicsCalibration(groupId)
-  }
 }
 
 const enablePicsAddMode = (groupId: string) => {
@@ -920,7 +832,6 @@ const savePicCalibration = async (groupId: string) => {
 
       picsAddingMode[groupId] = false
       picForms[groupId] = createDefaultPicForm()
-      await fetchPicsCalibration(groupId)
     }
   } catch (error) {
     console.error('Error al crear pics calibration:', error)
@@ -934,46 +845,8 @@ const savePicCalibration = async (groupId: string) => {
   }
 }
 
-const deletePicCalibration = async (picsCalibrationId: string, groupId: string) => {
-  try {
-    const key1 = `${picsCalibrationId}_pic1`
-    const key2 = `${picsCalibrationId}_pic2`
-    if (calibrationImages[key1]) {
-      URL.revokeObjectURL(calibrationImages[key1])
-      delete calibrationImages[key1]
-    }
-    if (calibrationImages[key2]) {
-      URL.revokeObjectURL(calibrationImages[key2])
-      delete calibrationImages[key2]
-    }
-    delete imagesLoading[key1]
-    delete imagesLoading[key2]
-    delete imagesErrors[key1]
-    delete imagesErrors[key2]
-
-    await $fetch(`${config.public.apiUrl}/api/PicsCalibration/${picsCalibrationId}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
-
-    alertStore.NewAlert({
-      type: 'OK',
-      tittle: 'Éxito',
-      data: 'Pics Calibration eliminado exitosamente'
-    })
-
-    await fetchPicsCalibration(groupId)
-  } catch (error) {
-    console.error('Error al eliminar pics calibration:', error)
-    alertStore.NewAlert({
-      type: 'error',
-      tittle: 'Error',
-      data: 'Error al eliminar Pics Calibration'
-    })
-  }
-}
+// Eliminar mediciones puntuales ahora se hace desde /calibraciones, la vista
+// donde sí se listan (esta sección solo dispara tomas nuevas).
 
 const fetchElements = async () => {
   try {

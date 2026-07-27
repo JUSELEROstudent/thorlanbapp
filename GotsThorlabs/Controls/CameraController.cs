@@ -70,5 +70,51 @@ namespace GotsThorlabs.Controls
             catch (KeyNotFoundException) { return NotFound(); }
             return NoContent();
         }
+
+        /// <summary>
+        /// Parámetros de captura que acepta el dispositivo de esta cámara, con sus
+        /// rangos y valores actuales, más lo que el usuario dejó guardado.
+        /// Consulta el hardware, así que puede tardar unos segundos.
+        /// </summary>
+        [HttpGet("{id}/parameters")]
+        public async Task<ActionResult<CameraParametersResponseDTO>> GetParametersAsync(string id, CancellationToken ct)
+        {
+            try
+            {
+                var result = await _service.GetParametersAsync(id, ct);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException) { return NotFound(); }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error al consultar los parámetros de la cámara: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Guarda los parámetros de captura de esta cámara. Se aplican de inmediato al
+        /// driver y se usan en el streaming, en la calibración automática y en los
+        /// recorridos.
+        /// </summary>
+        [HttpPut("{id}/parameters")]
+        public async Task<IActionResult> UpdateParametersAsync(
+            string id,
+            [FromBody] CameraParametersUpdateDTO dto,
+            CancellationToken ct)
+        {
+            if (dto is null) return BadRequest();
+
+            try
+            {
+                await _service.UpdateParametersAsync(id, dto, ct);
+            }
+            catch (KeyNotFoundException) { return NotFound(); }
+            catch (ArgumentException ex) { return BadRequest(ex.Message); }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error al guardar los parámetros de la cámara: {ex.Message}");
+            }
+            return NoContent();
+        }
     }
 }

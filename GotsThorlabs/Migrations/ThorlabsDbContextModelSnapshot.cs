@@ -43,6 +43,10 @@ namespace GotsThorlabs.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("name");
 
+                    b.Property<string>("SettingsJson")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("settingsJson");
+
                     b.HasKey("CameraId");
 
                     b.ToTable("camera", (string)null);

@@ -26,5 +26,22 @@ namespace GotsThorlabs.Interfaces
         /// capture may leave this as a no-op.
         /// </summary>
         void ReleaseConnection();
+
+        /// <summary>
+        /// Configura los parámetros de captura de un dispositivo a partir del JSON
+        /// guardado en camera.settingsJson.
+        ///
+        /// Se llama ANTES de capturar (al abrir el streaming, al iniciar un recorrido
+        /// y al arrancar una calibración automática). Los servicios de cámara son
+        /// singleton y el DbContext es scoped, así que el driver no consulta la base
+        /// de datos: quien llama ya tiene la entidad Camera cargada y le pasa el JSON.
+        ///
+        /// Es idempotente y tolerante a fallos: un JSON inválido o un parámetro que el
+        /// dispositivo no soporte se registra en consola y se ignora, sin impedir la
+        /// captura. Pasar null restablece el comportamiento por defecto del driver.
+        /// </summary>
+        /// <param name="localIdentifier">Identificador del dispositivo.</param>
+        /// <param name="settingsJson">Contenido de camera.settingsJson, o null.</param>
+        void ApplySettings(string localIdentifier, string? settingsJson);
     }
 }

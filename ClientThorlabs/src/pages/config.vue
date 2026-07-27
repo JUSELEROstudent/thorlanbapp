@@ -1,5 +1,5 @@
 <template>
-   <div class=" w-full flex-col space-y-4 p-4 "> 
+   <div class=" w-full flex-col space-y-4 p-4 ">
       <div class="flex flex-row space-x-4 items-center px-4 bg-gray rounded p-1">
         <label class="flex cursor-pointer gap-2 self-center">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>
@@ -14,10 +14,23 @@
       <div class="w-full flex flex-row space-x-4 p-4">
         <div class="flex-1 space-y-4">
           <CameraStreamCapture />
-        </div>        
-        
 
-        
+          <div class="collapse collapse-arrow bg-gray shadow">
+            <input type="checkbox" v-model="isParametersAccordionOpen" />
+            <div class="collapse-title text-sm font-semibold text-white">
+              Parámetros de captura de la cámara
+            </div>
+            <div class="collapse-content">
+              <!-- Configuración por cámara (guardada como JSON, según su driver): la
+                   usa tanto el streaming como la calibración automática, que la aplica
+                   justo antes de capturar. Va debajo del streaming (y no en la columna
+                   de configuración general) porque son ajustes que se consultan junto
+                   a la vista previa en vivo, no parte del alta de cámara/microscopio. -->
+              <CameraParameters />
+            </div>
+          </div>
+        </div>
+
         <div class="flex-1 space-y-4">
           <div class="collapse collapse-arrow bg-gray shadow">
             <input type="checkbox" v-model="isAccordionOpen" />
@@ -32,10 +45,11 @@
               <CardConfigIncrease />
             </div>
           </div>
+
           <CreateCalibration />
         </div>
       </div>
-      
+
     </div>
   </div>
 </template>
@@ -44,9 +58,11 @@ import CardConfigIncrease from '~/components/Configuration/cardConfigIncrease.vu
 import cardConfigCamera from '../components/Configuration/cardConfigCamera.vue'
 import CardConfigMicroscope from '~/components/Configuration/cardConfigMicroscope.vue';
 import CameraStreamCapture from '~/components/Configuration/CameraStreamCapture.vue';
+import CameraParameters from '~/components/Configuration/CameraParameters.vue';
 import CreateCalibration from '~/components/Configuration/CreateCalibration.vue';
 
 const isAccordionOpen = ref(false)
+const isParametersAccordionOpen = ref(false)
 
 function alerta()
 {

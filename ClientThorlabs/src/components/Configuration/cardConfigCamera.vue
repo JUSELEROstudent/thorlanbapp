@@ -1,414 +1,170 @@
 <template>
-    <div class="mx-4 mb-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-    <!-- Card Header -->
-    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-      <h3 class="text-lg font-semibold text-gray-900">Config Camera</h3>
-      
-      <!-- Botones modo normal -->
-      <button v-if="!isAddingMode" @click="enableAddMode" class="btn btn-primary btn-sm">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M5 12h14M12 5v14"/>
-        </svg>
-        Agregar
-      </button>
-      
-      <!-- Botones modo agregar -->
-      <div v-if="isAddingMode" class="flex space-x-2">
-        <button @click="saveNewRecord" :disabled="isSaving" class="btn btn-success btn-sm">
-          <span v-if="isSaving" class="loading loading-spinner loading-xs"></span>
-          <svg v-if="!isSaving" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-            <polyline points="17,21 17,13 7,13 7,21"/>
-            <polyline points="7,3 7,8 15,8"/>
-          </svg>
-          {{ isSaving ? 'Guardando...' : 'Guardar' }}
-        </button>
-        <button @click="cancelAddMode" :disabled="isSaving" class="btn btn-outline btn-sm">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 6L6 18M6 6l12 12"/>
-          </svg>
-          Cancelar
-        </button>
-      </div>
-    </div>
-    
-    <!-- Card Body -->
-    <div class="p-6">
-      <!-- Formulario para agregar nuevo registro -->
-      <div v-if="isAddingMode" class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <h4 class="text-md font-medium text-blue-900 mb-4">Nueva Cámara</h4>
-        <div class="grid grid-cols-1 gap-4">
-          <!-- Campo Name -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
-            <input 
-              v-model="newRecord.name" 
-              type="text" 
-              class="input input-bordered w-full bg-gray-100"
-              placeholder="El nombre se autocompleta"
-              :disabled="isSaving"
-              readonly
-            />
-          </div>
-          
-          <!-- Campo LocalIdentifier -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Identificador Local *</label>
-            <select 
-              v-model="newRecord.localIdentifier" 
-              class="select select-bordered w-full"
-              :disabled="isSaving || isLoadingCameras"
+  <CrudCard
+    ref="crudRef"
+    title="Cámaras"
+    subtitle="Cámaras registradas y su driver de captura"
+    resource-path="camera"
+    id-field="cameraId"
+    :fields="fields"
+    :extra-keys="['name', 'localIdentifier', 'driverType']"
+    @add-mode="onAddMode"
+    @created="notifyCameraConfigUpdated"
+    @deleted="notifyCameraConfigUpdated"
+    @loaded="onLoaded"
+  >
+    <!-- Campos propios de la cámara: se eligen antes de los genéricos porque
+         el nombre se deduce del dispositivo seleccionado. -->
+    <template #form-extra="{ record, disabled }">
+      <div class="grid grid-cols-1 gap-4 mb-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            Dispositivo detectado<span class="text-red-500"> *</span>
+          </label>
+          <select
+            v-model="record.localIdentifier"
+            class="select select-bordered w-full"
+            :disabled="disabled || isLoadingCameras"
+            @change="syncNameFromIdentifier(record)"
+          >
+            <option value="">
+              {{ isLoadingCameras ? 'Buscando cámaras...' : 'Seleccione una cámara conectada' }}
+            </option>
+            <option
+              v-for="camera in filteredAvailableCameras"
+              :key="camera.uniqueId"
+              :value="camera.uniqueId"
             >
-              <option value="" disabled>{{ isLoadingCameras ? 'Cargando cámaras...' : 'Seleccione una cámara' }}</option>
-              <option 
-                v-for="camera in filteredAvailableCameras" 
-                :key="camera.cameraId" 
-                :value="camera.uniqueId"
-              >
-                {{ camera.cameraName }}
-              </option>
-            </select>
-          </div>
-          
-          <!-- Campo Features -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Características *</label>
-            <textarea 
-              v-model="newRecord.features" 
-              class="textarea textarea-bordered w-full"
-              placeholder="Describa las características de la cámara"
-              rows="3"
-              :disabled="isSaving"
-            ></textarea>
-          </div>
+              {{ camera.cameraName }} ({{ formatIdentifier(camera.uniqueId) }})
+            </option>
+          </select>
+          <p class="text-xs text-gray-500 mt-1">
+            Solo se listan las cámaras conectadas que todavía no están registradas.
+          </p>
+        </div>
 
-          <!-- Campo DriverType -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Driver Type *</label>
-            <select
-              v-model="newRecord.driverType"
-              class="select select-bordered w-full"
-              :disabled="isSaving"
-            >
-              <option value="" disabled>Seleccione un driver</option>
-              <option value="generic">generic</option>
-              <option value="ids_peak_dotnet">ids_peak_dotnet</option>
-              <option value="ids_ueye">ids_ueye</option>
-            </select>
-          </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+          <input
+            :value="record.name"
+            type="text"
+            class="input input-bordered w-full bg-gray-100"
+            placeholder="Se toma del dispositivo seleccionado"
+            readonly
+            disabled
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            Driver<span class="text-red-500"> *</span>
+          </label>
+          <select v-model="record.driverType" class="select select-bordered w-full" :disabled="disabled">
+            <option value="">Seleccione el driver</option>
+            <option value="generic">generic — webcam / DirectShow</option>
+            <option value="ids_peak_dotnet">ids_peak_dotnet — IDS Peak (GigE / USB3)</option>
+            <option value="ids_ueye">ids_ueye — IDS uEye clásica</option>
+          </select>
+          <p class="text-xs text-gray-500 mt-1">
+            Determina cómo se captura y qué parámetros se pueden configurar después.
+          </p>
         </div>
       </div>
-      
-      <div class="space-y-3">
-        <!-- Lista de elementos existentes -->
-        <div v-if="elementList.length === 0" class="text-center p-6 text-gray-500">
-          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-2 text-gray-300">
-            <rect width="14" height="10" x="5" y="2" rx="2"/>
-            <circle cx="12" cy="12" r="2"/>
-            <path d="M12 2v4"/>
-            <path d="M12 18v4"/>
-            <path d="M5 12h4"/>
-            <path d="M15 12h4"/>
-          </svg>
-          <p>No hay cámaras registradas</p>
-        </div>
-        
-        <div 
-          v-for="element in elementList" 
-          :key="element.cameraId"
-          class="flex items-center justify-between p-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors"
-        >
-          <div class="flex-1">
-            <span class="text-sm font-medium text-gray-900">{{ element.name }}</span>
-            <p class="text-xs text-gray-500">ID: {{ formatIdentifier(element.localIdentifier) }}</p>
-            <p class="text-xs text-gray-500">{{ element.features }}</p>
-          </div>
-          <button @click="deleteElement(element.cameraId)" class="btn btn-error btn-xs ml-3">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-            </svg>
-          </button>
-        </div>
-        
-      </div>
-    </div>
-  </div> 
-  </template>
+    </template>
+
+    <template #item-subtitle="{ item }">
+      <p class="text-xs text-gray-500 truncate">
+        <span class="badge badge-outline badge-xs mr-1">{{ item.driverType || 'generic' }}</span>
+        {{ item.features || 'Sin características' }}
+      </p>
+    </template>
+  </CrudCard>
+</template>
+
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
-import { alertsClient } from '../../stores/alerts'
+/**
+ * Configuración de cámaras.
+ *
+ * A diferencia de las otras dos tarjetas, esta no es solo una lista de campos:
+ * el nombre no se escribe, se deduce del dispositivo físico que el usuario
+ * selecciona, y hay que avisar al resto de la aplicación cuando la lista cambia
+ * (CameraStreamCapture escucha el evento 'camera-config-updated' para refrescar
+ * su selector sin recargar la página).
+ */
+import { ref, computed, onMounted } from 'vue'
+import CrudCard, { type CrudField } from '../ui/CrudCard.vue'
 
-const alertStore = alertsClient()
-const config = useRuntimeConfig()
-
-// Estados reactivos
-const isAddingMode = ref(false)
-const isSaving = ref(false)
-const isLoadingCameras = ref(false)
-const elementList = ref<CameraElement[]>([])
-const availableCameras = ref<AvailableCamera[]>([])
-
-const filteredAvailableCameras = computed(() => {
-  const usedIds = new Set(elementList.value.map((item) => item.localIdentifier))
-  return availableCameras.value.filter((camera) => !usedIds.has(camera.uniqueId))
-})
-
-// Interface para el elemento
-interface CameraElement {
-  cameraId: string
-  name: string
-  localIdentifier: string
-  features: string
-  driverType?: string
-}
-
-// Interface para las cámaras disponibles
 interface AvailableCamera {
   cameraId: number
   cameraName: string
   uniqueId: string
 }
 
-// Modelo para el nuevo registro
-const newRecord = ref({
-  name: '',
-  localIdentifier: '',
-  features: '',
-  driverType: ''
+const api = useApi()
+
+const crudRef = ref<InstanceType<typeof CrudCard> | null>(null)
+const availableCameras = ref<AvailableCamera[]>([])
+const registeredCameras = ref<any[]>([])
+const isLoadingCameras = ref(false)
+
+const fields: CrudField[] = [
+  {
+    key: 'features',
+    label: 'Características',
+    type: 'textarea',
+    placeholder: 'Describa las características de la cámara',
+    rows: 3,
+    required: true,
+    help: 'Texto libre descriptivo (por ejemplo: USB3, 5MP, color). No son los parámetros de captura.'
+  }
+]
+
+// No tiene sentido ofrecer cámaras que ya están registradas.
+const filteredAvailableCameras = computed(() => {
+  const used = new Set(registeredCameras.value.map((item) => item.localIdentifier))
+  return availableCameras.value.filter((camera) => !used.has(camera.uniqueId))
 })
 
-const notifyCameraConfigUpdated = () => {
-  if (process.client) {
-    window.dispatchEvent(new CustomEvent('camera-config-updated', {
-      detail: elementList.value
-    }))
-  }
-}
-
-const syncNameFromIdentifier = () => {
-  const match = availableCameras.value.find(
-    (camera) => camera.uniqueId === newRecord.value.localIdentifier
-  )
-  newRecord.value.name = match ? match.cameraName : ''
+const syncNameFromIdentifier = (record: Record<string, any>) => {
+  const match = availableCameras.value.find((camera) => camera.uniqueId === record.localIdentifier)
+  record.name = match ? match.cameraName : ''
 }
 
 const formatIdentifier = (value: string, visibleChars = 8) => {
   if (!value) return ''
-  if (value.length <= visibleChars) return value
-  return `${value.slice(0, visibleChars)}...`
+  return value.length <= visibleChars ? value : `${value.slice(0, visibleChars)}...`
 }
 
-watch([
-  () => newRecord.value.localIdentifier,
-  () => availableCameras.value
-], () => {
-  syncNameFromIdentifier()
-})
-
-// Función para obtener la lista de elementos
-const fetchElements = async () => {
-  try {
-    const response = await $fetch(`${config.public.apiUrl}/api/camera`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }) as CameraElement[]
-    
-    if (response) {
-      elementList.value = response
-      notifyCameraConfigUpdated()
-    }
-  } catch (error) {
-    console.error('Error al obtener cámaras:', error)
-    alertStore.NewAlert({
-      type: 'error',
-      tittle: 'Error',
-      data: 'Error al cargar las cámaras'
-    })
-  }
-}
-
-// Función para obtener las cámaras disponibles
 const fetchAvailableCameras = async () => {
+  isLoadingCameras.value = true
   try {
-    isLoadingCameras.value = true
-    const response = await $fetch(`${config.public.apiUrl}/Home/cameras`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }) as AvailableCamera[]
-    
-    if (response) {
-      availableCameras.value = response
-    }
+    const response = await api.get<AvailableCamera[]>('/Home/cameras')
+    availableCameras.value = response || []
   } catch (error) {
-    console.error('Error al obtener cámaras disponibles:', error)
-    alertStore.NewAlert({
-      type: 'error',
-      tittle: 'Error',
-      data: 'Error al cargar las cámaras disponibles'
-    })
+    console.error('Error al obtener las cámaras conectadas:', error)
+    availableCameras.value = []
   } finally {
     isLoadingCameras.value = false
   }
 }
 
-// Función para eliminar elemento
-const deleteElement = async (cameraId: string) => {
-  try {
-    await $fetch(`${config.public.apiUrl}/api/camera/${cameraId}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
-
-    // Si llega aquí sin error, la eliminación fue exitosa (204 No Content)
-    alertStore.NewAlert({
-      type: 'OK',
-      tittle: 'Éxito',
-      data: 'Cámara eliminada exitosamente'
-    })
-    
-    // Refrescar la lista
-    await fetchElements()
-  } catch (error) {
-    console.error('Error al eliminar cámara:', error)
-    alertStore.NewAlert({
-      type: 'error',
-      tittle: 'Error',
-      data: 'Error al eliminar la cámara'
-    })
-  }
+const onAddMode = (active: boolean) => {
+  // Se consultan los dispositivos al abrir el formulario, no al montar: así se
+  // detecta una cámara que el usuario acaba de conectar.
+  if (active) fetchAvailableCameras()
 }
 
-// Función para habilitar modo agregar
-const enableAddMode = async () => {
-  isAddingMode.value = true
-  // Limpiar el formulario
-  newRecord.value = {
-    name: '',
-    localIdentifier: '',
-    features: '',
-    driverType: ''
-  }
-  // Cargar cámaras disponibles
-  await fetchAvailableCameras()
+const onLoaded = (items: any[]) => {
+  registeredCameras.value = items || []
 }
 
-// Función para cancelar modo agregar
-const cancelAddMode = () => {
-  isAddingMode.value = false
-  // Limpiar el formulario
-  newRecord.value = {
-    name: '',
-    localIdentifier: '',
-    features: '',
-    driverType: ''
-  }
+const notifyCameraConfigUpdated = () => {
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(new CustomEvent('camera-config-updated', {
+    detail: registeredCameras.value
+  }))
 }
 
-// Función para guardar nuevo registro
-const saveNewRecord = async () => {
-  try {
-    // Validar campos requeridos
-    if (!newRecord.value.name.trim()) {
-      alertStore.NewAlert({
-        type: 'error',
-        tittle: 'Error de validación',
-        data: 'El nombre es requerido'
-      })
-      return
-    }
-
-    if (!newRecord.value.localIdentifier.trim()) {
-      alertStore.NewAlert({
-        type: 'error',
-        tittle: 'Error de validación',
-        data: 'El identificador local es requerido'
-      })
-      return
-    }
-
-    if (!newRecord.value.features.trim()) {
-      alertStore.NewAlert({
-        type: 'error',
-        tittle: 'Error de validación',
-        data: 'Las características son requeridas'
-      })
-      return
-    }
-
-    if (!newRecord.value.driverType.trim()) {
-      alertStore.NewAlert({
-        type: 'error',
-        tittle: 'Error de validación',
-        data: 'El tipo de driver es requerido'
-      })
-      return
-    }
-
-    // Bloquear botón guardar
-    isSaving.value = true
-
-    // Preparar datos para enviar
-    const recordData = {
-      CameraId: crypto.randomUUID(), // Generar nuevo GUID
-      Name: newRecord.value.name.trim(),
-      LocalIdentifier: newRecord.value.localIdentifier.trim(),
-      Features: newRecord.value.features.trim(),
-      DriverType: newRecord.value.driverType.trim() 
-    }
-
-    // Realizar petición al endpoint
-    const response = await $fetch(`${config.public.apiUrl}/api/camera`, {
-      method: 'POST',
-      body: recordData,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
-
-    // Si la petición fue exitosa
-    if (response) {
-      alertStore.NewAlert({
-        type: 'OK',
-        tittle: 'Éxito',
-        data: 'Cámara creada exitosamente'
-      })
-      
-      // Salir del modo agregar
-      isAddingMode.value = false
-      
-      // Limpiar formulario
-      newRecord.value = {
-        name: '',
-        localIdentifier: '',
-        features: '',
-        driverType: ''
-      }
-      
-      // Refrescar la lista después de crear
-      await fetchElements()
-    }
-
-  } catch (error) {
-    console.error('Error al crear cámara:', error)
-    alertStore.NewAlert({
-      type: 'error',
-      tittle: 'Error',
-      data: 'Error al crear la cámara'
-    })
-  } finally {
-    // Desbloquear botón guardar
-    isSaving.value = false
-  }
-}
-
-// Cargar elementos al montar el componente
 onMounted(() => {
-  fetchElements()
+  fetchAvailableCameras()
 })
 </script>

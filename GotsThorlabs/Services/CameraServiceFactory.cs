@@ -14,11 +14,24 @@ namespace GotsThorlabs.Services
         private readonly Dictionary<string, ICameraService> _services;
         private readonly Dictionary<string, ICameraDiscoveryService> _discoveryServices;
 
+        /// <summary>
+        /// Drivers que además saben informar qué parámetros de captura aceptan.
+        /// No todos lo implementan (ids_peak_dotnet todavía no), por eso es un
+        /// diccionario aparte y no se asume que exista para un driver dado.
+        /// </summary>
+        private readonly Dictionary<string, ICameraParameterProvider> _parameterProviders;
+
         public CameraServiceFactory(
             VideoCaptureCameraService genericService,
             IdsPeakCameraService idsPeakService,
             IdsUEyeCameraService idsUEyeService)
         {
+            _parameterProviders = new Dictionary<string, ICameraParameterProvider>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["generic"]  = genericService,
+                ["ids_ueye"] = idsUEyeService,
+            };
+
             _services = new Dictionary<string, ICameraService>(StringComparer.OrdinalIgnoreCase)
             {
                 ["generic"]         = genericService,
@@ -34,6 +47,22 @@ namespace GotsThorlabs.Services
                 ["ids_peak_dotnet"] = idsPeakService,
                 ["ids_ueye"]        = idsUEyeService,
             };
+        }
+
+        /// <summary>
+        /// Devuelve el proveedor de parámetros del driver indicado, o null si ese
+        /// driver todavía no soporta configuración de parámetros. A diferencia de
+        /// GetService, NO cae a "generic": responder con los parámetros de otro
+        /// driver llevaría a configurar la cámara equivocada.
+        /// </summary>
+        public ICameraParameterProvider? GetParameterProvider(string? driverType)
+        {
+            if (!string.IsNullOrWhiteSpace(driverType)
+                && _parameterProviders.TryGetValue(driverType.Trim(), out var provider))
+            {
+                return provider;
+            }
+            return null;
         }
 
         /// <summary>

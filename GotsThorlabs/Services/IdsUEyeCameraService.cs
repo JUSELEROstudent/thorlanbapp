@@ -5,6 +5,9 @@ using GotsThorlabs.Interfaces;
 using GotsThorlabs.Models;
 using OpenCvSharp;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 
 namespace GotsThorlabs.Services
@@ -22,9 +25,17 @@ namespace GotsThorlabs.Services
     ///  record in the database (or update the default in CameraServiceFactory).
     /// ─────────────────────────────────────────────────────────────────
     /// </summary>
-    public class IdsUEyeCameraService : ICameraService, ICameraDiscoveryService, IDisposable
+    public class IdsUEyeCameraService : ICameraService, ICameraDiscoveryService, ICameraParameterProvider, IDisposable
     {
         private bool _disposed;
+
+        // ── CONFIGURACIÓN POR CÁMARA ──────────────────────────────────
+        // Parámetros elegidos por el usuario (camera.settingsJson). Se aplican al
+        // abrir la sesión. Como abrir es caro (convergencia + 3 s de espera), la
+        // sesión solo se cierra y reabre cuando la configuración realmente cambió,
+        // lo que se detecta comparando la huella del contenido.
+        private CameraSettings? _pendingSettings;
+        private string _appliedFingerprint = string.Empty;
 
         // ── PERSISTENT SESSION ────────────────────────────────────────
         // The camera is opened & calibrated ONCE per identifier, then reused
@@ -185,7 +196,9 @@ namespace GotsThorlabs.Services
             try
             {
                 // Apply profile FIRST (it can change the pixel format).
-                ApplyProfile(camera);
+                // El perfil ya no es una constante de compilación: si la cámara tiene
+                // uno configurado en settingsJson se usa ese, y si no, el de siempre.
+                ApplyProfile(camera, ResolveProfile(_pendingSettings));
 
                 // Lock BGR8 output AFTER the profile so the color conversion persists.
                 var pixStatus = camera.PixelFormat.Set(ColorMode.BGR8Packed);
@@ -207,8 +220,27 @@ namespace GotsThorlabs.Services
                 Console.WriteLine($"[IdsUEye] Trigger.Set(Off) = {triggerStatus}");
 
                 // Converge exposure (auto-shutter only, no auto-gain) + white balance.
-                Console.WriteLine("[IdsUEye] Starting auto-exposure/AWB convergence...");
-                ApplyAutoExposure(camera);
+                // Si el usuario desactivó explícitamente el obturador automático, se
+                // salta la convergencia: no tendría sentido dejar que la cámara elija
+                // la exposición para luego pisarla con el valor manual.
+                var settings = _pendingSettings;
+                var autoShutterDisabled = settings != null
+                    && settings.TryGetBool("AutoShutter", out var autoShutter)
+                    && !autoShutter;
+
+                if (autoShutterDisabled)
+                {
+                    Console.WriteLine("[IdsUEye] Obturador automático desactivado por configuración; se omite la convergencia.");
+                }
+                else
+                {
+                    Console.WriteLine("[IdsUEye] Starting auto-exposure/AWB convergence...");
+                    ApplyAutoExposure(camera);
+                }
+
+                // Los valores explícitos se aplican DESPUÉS de la convergencia para que
+                // siempre ganen sobre lo que haya decidido el modo automático.
+                ApplyManualSettings(camera, settings);
 
                 // Let the locked exposure / AWB stabilize before the first real capture.
                 Console.WriteLine($"[IdsUEye] Calibrated. Settling {SettleAfterCalibrationMs} ms before first capture...");
@@ -376,11 +408,11 @@ namespace GotsThorlabs.Services
         }
 
         // ── Profile loading ──────────────────────────────────────────
-        private static void ApplyProfile(Camera camera)
+        private static void ApplyProfile(Camera camera, UEyeProfile profile)
         {
-            Console.WriteLine($"[IdsUEye] Applying profile: {ActiveProfile}");
+            Console.WriteLine($"[IdsUEye] Applying profile: {profile}");
             Status st;
-            switch (ActiveProfile)
+            switch (profile)
             {
                 case UEyeProfile.Default:
                     st = camera.Parameter.ResetToDefault();
@@ -429,6 +461,429 @@ namespace GotsThorlabs.Services
             }
         }
         // ── END Profile loading ──────────────────────────────────────
+
+        // ══════════════════════════════════════════════════════════════
+        //  CONFIGURACIÓN POR CÁMARA (ICameraService.ApplySettings +
+        //  ICameraParameterProvider)
+        // ══════════════════════════════════════════════════════════════
+
+        public void ApplySettings(string localIdentifier, string? settingsJson)
+        {
+            var incoming = CameraSettings.Parse(settingsJson);
+            var fingerprint = incoming?.Fingerprint() ?? string.Empty;
+
+            _sessionLock.Wait();
+            try
+            {
+                _pendingSettings = incoming;
+
+                // Abrir la sesión cuesta varios segundos (convergencia + settle), así
+                // que solo se cierra si la configuración cambió de verdad. Si no
+                // cambió, la sesión viva ya tiene estos valores aplicados.
+                if (!string.Equals(_appliedFingerprint, fingerprint, StringComparison.Ordinal))
+                {
+                    _appliedFingerprint = fingerprint;
+                    if (_sessionCamera != null)
+                    {
+                        Console.WriteLine("[IdsUEye] La configuración de la cámara cambió; se cierra la sesión para reabrirla con los valores nuevos.");
+                        CloseSession();
+                    }
+                }
+            }
+            finally
+            {
+                _sessionLock.Release();
+            }
+        }
+
+        public IReadOnlyList<CameraParameterDescriptor> GetParameters(string localIdentifier)
+        {
+            var descriptors = BuildParameterCatalog();
+
+            if (string.IsNullOrWhiteSpace(localIdentifier))
+                return descriptors;
+
+            // Se toma el mismo semáforo que las capturas (sin anidarlo) para no
+            // interferir con un streaming en curso ni abrir el dispositivo dos veces.
+            _sessionLock.Wait();
+            try
+            {
+                if (_sessionCamera == null ||
+                    !string.Equals(_sessionIdentifier, localIdentifier, StringComparison.OrdinalIgnoreCase))
+                {
+                    OpenAndCalibrate(localIdentifier);
+                }
+
+                var camera = _sessionCamera;
+                if (camera == null)
+                {
+                    Console.WriteLine($"[IdsUEye] GetParameters: dispositivo '{localIdentifier}' no disponible; se devuelve el catálogo sin rangos.");
+                    return descriptors;
+                }
+
+                EnrichFromDevice(camera, descriptors);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[IdsUEye] GetParameters falló: {ex.Message}");
+            }
+            finally
+            {
+                _sessionLock.Release();
+            }
+
+            return descriptors;
+        }
+
+        /// <summary>
+        /// Catálogo base de parámetros. Los que dependen del módulo Timing del SDK se
+        /// agregan solo si el dispositivo los expone (ver EnrichFromDevice).
+        /// </summary>
+        private static List<CameraParameterDescriptor> BuildParameterCatalog()
+        {
+            var profileOptions = Enum.GetNames(typeof(UEyeProfile))
+                // FromFile se omite: apunta a una ruta .ini fija en el código y no
+                // tiene sentido ofrecerla hasta que la ruta sea configurable.
+                .Where(n => !string.Equals(n, nameof(UEyeProfile.FromFile), StringComparison.Ordinal))
+                .ToArray();
+
+            return new List<CameraParameterDescriptor>
+            {
+                new()
+                {
+                    Name = "Profile", Label = "Perfil de la cámara", Type = "enum",
+                    Options = profileOptions, Group = "Perfil",
+                    Description = "Punto de partida al abrir la cámara. 'Default' restablece los valores de fábrica; " +
+                                  "'HardwareStored' carga el perfil guardado dentro de la cámara desde IDS Cockpit."
+                },
+                new()
+                {
+                    Name = "AutoShutter", Label = "Obturador automático", Type = "bool", Group = "Exposición",
+                    Description = "Deja que la cámara ajuste sola el tiempo de exposición al abrir la sesión. " +
+                                  "Desactívelo para fijar una exposición manual y que las capturas sean reproducibles."
+                },
+                new()
+                {
+                    Name = "AutoGain", Label = "Ganancia automática", Type = "bool", Group = "Exposición",
+                    Description = "Se recomienda dejarla desactivada: la ganancia automática es la principal causa de " +
+                                  "la imagen quemada, porque amplifica la señal en vez de ajustar la exposición."
+                },
+                new()
+                {
+                    Name = "MasterGain", Label = "Ganancia maestra", Type = "number",
+                    Min = 0, Max = 100, Step = 1, Unit = "%", Group = "Exposición",
+                    Description = "0 = sin amplificación. Subirla aclara la imagen a costa de ruido."
+                },
+                new()
+                {
+                    Name = "GainBoost", Label = "Refuerzo de ganancia", Type = "bool", Group = "Exposición",
+                    Description = "Amplificación analógica adicional. Normalmente conviene dejarlo desactivado."
+                },
+                new()
+                {
+                    Name = "AutoWhiteBalance", Label = "Balance de blancos automático", Type = "bool", Group = "Color",
+                    Description = "Se ejecuta una sola vez al abrir la sesión y luego queda fijo, para que el color " +
+                                  "no cambie entre las imágenes de una misma calibración."
+                },
+            };
+        }
+
+        /// <summary>
+        /// Completa el catálogo con los datos que solo el dispositivo puede dar:
+        /// valores actuales y, para los parámetros del módulo Timing, su rango real.
+        ///
+        /// El módulo Timing se consulta por reflexión a propósito. La superficie de la
+        /// API de uEyeDotNet.dll cambia entre versiones del SDK, y una llamada directa
+        /// a un miembro inexistente rompería la compilación en un equipo con otra
+        /// versión instalada. Con reflexión, el parámetro simplemente no aparece.
+        /// </summary>
+        private static void EnrichFromDevice(Camera camera, List<CameraParameterDescriptor> descriptors)
+        {
+            // Ganancia maestra actual.
+            if (TryGetSdkValue(camera, "Gain.Hardware.Scaled", out var master, "GetMaster"))
+            {
+                var gain = descriptors.FirstOrDefault(d => d.Name == "MasterGain");
+                if (gain != null) gain.Current = CameraSettings.Format(master);
+            }
+
+            // Parámetros del módulo Timing: se agregan solo si el SDK los expone.
+            TryAddTimingParameter(camera, descriptors, "Timing.Exposure", "ExposureTimeMs",
+                "Tiempo de exposición", "ms", "Exposición",
+                "Cuánto tiempo se expone el sensor. Es la forma correcta de controlar el brillo: " +
+                "a diferencia de la ganancia, no agrega ruido.");
+
+            TryAddTimingParameter(camera, descriptors, "Timing.PixelClock", "PixelClockMHz",
+                "Reloj de píxel", "MHz", "Temporización",
+                "Velocidad de lectura del sensor. Subirlo permite más cuadros por segundo, " +
+                "pero puede introducir ruido y exige más ancho de banda del USB.");
+
+            TryAddTimingParameter(camera, descriptors, "Timing.Framerate", "FramerateFps",
+                "Cuadros por segundo", "fps", "Temporización",
+                "Limita la tasa de captura. Un valor alto reduce el máximo de exposición posible.");
+        }
+
+        private static void TryAddTimingParameter(
+            Camera camera,
+            List<CameraParameterDescriptor> descriptors,
+            string sdkPath,
+            string name,
+            string label,
+            string unit,
+            string group,
+            string description)
+        {
+            var hasRange = TryGetSdkRange(camera, sdkPath, out var min, out var max, out var increment);
+            var hasValue = TryGetSdkValue(camera, sdkPath, out var current);
+
+            // Si el SDK instalado no expone este módulo, no se ofrece el parámetro:
+            // mostrarlo sin poder aplicarlo sería engañoso.
+            if (!hasRange && !hasValue)
+            {
+                Console.WriteLine($"[IdsUEye] El SDK no expone '{sdkPath}'; se omite el parámetro '{name}'.");
+                return;
+            }
+
+            descriptors.Add(new CameraParameterDescriptor
+            {
+                Name = name,
+                Label = label,
+                Type = "number",
+                Unit = unit,
+                Group = group,
+                Description = description,
+                Min = hasRange ? min : null,
+                Max = hasRange ? max : null,
+                Step = hasRange && increment > 0 ? increment : null,
+                Current = hasValue ? CameraSettings.Format(current) : null
+            });
+        }
+
+        /// <summary>
+        /// Aplica los valores explícitos configurados por el usuario. Se ejecuta
+        /// después de la convergencia automática para que siempre tengan prioridad.
+        /// Cada parámetro se aplica de forma independiente: que uno falle no debe
+        /// impedir los demás ni la captura.
+        /// </summary>
+        private static void ApplyManualSettings(Camera camera, CameraSettings? settings)
+        {
+            if (settings == null || settings.Values == null || settings.Values.Count == 0)
+                return;
+
+            if (settings.TryGetBool("AutoGain", out var autoGain))
+            {
+                TrySdk("AutoGain(sensor)", () =>
+                {
+                    camera.AutoFeatures.Sensor.Gain.GetSupported(out var supported);
+                    if (supported) camera.AutoFeatures.Sensor.Gain.SetEnable(autoGain);
+                });
+                TrySdk("AutoGain(software)", () =>
+                {
+                    camera.AutoFeatures.Software.Gain.GetSupported(out var supported);
+                    if (supported) camera.AutoFeatures.Software.Gain.SetEnable(autoGain);
+                });
+            }
+
+            if (settings.TryGetInt("MasterGain", out var masterGain))
+            {
+                var clamped = Math.Clamp(masterGain, 0, 100);
+                TrySdk($"MasterGain({clamped})", () => camera.Gain.Hardware.Scaled.SetMaster(clamped));
+            }
+
+            if (settings.TryGetBool("GainBoost", out var gainBoost))
+            {
+                TrySdk($"GainBoost({gainBoost})", () => camera.Gain.Hardware.Boost.SetEnable(gainBoost));
+            }
+
+            if (settings.TryGetBool("AutoShutter", out var autoShutter))
+            {
+                TrySdk("AutoShutter(sensor)", () =>
+                {
+                    camera.AutoFeatures.Sensor.Shutter.GetSupported(out var supported);
+                    if (supported) camera.AutoFeatures.Sensor.Shutter.SetEnable(autoShutter);
+                });
+                TrySdk("AutoShutter(software)", () =>
+                {
+                    camera.AutoFeatures.Software.Shutter.GetSupported(out var supported);
+                    if (supported) camera.AutoFeatures.Software.Shutter.SetEnable(autoShutter);
+                });
+            }
+
+            if (settings.TryGetBool("AutoWhiteBalance", out var autoWhiteBalance))
+            {
+                TrySdk($"AutoWhiteBalance({autoWhiteBalance})", () =>
+                {
+                    camera.AutoFeatures.Software.WhiteBalance.GetSupported(out var supported);
+                    if (!supported) return;
+
+                    if (autoWhiteBalance)
+                        camera.AutoFeatures.Software.WhiteBalance.SetEnable(uEye.Defines.ActivateMode.Once);
+                    else
+                        camera.AutoFeatures.Software.WhiteBalance.SetEnable(false);
+                });
+            }
+
+            // Módulo Timing: por reflexión, igual que en la lectura de rangos.
+            if (settings.TryGetDouble("ExposureTimeMs", out var exposure))
+                TrySetSdkValue(camera, "Timing.Exposure", exposure);
+
+            if (settings.TryGetDouble("PixelClockMHz", out var pixelClock))
+                TrySetSdkValue(camera, "Timing.PixelClock", pixelClock);
+
+            if (settings.TryGetDouble("FramerateFps", out var framerate))
+                TrySetSdkValue(camera, "Timing.Framerate", framerate);
+        }
+
+        private static UEyeProfile ResolveProfile(CameraSettings? settings)
+        {
+            var raw = settings?.GetString("Profile");
+            if (!string.IsNullOrWhiteSpace(raw) &&
+                Enum.TryParse<UEyeProfile>(raw, ignoreCase: true, out var parsed))
+            {
+                return parsed;
+            }
+            return ActiveProfile;
+        }
+
+        private static void TrySdk(string what, Action action)
+        {
+            try
+            {
+                action();
+                Console.WriteLine($"[IdsUEye] Configuración aplicada: {what}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[IdsUEye] No se pudo aplicar {what}: {ex.Message}");
+            }
+        }
+
+        // ── Acceso al SDK por reflexión ──────────────────────────────
+        // Ver la nota en EnrichFromDevice: evita que la compilación dependa de la
+        // versión exacta de uEyeDotNet.dll instalada en el equipo.
+
+        private static object? ResolveSdkNode(Camera camera, string path)
+        {
+            object? current = camera;
+            foreach (var part in path.Split('.', StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (current == null) return null;
+                var property = current.GetType().GetProperty(part, BindingFlags.Public | BindingFlags.Instance);
+                if (property == null) return null;
+                current = property.GetValue(current);
+            }
+            return current;
+        }
+
+        private static bool TrySetSdkValue(Camera camera, string path, double value, string methodName = "Set")
+        {
+            try
+            {
+                var node = ResolveSdkNode(camera, path);
+                if (node == null) return false;
+
+                var method = node.GetType()
+                    .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                    .FirstOrDefault(m => m.Name == methodName
+                        && m.GetParameters().Length == 1
+                        && !m.GetParameters()[0].IsOut
+                        && (m.GetParameters()[0].ParameterType == typeof(double)
+                            || m.GetParameters()[0].ParameterType == typeof(int)
+                            || m.GetParameters()[0].ParameterType == typeof(uint)));
+
+                if (method == null) return false;
+
+                var parameterType = method.GetParameters()[0].ParameterType;
+                object argument;
+                if (parameterType == typeof(double)) argument = value;
+                else if (parameterType == typeof(int)) argument = (int)Math.Round(value);
+                else argument = (uint)Math.Max(0, Math.Round(value));
+
+                method.Invoke(node, new[] { argument });
+                Console.WriteLine($"[IdsUEye] Configuración aplicada: {path} = {value}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[IdsUEye] No se pudo aplicar {path}: {ex.Message}");
+                return false;
+            }
+        }
+
+        private static bool TryGetSdkValue(Camera camera, string path, out double value, string methodName = "Get")
+        {
+            value = 0d;
+            try
+            {
+                var node = ResolveSdkNode(camera, path);
+                if (node == null) return false;
+
+                var method = node.GetType()
+                    .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                    .FirstOrDefault(m => m.Name == methodName
+                        && m.GetParameters().Length == 1
+                        && m.GetParameters()[0].IsOut);
+
+                if (method == null) return false;
+
+                var arguments = CreateOutArguments(method);
+                method.Invoke(node, arguments);
+                if (arguments[0] == null) return false;
+
+                value = Convert.ToDouble(arguments[0], CultureInfo.InvariantCulture);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static bool TryGetSdkRange(Camera camera, string path, out double min, out double max, out double increment)
+        {
+            min = 0d; max = 0d; increment = 0d;
+            try
+            {
+                var node = ResolveSdkNode(camera, path);
+                if (node == null) return false;
+
+                var method = node.GetType()
+                    .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                    .FirstOrDefault(m => m.Name == "GetRange"
+                        && m.GetParameters().Length == 3
+                        && m.GetParameters().All(p => p.IsOut));
+
+                if (method == null) return false;
+
+                var arguments = CreateOutArguments(method);
+                method.Invoke(node, arguments);
+                if (arguments[0] == null || arguments[1] == null) return false;
+
+                min = Convert.ToDouble(arguments[0], CultureInfo.InvariantCulture);
+                max = Convert.ToDouble(arguments[1], CultureInfo.InvariantCulture);
+                increment = arguments[2] != null
+                    ? Convert.ToDouble(arguments[2], CultureInfo.InvariantCulture)
+                    : 0d;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static object?[] CreateOutArguments(MethodInfo method)
+        {
+            var parameters = method.GetParameters();
+            var arguments = new object?[parameters.Length];
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                var elementType = parameters[i].ParameterType.GetElementType();
+                arguments[i] = elementType != null && elementType.IsValueType
+                    ? Activator.CreateInstance(elementType)
+                    : null;
+            }
+            return arguments;
+        }
 
         // ── Auto-exposure + white balance convergence ────────────────
         // Overexposure ("quemado") fix: auto-GAIN is the main culprit because it

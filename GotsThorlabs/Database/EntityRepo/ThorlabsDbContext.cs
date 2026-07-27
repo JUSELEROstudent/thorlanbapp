@@ -43,6 +43,10 @@ namespace GotsThorlabs.Database.EntityRepo
                 entity.Property(e => e.LocalIdentifier).HasColumnName("localIdentifier");
 
                 entity.Property(e => e.Name).HasColumnName("name");
+
+                // Parámetros de captura por cámara (JSON). Nullable: una cámara sin
+                // configurar usa el comportamiento por defecto de su driver.
+                entity.Property(e => e.SettingsJson).HasColumnName("settingsJson");
             });
 
             modelBuilder.Entity<GroupCalibration>(entity =>

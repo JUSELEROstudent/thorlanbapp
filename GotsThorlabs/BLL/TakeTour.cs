@@ -512,7 +512,7 @@ namespace GotsThorlabs.BLL
         {
             Mat frame = new Mat();
             string pathsave;
-            string resultadolaplace;
+            double focusScore;
             string nameimage;
 
             // capture frame via injected camera service resolved from GroupCalibration → Camera
@@ -546,13 +546,18 @@ namespace GotsThorlabs.BLL
                     image[y]?.Dispose();
                     image[y] = ownedFrame;
 
-                    // se hcae el calculo de la place para el estado del blur 
-                    using var grayresult = new Mat();
-                    using var shaperesult = new Mat();
-                    Cv2.CvtColor(ownedFrame, grayresult, ColorConversionCodes.BGR2GRAY);
-                    Cv2.Laplacian(grayresult, shaperesult, MatType.CV_64F);
-                    Cv2.MeanStdDev(ownedFrame, out var mean, out var stddev);
-                    resultadolaplace = (stddev.Val0 * stddev.Val0).ToString();
+                    // Nitidez de la imagen: varianza del Laplaciano.
+                    //
+                    // Antes aquí se calculaba el Laplaciano en 'shaperesult' y acto
+                    // seguido se descartaba, porque MeanStdDev se aplicaba sobre
+                    // ownedFrame (la imagen a color original). Lo que se guardaba en
+                    // gausianVal era entonces la varianza de intensidad de la imagen
+                    // cruda — una medida de contraste, no de enfoque. FocusMetrics mide
+                    // sobre el Laplaciano, que es lo que corresponde.
+                    //
+                    // Ojo: las filas de 'image' anteriores a este cambio tienen valores
+                    // en otra escala y no son comparables con las nuevas.
+                    focusScore = FocusMetrics.VarianceOfLaplacian(ownedFrame);
 
                     Rect region = new Rect(ownedFrame.Cols * x, ownedFrame.Rows * y, ownedFrame.Cols, ownedFrame.Rows);
                     ownedFrame.CopyTo(mosaic.SubMat(region));
@@ -581,7 +586,10 @@ namespace GotsThorlabs.BLL
                 _db.Images.Add(new GotsThorlabs.Database.EntityRepo.Entities.Image
                 {
                     Name = nameimage,
-                    GausianVal = double.TryParse(resultadolaplace, out var blurValue) ? blurValue : null,
+                    // Se guarda el double directamente: antes se formateaba a string y
+                    // se volvía a parsear, lo que dependía de la cultura del sistema
+                    // (con coma decimal el parse fallaba y quedaba null).
+                    GausianVal = focusScore,
                     Path = namefolder,
                     X = x,
                     Y = y,

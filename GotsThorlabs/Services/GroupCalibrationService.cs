@@ -20,6 +20,20 @@ namespace GotsThorlabs.Services
             return await _db.GroupCalibrations.AsNoTracking().ToListAsync(ct);
         }
 
+        public async Task<IEnumerable<GroupCalibration>> GetAllWithDetailsAsync(CancellationToken ct)
+        {
+            // Se devuelven las entidades completas, como el resto de los Get* del
+            // proyecto; los ciclos de referencias los resuelve el
+            // ReferenceHandler.IgnoreCycles configurado en Program.cs.
+            return await _db.GroupCalibrations
+                .AsNoTracking()
+                .Include(g => g.Camera)
+                .Include(g => g.Microscope)
+                .Include(g => g.Increase)
+                .Include(g => g.PicsCalibrations)
+                .ToListAsync(ct);
+        }
+
         public async Task<GroupCalibration?> GetByIdAsync(string id, CancellationToken ct)
         {
             return await _db.GroupCalibrations.AsNoTracking().FirstOrDefaultAsync(g => g.GroupCailbrationId == id, ct);

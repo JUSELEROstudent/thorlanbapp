@@ -295,6 +295,26 @@ namespace GotsThorlabs.Services
         // connection to release. No-op to satisfy the interface contract.
         public void ReleaseConnection() { }
 
+        /// <summary>
+        /// Todavía sin implementar para este driver: la configuración por cámara se
+        /// implementó primero para la genérica y la uEye.
+        ///
+        /// Cuando se implemente, Peak es el caso más simple de los tres: los nodos
+        /// GenICam se enumeran solos desde el NodeMap con sus propios
+        /// Minimum()/Maximum()/Increment(), así que el catálogo de parámetros puede
+        /// construirse dinámicamente en lugar de escribirse a mano. Los valores se
+        /// aplicarían en CaptureFromOpenedDevice, después de obtener el nodemap y
+        /// antes de iniciar la adquisición.
+        /// </summary>
+        public void ApplySettings(string localIdentifier, string? settingsJson)
+        {
+            if (!string.IsNullOrWhiteSpace(settingsJson))
+            {
+                Console.WriteLine($"[IdsPeak] Hay parámetros configurados para '{localIdentifier}', " +
+                                  "pero este driver aún no los aplica. Se captura con la configuración por defecto.");
+            }
+        }
+
         public void Dispose()
         {
             if (_disposed) return;

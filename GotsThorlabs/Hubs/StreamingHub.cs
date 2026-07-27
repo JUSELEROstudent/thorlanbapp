@@ -1,5 +1,6 @@
-﻿using GotsThorlabs.BLL;
+using GotsThorlabs.BLL;
 using GotsThorlabs.Database.EntityRepo;
+using GotsThorlabs.Models;
 using GotsThorlabs.Services;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -63,7 +64,7 @@ namespace GotsThorlabs.Hubs
         CancellationToken cancellationToken)
         {
             var connectionId = Context.ConnectionId;
-            
+
             CancelStream(connectionId);
 
             var streamCts = new CancellationTokenSource();
@@ -76,26 +77,15 @@ namespace GotsThorlabs.Hubs
                 cancellationToken, Context.ConnectionAborted, streamCts.Token);
             var token = linkedCts.Token;
 
-            var driverType = "generic";
-            var localIdentifier = camera.ToString();
+            var resolved = await ResolveCameraAsync(camera, cameraName);
+            var cameraService = _cameraFactory.GetService(resolved.DriverType);
 
-            if (!string.IsNullOrWhiteSpace(cameraName))
-            {
-                var cameraRecord = await _db.Cameras
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(c => c.Name.ToLower() == cameraName.Trim().ToLower());
+            // Se aplica la configuración guardada de la cámara antes de empezar a
+            // capturar, para que el usuario vea en el streaming exactamente la misma
+            // imagen que se usará al calibrar.
+            ApplyCameraSettings(cameraService, resolved);
 
-                if (cameraRecord != null)
-                {
-                    driverType = cameraRecord.DriverType;
-                    if (!string.IsNullOrWhiteSpace(cameraRecord.LocalIdentifier))
-                        localIdentifier = cameraRecord.LocalIdentifier;
-                }
-            }
-
-            var cameraService = _cameraFactory.GetService(driverType);
-
-            Console.WriteLine($"[StreamingHub] Stream started — camera={cameraName ?? localIdentifier} driver={driverType} connection={connectionId}");
+            Console.WriteLine($"[StreamingHub] Stream started — camera={cameraName ?? resolved.LocalIdentifier} driver={resolved.DriverType} connection={connectionId}");
 
             try
             {
@@ -104,7 +94,7 @@ namespace GotsThorlabs.Hubs
                     byte[]? frameBytes = null;
                     try
                     {
-                        using var image = cameraService.CaptureFrame(localIdentifier) ?? new Mat();
+                        using var image = cameraService.CaptureFrame(resolved.LocalIdentifier) ?? new Mat();
 
                         if (!image.Empty())
                             frameBytes = image.ToBytes();
@@ -132,8 +122,162 @@ namespace GotsThorlabs.Hubs
             finally
             {
                 CancelStream(connectionId);
-                Console.WriteLine($"[StreamingHub] Stream stopped — camera={cameraName ?? localIdentifier} connection={connectionId}");
+                Console.WriteLine($"[StreamingHub] Stream stopped — camera={cameraName ?? resolved.LocalIdentifier} connection={connectionId}");
             }
+        }
+
+        /// <summary>
+        /// Igual que Counter, pero cada cuadro viaja acompañado de su medida de
+        /// enfoque (varianza del Laplaciano), para que el investigador pueda enfocar
+        /// mirando un número en vez de a ojo.
+        ///
+        /// Se calcula sobre el MISMO cuadro que ya se estaba capturando para el
+        /// preview: abrir una segunda conexión al dispositivo competiría con este
+        /// streaming y con las capturas de calibración.
+        ///
+        /// Es un método aparte y no un cambio en Counter porque Counter lo consumen
+        /// también index.vue y signalrtest.vue, que esperan recibir el cuadro pelado.
+        /// </summary>
+        public async IAsyncEnumerable<StreamFrameDTO> CounterWithMetrics(
+            int camera,
+            int delay,
+            string? cameraName,
+            [EnumeratorCancellation]
+            CancellationToken cancellationToken)
+        {
+            var connectionId = Context.ConnectionId;
+
+            CancelStream(connectionId);
+
+            var streamCts = new CancellationTokenSource();
+            lock (_lock)
+            {
+                _activeStreams[connectionId] = streamCts;
+            }
+
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
+                cancellationToken, Context.ConnectionAborted, streamCts.Token);
+            var token = linkedCts.Token;
+
+            var resolved = await ResolveCameraAsync(camera, cameraName);
+            var cameraService = _cameraFactory.GetService(resolved.DriverType);
+
+            ApplyCameraSettings(cameraService, resolved);
+
+            var threshold = ResolveFocusThreshold(resolved.SettingsJson);
+
+            Console.WriteLine($"[StreamingHub] Stream con métricas iniciado — camera={cameraName ?? resolved.LocalIdentifier} driver={resolved.DriverType} connection={connectionId}");
+
+            try
+            {
+                while (!token.IsCancellationRequested)
+                {
+                    StreamFrameDTO? payload = null;
+                    try
+                    {
+                        using var image = cameraService.CaptureFrame(resolved.LocalIdentifier) ?? new Mat();
+
+                        if (!image.Empty())
+                        {
+                            var focus = FocusMetrics.VarianceOfLaplacian(image);
+                            payload = new StreamFrameDTO
+                            {
+                                Frame = image.ToBytes(),
+                                Focus = focus,
+                                FocusThreshold = threshold,
+                                IsFocusAcceptable = !threshold.HasValue || focus >= threshold.Value
+                            };
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[StreamingHub] Frame capture error: {ex.Message} — retrying...");
+                    }
+
+                    if (payload != null)
+                    {
+                        yield return payload;
+                        await Task.Delay(delay, token).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await Task.Delay(100, token).ConfigureAwait(false);
+                    }
+                }
+            }
+            finally
+            {
+                CancelStream(connectionId);
+                Console.WriteLine($"[StreamingHub] Stream con métricas detenido — connection={connectionId}");
+            }
+        }
+
+        // ── Resolución de cámara compartida por ambos streams ────────────
+
+        private sealed class ResolvedCamera
+        {
+            public string DriverType { get; set; } = "generic";
+            public string LocalIdentifier { get; set; } = string.Empty;
+            public string? SettingsJson { get; set; }
+        }
+
+        private async Task<ResolvedCamera> ResolveCameraAsync(int camera, string? cameraName)
+        {
+            var resolved = new ResolvedCamera
+            {
+                DriverType = "generic",
+                LocalIdentifier = camera.ToString()
+            };
+
+            if (string.IsNullOrWhiteSpace(cameraName))
+                return resolved;
+
+            var cameraRecord = await _db.Cameras
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Name.ToLower() == cameraName.Trim().ToLower());
+
+            if (cameraRecord != null)
+            {
+                resolved.DriverType = cameraRecord.DriverType;
+                resolved.SettingsJson = cameraRecord.SettingsJson;
+                if (!string.IsNullOrWhiteSpace(cameraRecord.LocalIdentifier))
+                    resolved.LocalIdentifier = cameraRecord.LocalIdentifier;
+            }
+
+            return resolved;
+        }
+
+        private static void ApplyCameraSettings(Interfaces.ICameraService cameraService, ResolvedCamera resolved)
+        {
+            try
+            {
+                cameraService.ApplySettings(resolved.LocalIdentifier, resolved.SettingsJson);
+            }
+            catch (Exception ex)
+            {
+                // Una configuración que el dispositivo rechace no debe impedir ver el
+                // streaming: se registra y se sigue con los valores por defecto.
+                Console.WriteLine($"[StreamingHub] No se pudo aplicar la configuración de la cámara: {ex.Message}");
+            }
+        }
+
+        private static double? ResolveFocusThreshold(string? settingsJson)
+        {
+            var settings = CameraSettings.Parse(settingsJson);
+            if (settings == null || string.IsNullOrWhiteSpace(settings.FocusThreshold))
+                return null;
+
+            return double.TryParse(
+                settings.FocusThreshold,
+                System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var threshold)
+                ? threshold
+                : null;
         }
     }
 
@@ -172,6 +316,18 @@ namespace GotsThorlabs.Hubs
                 ?? throw new HubException("No se encontró la cámara asociada a la calibración.");
             var cameraService = _cameraFactory.GetService(driverType);
 
+            // Las imágenes del recorrido deben tomarse con la misma configuración con
+            // la que se calibró; de lo contrario el desplazamiento medido en la
+            // calibración no corresponde al de estas capturas.
+            try
+            {
+                cameraService.ApplySettings(resolvedLocalIdentifier, groupCalibration.Camera?.SettingsJson);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[UpdateStatus] No se pudo aplicar la configuración de la cámara: {ex.Message}");
+            }
+
             var controlmotor = new TakeTour(resolvedLocalIdentifier, _db, cameraService);
             var processimgs = controlmotor.Createmosaicstepbystep(areaX_mm, areaY_mm, device.Trim(), groupCalibrationId);
             await foreach (var url in processimgs)
@@ -190,11 +346,11 @@ namespace GotsThorlabs.Hubs
     //        //SE PUEDE MEJORAR EL CODIGO METIENDO TODO EN LA CLASE 101_4 .... Y USANDO YIELD EN EL WHILE
     //    }
     //}
-    public class resourcesignal { 
+    public class resourcesignal {
         public string Name { get; set; }
         // public CancellationToken cancelacion { get; set; }
         public int numero { get; set; }
         public Bitmap imagen { get; set; }
-       
+
     }
 }

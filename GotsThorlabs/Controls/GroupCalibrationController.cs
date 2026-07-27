@@ -24,6 +24,19 @@ namespace GotsThorlabs.Controls
             return Ok(groups);
         }
 
+        /// <summary>
+        /// Grupos de calibración con la cámara, el microscopio y el objetivo asociados,
+        /// más sus mediciones. Es lo que consume la vista de calibraciones: permite
+        /// mostrar a qué combinación de equipos pertenece cada medición sin hacer una
+        /// petición por grupo.
+        /// </summary>
+        [HttpGet("with-details")]
+        public async Task<ActionResult<IEnumerable<GroupCalibration>>> GetAllWithDetailsAsync(CancellationToken ct)
+        {
+            var groups = await _service.GetAllWithDetailsAsync(ct);
+            return Ok(groups);
+        }
+
         [HttpGet("{id}")]
         public async Task<ActionResult<GroupCalibration>> GetByIdAsync(string id, CancellationToken ct)
         {

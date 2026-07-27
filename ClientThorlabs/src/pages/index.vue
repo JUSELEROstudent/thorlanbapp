@@ -2,16 +2,6 @@
     <div class=" w-full flex-col w-full space-y-4 p-4 ">
         <div class="flex flex-row space-x-4 items-center px-4 bg-gray rounded p-1 w-full">
 
-            <label style="color: white;" for="cameraSelect" class="space-x-2">
-                <span>Select Camara</span>
-                <Icon   name="material-symbols:android-camera" ></Icon>
-            </label>
-
-            <select id="cameraSelect" v-model="currentCamera" class="select select-bordered w-full max-w-xs ">
-                <option :value="lc.cameraId" v-for="lc in listCameras">
-                    {{ lc.cameraName }}
-                </option>
-            </select>
             <label style="color: white;" for="deviceSelect" class="space-x-2">
                 <span>Dispositivo</span>
             </label>
@@ -60,8 +50,6 @@ import { alertsClient }  from './../stores/alerts'
 const config = useRuntimeConfig();
 const alertStore = alertsClient()
 
-const listCameras = ref<{ cameraId: string; cameraName: string }[]>([]);
-const currentCamera = ref<string>("");
 const listDevices = ref<string[]>([]);
 const currentDevice = ref<string>("");
 const listGroups = ref<{ groupCailbrationId: string; aditionalInfo: string }[]>([]);
@@ -72,10 +60,9 @@ const statusstreamimg = ref<boolean>(false);
 const areaX = ref<number>(10.0);
 const areaY = ref<number>(8.0);
 const canStartStream = computed(() => {
-    const hasCamera = `${currentCamera.value ?? ""}`.trim().length > 0;
     const hasDevice = `${currentDevice.value ?? ""}`.trim().length > 0;
     const hasGroup = `${currentGroup.value ?? ""}`.trim().length > 0;
-    return hasCamera && hasDevice && hasGroup;
+    return hasDevice && hasGroup;
 });
 
 let hubConnection = await new signalR.HubConnectionBuilder()
@@ -99,21 +86,10 @@ onMounted( async () => {
         headers: myHeaders
         // , redirect: 'follow'
       }
-      const [camerasResponse, devicesResponse, groupsResponse] = await Promise.all([
-          fetch(`${config.public.apiUrl}/Home/cameras`, requestOptions),
+      const [devicesResponse, groupsResponse] = await Promise.all([
           fetch(`${config.public.apiUrl}/home/devices`, requestOptions),
           fetch(`${config.public.apiUrl}/api/GroupCalibration`, requestOptions)
       ]);
-
-      if (camerasResponse.ok) {
-          const data = await camerasResponse.json();
-          listCameras.value = data;
-          if (listCameras.value.length > 0) {
-              currentCamera.value = data[0].cameraId;
-          }
-      } else {
-          console.error(`Error en la solicitud: ${camerasResponse.status} - ${camerasResponse.statusText}`);
-      }
 
       if (devicesResponse.ok) {
           const data = await devicesResponse.json();
@@ -135,7 +111,7 @@ onMounted( async () => {
           console.error(`Error en la solicitud: ${groupsResponse.status} - ${groupsResponse.statusText}`);
       }
 
-      isendrequest.value = listCameras.value.length > 0;
+      isendrequest.value = listDevices.value.length > 0 && listGroups.value.length > 0;
   } catch (error) {
       console.error('Error al realizar la solicitud:', error);
   }
@@ -146,7 +122,11 @@ onMounted( async () => {
         // debugger;
         await hubConnection.stop();
         await hubConnection.start();
-        hubConnection.stream("Imgupdate", currentCamera.value,areaX.value,areaY.value,currentGroup.value,currentDevice.value).subscribe({
+        // El hub Imgupdate resuelve la cámara a usar a partir del grupo de
+        // calibración (groupCalibrationId -> Camera), no de este primer
+        // parámetro: por eso ya no hay selector de cámara en esta vista, y aquí
+        // solo se manda un valor cualquiera para cumplir la firma del método.
+        hubConnection.stream("Imgupdate", 0, areaX.value, areaY.value, currentGroup.value, currentDevice.value).subscribe({
             next: (item: string) => {
                 if (imgRef.value) { imgRef.value.src = `${item}` }
             },
@@ -158,7 +138,7 @@ onMounted( async () => {
 async function InitStreamImg()
 {
     if (!canStartStream.value) {
-        alertStore.NewAlert({type: 'error',data: 'Debe seleccionar camara, dispositivo y grupo.', tittle:'Validacion'})
+        alertStore.NewAlert({type: 'error',data: 'Debe seleccionar dispositivo y grupo.', tittle:'Validacion'})
         return;
     }
     statusstreamimg.value= true;

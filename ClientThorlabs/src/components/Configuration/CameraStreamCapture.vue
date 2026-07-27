@@ -12,7 +12,37 @@ const lastFrameUrl = ref<string | null>(null);
 const isLoadingCameras = ref<boolean>(false);
 const capturesStore = useCapturesStore();
 const maxPerPair = capturesStore.maxPerPair;
-let streamSubscription: signalR.ISubscription<string> | null = null;
+
+// ── Indicador de enfoque ─────────────────────────────────────────
+// El backend calcula la nitidez sobre el mismo cuadro que ya envía para el
+// preview, así que no cuesta una captura extra. La escala no es absoluta: lo
+// útil es maximizar el número girando el enfoque del microscopio, por eso se
+// muestra también el mejor valor visto en la sesión como referencia.
+const focusScore = ref<number | null>(null);
+const focusThreshold = ref<number | null>(null);
+const isFocusAcceptable = ref<boolean>(true);
+const bestFocusSeen = ref<number>(0);
+
+interface StreamFrame {
+  frame: string;
+  focus: number;
+  focusThreshold: number | null;
+  isFocusAcceptable: boolean;
+}
+
+let streamSubscription: signalR.ISubscription<StreamFrame> | null = null;
+
+const focusPercent = computed(() => {
+  if (focusScore.value === null || bestFocusSeen.value <= 0) return 0;
+  return Math.min(100, Math.round((focusScore.value / bestFocusSeen.value) * 100));
+});
+
+const resetFocus = () => {
+  focusScore.value = null;
+  focusThreshold.value = null;
+  isFocusAcceptable.value = true;
+  bestFocusSeen.value = 0;
+};
 
 const hubConnection = new signalR.HubConnectionBuilder()
   .withUrl(`${config.public.apiUrl}/StreamingHub`, {
@@ -38,11 +68,13 @@ const stopStream = async () => {
     
     isStreaming.value = false;
     lastFrameUrl.value = null;
+    resetFocus();
     console.log("[CameraStreamCapture] Stream detenido, estado:", hubConnection.state);
   } catch (error) {
     console.error("[CameraStreamCapture] Error al detener stream:", error);
     isStreaming.value = false;
     lastFrameUrl.value = null;
+    resetFocus();
   }
 };
 
@@ -57,11 +89,18 @@ const startStream = async () => {
     isStreaming.value = true;
 
     streamSubscription?.dispose();
+    // Se usa CounterWithMetrics en lugar de Counter para recibir además la medida
+    // de enfoque de cada cuadro. Counter sigue existiendo sin cambios para las
+    // otras vistas que lo consumen (index.vue y signalrtest.vue).
     streamSubscription = hubConnection
-      .stream("Counter", currentCamera.value, 10, listCameras.value.find(c => c.cameraId === currentCamera.value)?.cameraName ?? "")
+      .stream("CounterWithMetrics", currentCamera.value, 10, listCameras.value.find(c => c.cameraId === currentCamera.value)?.cameraName ?? "")
       .subscribe({
-        next: (item: string) => {
-          lastFrameUrl.value = `data:image/png;base64,${item}`;
+        next: (item: StreamFrame) => {
+          lastFrameUrl.value = `data:image/png;base64,${item.frame}`;
+          focusScore.value = item.focus;
+          focusThreshold.value = item.focusThreshold ?? null;
+          isFocusAcceptable.value = item.isFocusAcceptable;
+          if (item.focus > bestFocusSeen.value) bestFocusSeen.value = item.focus;
         },
         complete: () => {
           console.log("Stream completed");
@@ -229,6 +268,38 @@ onBeforeUnmount(async () => {
           <img :src="lastFrameUrl" class="max-h-64 rounded" />
         </div>
         <div v-else class="skeleton h-48 w-full rounded"></div>
+
+        <!-- Nitidez en vivo: sirve para enfocar mirando un número en vez de a ojo.
+             Gire el enfoque del microscopio buscando maximizar el valor. -->
+        <div v-if="focusScore !== null" class="rounded border border-base-200 p-3 space-y-2">
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-sm font-medium">Nitidez</span>
+            <div class="flex items-center gap-2">
+              <span class="font-mono text-sm">{{ focusScore.toFixed(1) }}</span>
+              <span
+                v-if="focusThreshold !== null"
+                class="badge badge-xs"
+                :class="isFocusAcceptable ? 'badge-success' : 'badge-error'"
+              >
+                {{ isFocusAcceptable ? 'Enfocada' : 'Desenfocada' }}
+              </span>
+            </div>
+          </div>
+
+          <progress
+            class="progress w-full"
+            :class="isFocusAcceptable ? 'progress-success' : 'progress-error'"
+            :value="focusPercent"
+            max="100"
+          ></progress>
+
+          <p class="text-xs text-gray-500">
+            Máximo visto en esta sesión: {{ bestFocusSeen.toFixed(1) }}.
+            <span v-if="focusThreshold !== null"> Umbral configurado: {{ focusThreshold.toFixed(1) }}.</span>
+            <span v-else> Sin umbral definido para esta cámara.</span>
+            La barra es relativa al máximo visto, no una escala absoluta.
+          </p>
+        </div>
 
         <div class="flex flex-wrap items-center gap-3">
           <button class="btn btn-success" @click="capturePhoto" :disabled="!lastFrameUrl">

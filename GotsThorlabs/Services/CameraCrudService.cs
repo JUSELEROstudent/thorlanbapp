@@ -66,6 +66,12 @@ namespace GotsThorlabs.Services
             existing.Features = dto.Features;
             existing.DriverType = string.IsNullOrWhiteSpace(dto.DriverType) ? "generic" : dto.DriverType.Trim().ToLowerInvariant();
 
+            // La configuración de parámetros solo se toca si viene explícitamente en el
+            // DTO. El formulario de la cámara no la envía, y sobrescribirla con null
+            // desde ahí borraría en silencio lo ajustado en la vista de parámetros.
+            if (dto.SettingsJson != null)
+                existing.SettingsJson = dto.SettingsJson;
+
             await _db.SaveChangesAsync(ct);
         }
 
@@ -76,6 +82,119 @@ namespace GotsThorlabs.Services
 
             _db.Cameras.Remove(camera);
             await _db.SaveChangesAsync(ct);
+        }
+
+        // ── Parámetros de captura ────────────────────────────────────────
+
+        public async Task<CameraParametersResponseDTO> GetParametersAsync(string id, CancellationToken ct)
+        {
+            var camera = await _db.Cameras.AsNoTracking().FirstOrDefaultAsync(c => c.CameraId == id, ct);
+            if (camera is null) throw new KeyNotFoundException($"Camera {id} not found.");
+
+            var saved = CameraSettings.Parse(camera.SettingsJson);
+
+            var response = new CameraParametersResponseDTO
+            {
+                CameraId = camera.CameraId,
+                CameraName = camera.Name,
+                DriverType = camera.DriverType,
+                Saved = saved?.Values ?? new Dictionary<string, string>(),
+                FocusThreshold = saved?.FocusThreshold
+            };
+
+            var provider = _cameraFactory.GetParameterProvider(camera.DriverType);
+            if (provider is null)
+            {
+                response.SupportsParameters = false;
+                response.Message = $"El driver '{camera.DriverType}' todavía no permite configurar parámetros " +
+                                   "desde la aplicación. La cámara se usa con su configuración por defecto.";
+                return response;
+            }
+
+            response.SupportsParameters = true;
+
+            try
+            {
+                // Consultar al dispositivo puede tardar (abrir la cámara) o fallar si
+                // está desconectada; eso no debe romper la vista, solo dejarla sin
+                // rangos ni valores actuales.
+                response.Descriptors = provider.GetParameters(camera.LocalIdentifier).ToList();
+
+                if (response.Descriptors.Count == 0)
+                {
+                    response.Message = "No se pudo consultar el dispositivo. Verifique que la cámara esté " +
+                                       "conectada y que ninguna otra aplicación la esté usando.";
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[CameraCrud] GetParameters falló para '{camera.Name}': {ex.Message}");
+                response.Message = $"No se pudo consultar el dispositivo: {ex.Message}";
+            }
+
+            return response;
+        }
+
+        public async Task UpdateParametersAsync(string id, CameraParametersUpdateDTO dto, CancellationToken ct)
+        {
+            var camera = await _db.Cameras.FirstOrDefaultAsync(c => c.CameraId == id, ct);
+            if (camera is null) throw new KeyNotFoundException($"Camera {id} not found.");
+
+            var values = dto.NormalizeValues();
+
+            // Se validan las claves contra lo que el dispositivo declara soportar, pero
+            // solo si se pudo consultar: si la cámara está desconectada, rechazar todo
+            // impediría preparar la configuración antes de conectarla.
+            var provider = _cameraFactory.GetParameterProvider(camera.DriverType);
+            if (provider != null && values.Count > 0)
+            {
+                IReadOnlyList<CameraParameterDescriptor> descriptors;
+                try
+                {
+                    descriptors = provider.GetParameters(camera.LocalIdentifier);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[CameraCrud] No se pudieron validar los parámetros contra el dispositivo: {ex.Message}");
+                    descriptors = Array.Empty<CameraParameterDescriptor>();
+                }
+
+                if (descriptors.Count > 0)
+                {
+                    var known = descriptors.Select(d => d.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                    var unknown = values.Keys.Where(k => !known.Contains(k)).ToList();
+                    if (unknown.Count > 0)
+                    {
+                        throw new ArgumentException(
+                            $"El dispositivo no acepta estos parámetros: {string.Join(", ", unknown)}.");
+                    }
+                }
+            }
+
+            var settings = CameraSettings.Parse(camera.SettingsJson) ?? new CameraSettings();
+            settings.DriverType = camera.DriverType;
+            settings.Values = values;
+            settings.UpdatedAt = DateTime.UtcNow.ToString("o", System.Globalization.CultureInfo.InvariantCulture);
+
+            var threshold = dto.NormalizeFocusThreshold();
+            if (threshold != null)
+                settings.FocusThreshold = threshold;
+
+            camera.SettingsJson = settings.ToJson();
+            await _db.SaveChangesAsync(ct);
+
+            // Se avisa al driver de inmediato. Importa sobre todo para la uEye, que
+            // mantiene la cámara abierta entre capturas: sin esto seguiría usando los
+            // valores anteriores hasta que algo más cerrara la sesión.
+            try
+            {
+                _cameraFactory.GetService(camera.DriverType)
+                    .ApplySettings(camera.LocalIdentifier, camera.SettingsJson);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[CameraCrud] No se pudo notificar la configuración al driver: {ex.Message}");
+            }
         }
     }
 }
