@@ -15,10 +15,35 @@ namespace GotsThorlabs.Services
             _db = db;
         }
 
-        public async Task<IEnumerable<GroupCalibration>> GetAllAsync(CancellationToken ct)
+        public async Task<IEnumerable<GroupCalibrationResponseDTO>> GetAllAsync(CancellationToken ct)
         {
-            return await _db.GroupCalibrations.AsNoTracking().ToListAsync(ct);
+            return await Project(_db.GroupCalibrations.AsNoTracking()).ToListAsync(ct);
         }
+
+        /// <summary>
+        /// Proyecta a DTO resolviendo los nombres en la misma consulta.
+        ///
+        /// Se usa Select y no Include porque solo hacen falta tres nombres: con Include,
+        /// EF trae las entidades completas de cámara, microscopio y objetivo por cada
+        /// grupo. Los navegadores se leen con ?. porque las claves foráneas de esta base
+        /// no siempre apuntan a un registro existente (los ids se escriben como texto);
+        /// un grupo con un id huérfano debe seguir listándose con el resto de sus datos
+        /// y el nombre en null, no desaparecer ni romper la consulta.
+        /// </summary>
+        private static IQueryable<GroupCalibrationResponseDTO> Project(IQueryable<GroupCalibration> query) =>
+            query.Select(g => new GroupCalibrationResponseDTO
+            {
+                GroupCailbrationId = g.GroupCailbrationId,
+                CameraId = g.CameraId,
+                MicroscopeId = g.MicroscopeId,
+                IncreaseId = g.IncreaseId,
+                Date = g.Date,
+                AditionalInfo = g.AditionalInfo,
+                CameraName = g.Camera != null ? g.Camera.Name : null,
+                MicroscopeName = g.Microscope != null ? g.Microscope.Name : null,
+                IncreaseName = g.Increase != null ? g.Increase.Name : null,
+                IncreaseValue = g.Increase != null ? g.Increase.Value : null
+            });
 
         public async Task<IEnumerable<GroupCalibration>> GetAllWithDetailsAsync(CancellationToken ct)
         {
@@ -34,9 +59,10 @@ namespace GotsThorlabs.Services
                 .ToListAsync(ct);
         }
 
-        public async Task<GroupCalibration?> GetByIdAsync(string id, CancellationToken ct)
+        public async Task<GroupCalibrationResponseDTO?> GetByIdAsync(string id, CancellationToken ct)
         {
-            return await _db.GroupCalibrations.AsNoTracking().FirstOrDefaultAsync(g => g.GroupCailbrationId == id, ct);
+            return await Project(_db.GroupCalibrations.AsNoTracking().Where(g => g.GroupCailbrationId == id))
+                .FirstOrDefaultAsync(ct);
         }
 
         public async Task<GroupCalibration> CreateAsync(GroupCalibrationDTO dto, CancellationToken ct)

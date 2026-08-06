@@ -115,6 +115,7 @@
                   <th class="text-right">Movimiento</th>
                   <th class="text-center">Aceptada</th>
                   <th class="text-center">Imágenes</th>
+                  <th class="text-center">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -141,6 +142,15 @@
                       @click="openImages(group, pic)"
                     >
                       Ver
+                    </button>
+                  </td>
+                  <td class="text-center">
+                    <button
+                      class="btn btn-xs btn-error btn-outline"
+                      :disabled="isDeleting"
+                      @click="askDelete(group, pic)"
+                    >
+                      Eliminar
                     </button>
                   </td>
                 </tr>
@@ -182,6 +192,61 @@
         </div>
       </template>
     </ImageViewerModal>
+
+    <!-- Confirmación de borrado.
+         El componente anterior eliminaba en el acto, sin preguntar. Una medición
+         borrada no se puede recuperar (habría que repetir la toma moviendo el motor),
+         y las filas de la tabla se parecen mucho entre sí: solo cambian el eje y el
+         número de pasos, así que equivocarse de fila es fácil. Por eso se confirma
+         mostrando de qué medición se trata. -->
+    <dialog ref="confirmDeleteRef" class="modal">
+      <div class="modal-box">
+        <h3 class="text-lg font-semibold text-gray-900">Eliminar medición</h3>
+        <p class="text-sm text-gray-600 mt-2">
+          Se eliminará esta medición de calibración de forma permanente:
+        </p>
+
+        <div v-if="pendingDelete" class="mt-3 rounded border border-gray-200 bg-gray-50 p-3 text-sm space-y-1">
+          <p>
+            <span class="text-gray-500">Eje:</span>
+            <span class="font-medium uppercase">
+              {{ pendingDelete.pic.axisMovementName || pendingDelete.pic.axeDirectionCalibration || '—' }}
+            </span>
+          </p>
+          <p>
+            <span class="text-gray-500">Pasos:</span>
+            <span class="font-medium">{{ pendingDelete.pic.numberOfSteps ?? pendingDelete.pic.movementValue ?? '—' }}</span>
+          </p>
+          <p>
+            <span class="text-gray-500">Desplazamiento:</span>
+            <span class="font-medium">
+              dx {{ formatNumber(pendingDelete.pic.dx) }}, dy {{ formatNumber(pendingDelete.pic.dy) }}
+            </span>
+          </p>
+          <p class="text-xs text-gray-500 pt-1">
+            {{ [pendingDelete.group.camera?.name, pendingDelete.group.microscope?.name, pendingDelete.group.increase?.name].filter(Boolean).join(' · ') }}
+          </p>
+        </div>
+
+        <p class="text-xs text-gray-500 mt-3">
+          Si esta medición se usó para calcular el grid de un recorrido, los recorridos
+          ya tomados no cambian; solo dejará de considerarse en los cálculos siguientes.
+        </p>
+
+        <div class="modal-action">
+          <button class="btn btn-ghost btn-sm" :disabled="isDeleting" @click="cancelDelete">
+            Cancelar
+          </button>
+          <button class="btn btn-error btn-sm" :disabled="isDeleting" @click="confirmDelete">
+            <span v-if="isDeleting" class="loading loading-spinner loading-xs"></span>
+            {{ isDeleting ? 'Eliminando...' : 'Eliminar' }}
+          </button>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>cerrar</button>
+      </form>
+    </dialog>
   </div>
 </template>
 
@@ -223,6 +288,10 @@ const viewerTitle = ref('Imágenes de calibración')
 const viewerSubtitle = ref('')
 const isLoadingImages = ref(false)
 const selectedPic = ref<any>(null)
+
+const confirmDeleteRef = ref<HTMLDialogElement | null>(null)
+const pendingDelete = ref<{ group: any; pic: any } | null>(null)
+const isDeleting = ref(false)
 
 // URLs de blob creadas para el visor; hay que liberarlas para no filtrar memoria.
 let objectUrls: string[] = []
@@ -358,6 +427,62 @@ const openImages = async (group: any, pic: any) => {
     }
   } finally {
     isLoadingImages.value = false
+  }
+}
+
+const askDelete = (group: any, pic: any) => {
+  pendingDelete.value = { group, pic }
+  confirmDeleteRef.value?.showModal()
+}
+
+const cancelDelete = () => {
+  confirmDeleteRef.value?.close()
+  pendingDelete.value = null
+}
+
+const confirmDelete = async () => {
+  const target = pendingDelete.value
+  if (!target) return
+
+  isDeleting.value = true
+  try {
+    await api.del(`/api/PicsCalibration/${target.pic.picsCalibrationId}`)
+
+    // Se quita del listado en memoria en lugar de recargar todo: un refetch
+    // reconstruye 'groups' y cerraría los grupos que el usuario tenga abiertos,
+    // perdiendo el sitio donde estaba mirando.
+    const group = groups.value.find((g) => g.groupCailbrationId === target.group.groupCailbrationId)
+    if (group) {
+      group.picsCalibrations = (group.picsCalibrations || [])
+        .filter((p: any) => p.picsCalibrationId !== target.pic.picsCalibrationId)
+    }
+
+    // Si el visor estaba mostrando justo esta medición, queda apuntando a algo que
+    // ya no existe: se cierra y se liberan sus blobs.
+    if (selectedPic.value?.picsCalibrationId === target.pic.picsCalibrationId) {
+      viewerRef.value?.close()
+      releaseObjectUrls()
+      viewerImages.value = []
+      selectedPic.value = null
+    }
+
+    confirmDeleteRef.value?.close()
+    pendingDelete.value = null
+
+    alertStore.NewAlert({
+      type: 'OK',
+      tittle: 'Éxito',
+      data: 'Medición de calibración eliminada'
+    })
+  } catch (error: any) {
+    console.error('Error al eliminar la medición de calibración:', error)
+    alertStore.NewAlert({
+      type: 'error',
+      tittle: 'Error',
+      data: error?.data || 'No se pudo eliminar la medición'
+    })
+  } finally {
+    isDeleting.value = false
   }
 }
 

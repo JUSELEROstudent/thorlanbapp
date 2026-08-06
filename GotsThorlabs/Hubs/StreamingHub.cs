@@ -164,7 +164,10 @@ namespace GotsThorlabs.Hubs
 
             ApplyCameraSettings(cameraService, resolved);
 
-            var threshold = ResolveFocusThreshold(resolved.SettingsJson);
+            // El criterio se lee una sola vez: deserializar settingsJson en cada cuadro
+            // costaría decenas de parseos por segundo para un valor que no cambia
+            // mientras dura el stream.
+            var criterion = FocusCriterion.FromSettings(resolved.SettingsJson);
 
             Console.WriteLine($"[StreamingHub] Stream con métricas iniciado — camera={cameraName ?? resolved.LocalIdentifier} driver={resolved.DriverType} connection={connectionId}");
 
@@ -179,13 +182,16 @@ namespace GotsThorlabs.Hubs
 
                         if (!image.Empty())
                         {
-                            var focus = FocusMetrics.VarianceOfLaplacian(image);
+                            var focus = FocusMetrics.Sharpness(image);
+                            var status = criterion.Evaluate(focus);
                             payload = new StreamFrameDTO
                             {
                                 Frame = image.ToBytes(),
                                 Focus = focus,
-                                FocusThreshold = threshold,
-                                IsFocusAcceptable = !threshold.HasValue || focus >= threshold.Value
+                                FocusThreshold = criterion.Threshold,
+                                FocusStatus = status,
+                                IsFocusAcceptable = status == FocusStatus.Acceptable,
+                                FocusMessage = criterion.DescribeFailure(focus)
                             };
                         }
                     }
@@ -265,20 +271,6 @@ namespace GotsThorlabs.Hubs
             }
         }
 
-        private static double? ResolveFocusThreshold(string? settingsJson)
-        {
-            var settings = CameraSettings.Parse(settingsJson);
-            if (settings == null || string.IsNullOrWhiteSpace(settings.FocusThreshold))
-                return null;
-
-            return double.TryParse(
-                settings.FocusThreshold,
-                System.Globalization.NumberStyles.Float,
-                System.Globalization.CultureInfo.InvariantCulture,
-                out var threshold)
-                ? threshold
-                : null;
-        }
     }
 
     public class UpdateStatus : Hub

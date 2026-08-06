@@ -114,7 +114,7 @@ namespace GotsThorlabs.Services
             int[]? magnitudes,
             int repetitions)
         {
-            var calibrationSteps = magnitudes ??  new[] { 0, 1, 10, 100,1000 };
+            var calibrationSteps = magnitudes ??  new[] { 0, 1, 10, 100, 1000 };
             var results = new List<PicsCalibration>();
 
             var device = KCubeInertialMotor.CreateKCubeInertialMotor(kimDeviceId);

@@ -20,14 +20,21 @@ const maxPerPair = capturesStore.maxPerPair;
 // muestra también el mejor valor visto en la sesión como referencia.
 const focusScore = ref<number | null>(null);
 const focusThreshold = ref<number | null>(null);
-const isFocusAcceptable = ref<boolean>(true);
+const focusStatus = ref<FocusStatus>('Unknown');
+const focusMessage = ref<string | null>(null);
 const bestFocusSeen = ref<number>(0);
+
+// El servidor manda tres estados y no un booleano: 'Unknown' significa que esta
+// cámara no tiene umbral calibrado (o que el guardado quedó obsoleto), y eso no es
+// lo mismo que estar desenfocada. Pintarlo como error diría algo que no se sabe.
+type FocusStatus = 'Unknown' | 'Insufficient' | 'Acceptable';
 
 interface StreamFrame {
   frame: string;
   focus: number;
   focusThreshold: number | null;
-  isFocusAcceptable: boolean;
+  focusStatus: FocusStatus;
+  focusMessage: string | null;
 }
 
 let streamSubscription: signalR.ISubscription<StreamFrame> | null = null;
@@ -37,10 +44,30 @@ const focusPercent = computed(() => {
   return Math.min(100, Math.round((focusScore.value / bestFocusSeen.value) * 100));
 });
 
+/** Gris cuando no hay veredicto, para no afirmar ni que está bien ni que está mal. */
+const focusBadgeClass = computed(() => ({
+  Acceptable: 'badge-success',
+  Insufficient: 'badge-error',
+  Unknown: 'badge-ghost'
+}[focusStatus.value]));
+
+const focusBarClass = computed(() => ({
+  Acceptable: 'progress-success',
+  Insufficient: 'progress-error',
+  Unknown: 'progress-info'
+}[focusStatus.value]));
+
+const focusLabel = computed(() => ({
+  Acceptable: 'Enfocada',
+  Insufficient: 'Desenfocada',
+  Unknown: 'Sin calibrar'
+}[focusStatus.value]));
+
 const resetFocus = () => {
   focusScore.value = null;
   focusThreshold.value = null;
-  isFocusAcceptable.value = true;
+  focusStatus.value = 'Unknown';
+  focusMessage.value = null;
   bestFocusSeen.value = 0;
 };
 
@@ -99,7 +126,8 @@ const startStream = async () => {
           lastFrameUrl.value = `data:image/png;base64,${item.frame}`;
           focusScore.value = item.focus;
           focusThreshold.value = item.focusThreshold ?? null;
-          isFocusAcceptable.value = item.isFocusAcceptable;
+          focusStatus.value = item.focusStatus ?? 'Unknown';
+          focusMessage.value = item.focusMessage ?? null;
           if (item.focus > bestFocusSeen.value) bestFocusSeen.value = item.focus;
         },
         complete: () => {
@@ -276,28 +304,30 @@ onBeforeUnmount(async () => {
             <span class="text-sm font-medium">Nitidez</span>
             <div class="flex items-center gap-2">
               <span class="font-mono text-sm">{{ focusScore.toFixed(1) }}</span>
-              <span
-                v-if="focusThreshold !== null"
-                class="badge badge-xs"
-                :class="isFocusAcceptable ? 'badge-success' : 'badge-error'"
-              >
-                {{ isFocusAcceptable ? 'Enfocada' : 'Desenfocada' }}
+              <span class="badge badge-xs" :class="focusBadgeClass">
+                {{ focusLabel }}
               </span>
             </div>
           </div>
 
           <progress
             class="progress w-full"
-            :class="isFocusAcceptable ? 'progress-success' : 'progress-error'"
+            :class="focusBarClass"
             :value="focusPercent"
             max="100"
           ></progress>
 
           <p class="text-xs text-gray-500">
             Máximo visto en esta sesión: {{ bestFocusSeen.toFixed(1) }}.
-            <span v-if="focusThreshold !== null"> Umbral configurado: {{ focusThreshold.toFixed(1) }}.</span>
-            <span v-else> Sin umbral definido para esta cámara.</span>
+            <span v-if="focusThreshold !== null"> Umbral calibrado: {{ focusThreshold.toFixed(1) }}.</span>
             La barra es relativa al máximo visto, no una escala absoluta.
+          </p>
+
+          <!-- Explica POR QUÉ no hay veredicto (sin calibrar, métrica obsoleta o
+               configuración cambiada). En gris y no en rojo: no es un fallo, es una
+               calibración pendiente. -->
+          <p v-if="focusMessage" class="text-xs" :class="focusStatus === 'Insufficient' ? 'text-red-600' : 'text-gray-500'">
+            {{ focusMessage }}
           </p>
         </div>
 

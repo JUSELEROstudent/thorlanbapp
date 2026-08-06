@@ -24,11 +24,30 @@ namespace GotsThorlabs.Models
         public string? UpdatedAt { get; set; }
 
         /// <summary>
-        /// Umbral de nitidez (varianza del Laplaciano) por debajo del cual se advierte
-        /// al usuario antes de lanzar una calibración. Se guarda por cámara porque la
-        /// escala depende del montaje óptico y no tiene un valor universal.
+        /// Umbral de nitidez por debajo del cual se advierte al usuario antes de lanzar
+        /// una calibración. Se guarda por cámara porque la escala depende del montaje
+        /// óptico y no tiene un valor universal; se obtiene midiendo la muestra enfocada
+        /// (POST /api/Focus/learn-threshold) en lugar de fijarse a ojo.
         /// </summary>
         public string? FocusThreshold { get; set; }
+
+        /// <summary>
+        /// Versión de la fórmula con la que se midió FocusThreshold (FocusMetrics.MetricVersion).
+        /// Sin esto no habría forma de distinguir un umbral medido con el cálculo actual de
+        /// uno heredado en otra escala, y el veredicto de nitidez sería falso sin avisar.
+        /// </summary>
+        public string? FocusMetricVersion { get; set; }
+
+        /// <summary>
+        /// Huella de los parámetros de captura vigentes cuando se aprendió FocusThreshold.
+        ///
+        /// La medida de nitidez sube con el ruido del sensor, así que un umbral aprendido
+        /// con una ganancia y una exposición concretas solo es válido con esas mismas: al
+        /// subir la ganancia, una muestra desenfocada puede superar el umbral por puro
+        /// ruido. Comparando esta huella con la actual, un cambio de configuración marca el
+        /// umbral como no calibrado en vez de dejarlo aprobando imágenes que no debería.
+        /// </summary>
+        public string? FocusSettingsFingerprint { get; set; }
 
         public Dictionary<string, string> Values { get; set; } = new();
 

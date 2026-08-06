@@ -1,0 +1,542 @@
+{
+  ".claude/settings.local.json": {
+    "mtime": 1783199983.2368937,
+    "ast_hash": "432a7eba097d1a91dcf8b7f707506e28",
+    "semantic_hash": "432a7eba097d1a91dcf8b7f707506e28"
+  },
+  ".config/dotnet-tools.json": {
+    "mtime": 1746308461.8800166,
+    "ast_hash": "4e5299b754f86e5d8405d2ffe6383d1e",
+    "semantic_hash": "4e5299b754f86e5d8405d2ffe6383d1e"
+  },
+  "BLL/CollageGestor.cs": {
+    "mtime": 1758768820.8758361,
+    "ast_hash": "fd89e6f3adc85cf90e2d5884f65f7ad9",
+    "semantic_hash": "fd89e6f3adc85cf90e2d5884f65f7ad9"
+  },
+  "BLL/Configuration/ConfigurationService.cs": {
+    "mtime": 1758768943.7873483,
+    "ast_hash": "b98bc1ff10737e1b58080c0a78e80908",
+    "semantic_hash": "b98bc1ff10737e1b58080c0a78e80908"
+  },
+  "BLL/Configuration/IConfigurationService.cs": {
+    "mtime": 1757384766.7732513,
+    "ast_hash": "02bd2cd07910b937d811468d5b826ee4",
+    "semantic_hash": "02bd2cd07910b937d811468d5b826ee4"
+  },
+  "BLL/FocusMetrics.cs": {
+    "mtime": 1785103412.833867,
+    "ast_hash": "bc3ec3c8ed5744f23b082345063d2b3c",
+    "semantic_hash": "bc3ec3c8ed5744f23b082345063d2b3c"
+  },
+  "BLL/MosaicGridCalculator.cs": {
+    "mtime": 1784938822.6270676,
+    "ast_hash": "e2d952a0b6d66e819b2d893987f60d0b",
+    "semantic_hash": "e2d952a0b6d66e819b2d893987f60d0b"
+  },
+  "BLL/ProcessTourData.cs": {
+    "mtime": 1758855084.629126,
+    "ast_hash": "bebc5da45a16248c3ead4088a2145e8b",
+    "semantic_hash": "bebc5da45a16248c3ead4088a2145e8b"
+  },
+  "BLL/TakeTour.cs": {
+    "mtime": 1785103413.1747873,
+    "ast_hash": "c1da77cbbaca70b662de275396343aa2",
+    "semantic_hash": "c1da77cbbaca70b662de275396343aa2"
+  },
+  "BLL/Tim101_4_ch_inertial_motor.cs": {
+    "mtime": 1782874951.481723,
+    "ast_hash": "5f1b404515ad0c313c08ae758ec88cca",
+    "semantic_hash": "5f1b404515ad0c313c08ae758ec88cca"
+  },
+  "BLL/Utilities.cs": {
+    "mtime": 1746308461.8800166,
+    "ast_hash": "7272bbea749f8fa53d76f83b85c7a1bc",
+    "semantic_hash": "7272bbea749f8fa53d76f83b85c7a1bc"
+  },
+  "BLL/emgu.cs": {
+    "mtime": 1746308461.8800166,
+    "ast_hash": "83e7d92d749b6c73a09fefc3e3802df0",
+    "semantic_hash": "83e7d92d749b6c73a09fefc3e3802df0"
+  },
+  "Controls/CameraController.cs": {
+    "mtime": 1785103421.1747954,
+    "ast_hash": "2313ad0b3025b9cb76e5e81a0818d237",
+    "semantic_hash": "2313ad0b3025b9cb76e5e81a0818d237"
+  },
+  "Controls/FocusController.cs": {
+    "mtime": 1785103421.5747242,
+    "ast_hash": "0e1ebc5603ff8a98697cc2d3813b6c35",
+    "semantic_hash": "0e1ebc5603ff8a98697cc2d3813b6c35"
+  },
+  "Controls/GroupCalibrationController.cs": {
+    "mtime": 1785103421.916674,
+    "ast_hash": "ef3531a6cf37187d4227f4001de1ff52",
+    "semantic_hash": "ef3531a6cf37187d4227f4001de1ff52"
+  },
+  "Controls/IncreaseController.cs": {
+    "mtime": 1781307953.2198963,
+    "ast_hash": "bd7b5114664e77b63e38819c73b684d8",
+    "semantic_hash": "bd7b5114664e77b63e38819c73b684d8"
+  },
+  "Controls/LoginController.cs": {
+    "mtime": 1781300058.4734254,
+    "ast_hash": "5d2eb0bfb21e65f297509ebe7fea83ec",
+    "semantic_hash": "5d2eb0bfb21e65f297509ebe7fea83ec"
+  },
+  "Controls/MicroscopeController.cs": {
+    "mtime": 1781307956.4311237,
+    "ast_hash": "5c3c67d69b6c552e70129d0d7107b6e0",
+    "semantic_hash": "5c3c67d69b6c552e70129d0d7107b6e0"
+  },
+  "Controls/PhaseCorrelationCalibrationController.cs": {
+    "mtime": 1781300039.2684896,
+    "ast_hash": "694c2ec13ea25d7230309d1ccde791fb",
+    "semantic_hash": "694c2ec13ea25d7230309d1ccde791fb"
+  },
+  "Controls/PicsCalibrationController.cs": {
+    "mtime": 1785092498.4202397,
+    "ast_hash": "fe82dd42a4d35a9fbe5b3da63cc452da",
+    "semantic_hash": "fe82dd42a4d35a9fbe5b3da63cc452da"
+  },
+  "Controls/TokenGenerator.cs": {
+    "mtime": 1746308006.676706,
+    "ast_hash": "e1f883af0e9a4f89ee5fadc4df908e0f",
+    "semantic_hash": "e1f883af0e9a4f89ee5fadc4df908e0f"
+  },
+  "Controls/TokenValidationHandler.cs": {
+    "mtime": 1746308461.8859167,
+    "ast_hash": "be3cc329f8ed5505ef2852269831dec9",
+    "semantic_hash": "be3cc329f8ed5505ef2852269831dec9"
+  },
+  "Controls/TourController.cs": {
+    "mtime": 1781300358.3553598,
+    "ast_hash": "a31f1a508c049b6cbc69327edf7363f9",
+    "semantic_hash": "a31f1a508c049b6cbc69327edf7363f9"
+  },
+  "Controls/UEyeController.cs": {
+    "mtime": 1751839720.259431,
+    "ast_hash": "851e94cddaaa837baf87ea1a73351fa4",
+    "semantic_hash": "851e94cddaaa837baf87ea1a73351fa4"
+  },
+  "Database/EntityRepo/Entities/Camera.cs": {
+    "mtime": 1785103422.6255355,
+    "ast_hash": "baffdb74693590ad077913729e855551",
+    "semantic_hash": "baffdb74693590ad077913729e855551"
+  },
+  "Database/EntityRepo/Entities/GroupCalibration.cs": {
+    "mtime": 1781307554.2920864,
+    "ast_hash": "5982498d13e2c05d85d547d849ff1ba9",
+    "semantic_hash": "5982498d13e2c05d85d547d849ff1ba9"
+  },
+  "Database/EntityRepo/Entities/Image.cs": {
+    "mtime": 1781307554.2930918,
+    "ast_hash": "f5daced5c4fa549ca12b92bcc4fc3340",
+    "semantic_hash": "f5daced5c4fa549ca12b92bcc4fc3340"
+  },
+  "Database/EntityRepo/Entities/Increase.cs": {
+    "mtime": 1781307554.2940903,
+    "ast_hash": "4afde293ca82b6db77ca3e0760ef6864",
+    "semantic_hash": "4afde293ca82b6db77ca3e0760ef6864"
+  },
+  "Database/EntityRepo/Entities/Microscope.cs": {
+    "mtime": 1781307554.295089,
+    "ast_hash": "ba83a0862034391ccfda78d166ad1366",
+    "semantic_hash": "ba83a0862034391ccfda78d166ad1366"
+  },
+  "Database/EntityRepo/Entities/PicsCalibration.cs": {
+    "mtime": 1781307554.2960875,
+    "ast_hash": "e4978c425f85f0784206f066ddc5edd0",
+    "semantic_hash": "e4978c425f85f0784206f066ddc5edd0"
+  },
+  "Database/EntityRepo/Entities/Tour.cs": {
+    "mtime": 1781307554.2980876,
+    "ast_hash": "9d28d75aa41c245f1560d92ca5e35722",
+    "semantic_hash": "9d28d75aa41c245f1560d92ca5e35722"
+  },
+  "Database/EntityRepo/Entities/User.cs": {
+    "mtime": 1781307554.2990897,
+    "ast_hash": "ff6d7322169c4b3888efa71d7563761b",
+    "semantic_hash": "ff6d7322169c4b3888efa71d7563761b"
+  },
+  "Database/EntityRepo/ThorlabsDbContext.cs": {
+    "mtime": 1785103423.0506783,
+    "ast_hash": "3bb356f91d9135c82cdf6fb57effafcf",
+    "semantic_hash": "3bb356f91d9135c82cdf6fb57effafcf"
+  },
+  "Database/EntityRepo/ThorlabsDbContextFactory.cs": {
+    "mtime": 1760671702.7236397,
+    "ast_hash": "16c6e90252f34e6153d863f0c932a256",
+    "semantic_hash": "16c6e90252f34e6153d863f0c932a256"
+  },
+  "GotsThorlabs.csproj": {
+    "mtime": 1779375444.8181636,
+    "ast_hash": "12954913ca11e1fb149946cf5b5d4780",
+    "semantic_hash": "12954913ca11e1fb149946cf5b5d4780"
+  },
+  "GotsThorlabs.sln": {
+    "mtime": 1770767399.4260087,
+    "ast_hash": "3fc63615726081b9ee0041ada3e9877f",
+    "semantic_hash": "3fc63615726081b9ee0041ada3e9877f"
+  },
+  "Hubs/ChatHub.cs": {
+    "mtime": 1746308006.678705,
+    "ast_hash": "8e623dadfd4abaec62f0486e5b03356d",
+    "semantic_hash": "8e623dadfd4abaec62f0486e5b03356d"
+  },
+  "Hubs/StreamingHub.cs": {
+    "mtime": 1785103422.261578,
+    "ast_hash": "d634cfd074f4d3b14137ad315af47f2b",
+    "semantic_hash": "d634cfd074f4d3b14137ad315af47f2b"
+  },
+  "Interfaces/IAuthService.cs": {
+    "mtime": 1781299819.102798,
+    "ast_hash": "7afc2fedffe1b1cba448da0cf78e2cd8",
+    "semantic_hash": "7afc2fedffe1b1cba448da0cf78e2cd8"
+  },
+  "Interfaces/ICameraCrudService.cs": {
+    "mtime": 1785103416.6043706,
+    "ast_hash": "c7a515b18732cc071364dd3d40eeed68",
+    "semantic_hash": "c7a515b18732cc071364dd3d40eeed68"
+  },
+  "Interfaces/ICameraDiscoveryService.cs": {
+    "mtime": 1779306060.1678586,
+    "ast_hash": "f6031d530193c0236c15e97d4ce6f8bd",
+    "semantic_hash": "f6031d530193c0236c15e97d4ce6f8bd"
+  },
+  "Interfaces/ICameraParameterProvider.cs": {
+    "mtime": 1785103415.822935,
+    "ast_hash": "9ac2bddd8b157008ea8353092c539f44",
+    "semantic_hash": "9ac2bddd8b157008ea8353092c539f44"
+  },
+  "Interfaces/ICameraService.cs": {
+    "mtime": 1785103415.3769393,
+    "ast_hash": "dc28db069765b84970d227311076f2d9",
+    "semantic_hash": "dc28db069765b84970d227311076f2d9"
+  },
+  "Interfaces/IConnectionSql.cs": {
+    "mtime": 1746308461.889481,
+    "ast_hash": "02ba55a19c4fe6ecba3f879dc7a8c2ba",
+    "semantic_hash": "02ba55a19c4fe6ecba3f879dc7a8c2ba"
+  },
+  "Interfaces/IFocusService.cs": {
+    "mtime": 1785103416.2064216,
+    "ast_hash": "ec759b93d563064a2eac652f025e15f4",
+    "semantic_hash": "ec759b93d563064a2eac652f025e15f4"
+  },
+  "Interfaces/IGroupCalibrationService.cs": {
+    "mtime": 1785103417.4502258,
+    "ast_hash": "902a4c378263ce3ef3a2ee1630041cc3",
+    "semantic_hash": "902a4c378263ce3ef3a2ee1630041cc3"
+  },
+  "Interfaces/IIncreaseService.cs": {
+    "mtime": 1781307701.5167327,
+    "ast_hash": "7837360d621af8d037cc1fdd8dc980ad",
+    "semantic_hash": "7837360d621af8d037cc1fdd8dc980ad"
+  },
+  "Interfaces/IMakeAnStitching.cs": {
+    "mtime": 1746308461.8907104,
+    "ast_hash": "53e2fa263c97bf73c5c7ef7e28745af3",
+    "semantic_hash": "53e2fa263c97bf73c5c7ef7e28745af3"
+  },
+  "Interfaces/IMicroscopeService.cs": {
+    "mtime": 1781307702.434742,
+    "ast_hash": "61c17a0a633b2f2578c6481004bd744a",
+    "semantic_hash": "61c17a0a633b2f2578c6481004bd744a"
+  },
+  "Interfaces/IPhaseCorrelationService.cs": {
+    "mtime": 1781299804.5498343,
+    "ast_hash": "17c61a5ea73cd933743ece93d71b2ca7",
+    "semantic_hash": "17c61a5ea73cd933743ece93d71b2ca7"
+  },
+  "Interfaces/IPicsCalibrationService.cs": {
+    "mtime": 1785092497.6637156,
+    "ast_hash": "dd0e6a61c291081d351dd0227c394297",
+    "semantic_hash": "dd0e6a61c291081d351dd0227c394297"
+  },
+  "Interfaces/ITakeTour.cs": {
+    "mtime": 1782874346.4361713,
+    "ast_hash": "b1388c3db4eee234a274049f065ff603",
+    "semantic_hash": "b1388c3db4eee234a274049f065ff603"
+  },
+  "Interfaces/ITourCrudService.cs": {
+    "mtime": 1781307704.463764,
+    "ast_hash": "2551f241534578d4bb73e08b7ad73cbf",
+    "semantic_hash": "2551f241534578d4bb73e08b7ad73cbf"
+  },
+  "MIddleware/TokenValidatorMiddleware.cs": {
+    "mtime": 1746308006.6802807,
+    "ast_hash": "452c55c2ea9aa6d5403d1580f7d0d84f",
+    "semantic_hash": "452c55c2ea9aa6d5403d1580f7d0d84f"
+  },
+  "Migrations/20251017034003_AddCalibrationTables.Designer.cs": {
+    "mtime": 1760672403.2018163,
+    "ast_hash": "1c83046000ee3f58fd1a26d8ba6f9d11",
+    "semantic_hash": "1c83046000ee3f58fd1a26d8ba6f9d11"
+  },
+  "Migrations/20251017034003_AddCalibrationTables.cs": {
+    "mtime": 1760672403.2008212,
+    "ast_hash": "7d9dee5cdd9231008df2015aaba75094",
+    "semantic_hash": "7d9dee5cdd9231008df2015aaba75094"
+  },
+  "Migrations/20260517120000_AddCameraDriverType.Designer.cs": {
+    "mtime": 1779038052.259276,
+    "ast_hash": "459f6b756c49caa1095b6c1fe9dc74ba",
+    "semantic_hash": "459f6b756c49caa1095b6c1fe9dc74ba"
+  },
+  "Migrations/20260517120000_AddCameraDriverType.cs": {
+    "mtime": 1779038240.155096,
+    "ast_hash": "5d1fb89d521a20a64f8eff65f8df2ae5",
+    "semantic_hash": "5d1fb89d521a20a64f8eff65f8df2ae5"
+  },
+  "Migrations/20260726190000_AddCameraSettingsJson.Designer.cs": {
+    "mtime": 1785103423.817422,
+    "ast_hash": "641c6f9246c11819cb84df4b264f5e8d",
+    "semantic_hash": "641c6f9246c11819cb84df4b264f5e8d"
+  },
+  "Migrations/20260726190000_AddCameraSettingsJson.cs": {
+    "mtime": 1785103423.4476676,
+    "ast_hash": "d3c186a8888c266da147220866117cdc",
+    "semantic_hash": "d3c186a8888c266da147220866117cdc"
+  },
+  "Migrations/ThorlabsDbContextModelSnapshot.cs": {
+    "mtime": 1785103424.1681986,
+    "ast_hash": "82c211e75b8811527aca891c5f835be3",
+    "semantic_hash": "82c211e75b8811527aca891c5f835be3"
+  },
+  "Models/AuthDTO.cs": {
+    "mtime": 1781299720.8841374,
+    "ast_hash": "310a10fb315c3edf6fa4aeb7d4acb16a",
+    "semantic_hash": "310a10fb315c3edf6fa4aeb7d4acb16a"
+  },
+  "Models/CameraDTO.cs": {
+    "mtime": 1785103415.0267458,
+    "ast_hash": "e88b80db3cc85f5c978d2f90c263ba13",
+    "semantic_hash": "e88b80db3cc85f5c978d2f90c263ba13"
+  },
+  "Models/CameraParameterDescriptor.cs": {
+    "mtime": 1785103413.5115836,
+    "ast_hash": "1a9bd189a8aad893ac9e5a64b88b7f21",
+    "semantic_hash": "1a9bd189a8aad893ac9e5a64b88b7f21"
+  },
+  "Models/CameraParametersDTO.cs": {
+    "mtime": 1785103414.2950504,
+    "ast_hash": "ca5aa31e20bbec8fa117b575f75445a0",
+    "semantic_hash": "ca5aa31e20bbec8fa117b575f75445a0"
+  },
+  "Models/CameraSettings.cs": {
+    "mtime": 1785103413.9159377,
+    "ast_hash": "506dd4e93daf212701af312413656673",
+    "semantic_hash": "506dd4e93daf212701af312413656673"
+  },
+  "Models/Configuration/ConfigurationDTO.cs": {
+    "mtime": 1757384493.1190429,
+    "ast_hash": "f128cb0b944ce30d5756d24674b10c29",
+    "semantic_hash": "f128cb0b944ce30d5756d24674b10c29"
+  },
+  "Models/DeviceInfo.cs": {
+    "mtime": 1779306052.106255,
+    "ast_hash": "8658bdf959ad554476f82fd0047be4a8",
+    "semantic_hash": "8658bdf959ad554476f82fd0047be4a8"
+  },
+  "Models/GroupCalibrationDTO.cs": {
+    "mtime": 1781307685.1132255,
+    "ast_hash": "deffb8bd2fe9146e51576a355209197d",
+    "semantic_hash": "deffb8bd2fe9146e51576a355209197d"
+  },
+  "Models/Image.cs": {
+    "mtime": 1746308461.8907104,
+    "ast_hash": "96a94d09eec65c237449b0d8eb2e6a7c",
+    "semantic_hash": "96a94d09eec65c237449b0d8eb2e6a7c"
+  },
+  "Models/IncreaseDTO.cs": {
+    "mtime": 1784673403.385172,
+    "ast_hash": "0a3bf0b40ae9262b04081f94c23d5b94",
+    "semantic_hash": "0a3bf0b40ae9262b04081f94c23d5b94"
+  },
+  "Models/LenientStringJsonConverter.cs": {
+    "mtime": 1784673403.821984,
+    "ast_hash": "7c6b60a123e5888b6332a80b323e89ee",
+    "semantic_hash": "7c6b60a123e5888b6332a80b323e89ee"
+  },
+  "Models/MicroscopeDTO.cs": {
+    "mtime": 1781307686.7089698,
+    "ast_hash": "888ecad4b2b3eb42aea32027186b5c55",
+    "semantic_hash": "888ecad4b2b3eb42aea32027186b5c55"
+  },
+  "Models/PhaseCorrelationResultDTO.cs": {
+    "mtime": 1781299729.3094385,
+    "ast_hash": "be36acc695cabb5f70c21f638c781fe4",
+    "semantic_hash": "be36acc695cabb5f70c21f638c781fe4"
+  },
+  "Models/PicsCalibrationDTO.cs": {
+    "mtime": 1781307935.995478,
+    "ast_hash": "f7a4d7b8fcc73ebd140f78bb6df6fa1f",
+    "semantic_hash": "f7a4d7b8fcc73ebd140f78bb6df6fa1f"
+  },
+  "Models/PicsCalibrationUploadDTO.cs": {
+    "mtime": 1781364478.5989072,
+    "ast_hash": "5406d5f5d4ef1916bd34c2ea2ed436d1",
+    "semantic_hash": "5406d5f5d4ef1916bd34c2ea2ed436d1"
+  },
+  "Models/Stitching.cs": {
+    "mtime": 1746308461.8925405,
+    "ast_hash": "cf635fb3200e806094080211b44de427",
+    "semantic_hash": "cf635fb3200e806094080211b44de427"
+  },
+  "Models/StreamFrameDTO.cs": {
+    "mtime": 1785103414.6844738,
+    "ast_hash": "c4a1ef05cb48d9f79a75d3a300516495",
+    "semantic_hash": "c4a1ef05cb48d9f79a75d3a300516495"
+  },
+  "Models/Tour.cs": {
+    "mtime": 1781305063.4810495,
+    "ast_hash": "99255bc964da1f998460f4b5451dbed3",
+    "semantic_hash": "99255bc964da1f998460f4b5451dbed3"
+  },
+  "Models/TourDTO.cs": {
+    "mtime": 1781307691.2452428,
+    "ast_hash": "a6c1bc10d9e4e488ce03c24497a01e6e",
+    "semantic_hash": "a6c1bc10d9e4e488ce03c24497a01e6e"
+  },
+  "NodesApi/NodeGenerics.cs": {
+    "mtime": 1746308006.6802807,
+    "ast_hash": "c5c5e87b83d67fefa7d22b5d7fc6bef2",
+    "semantic_hash": "c5c5e87b83d67fefa7d22b5d7fc6bef2"
+  },
+  "NodesApi/NodeHomepage.cs": {
+    "mtime": 1781305063.486057,
+    "ast_hash": "92926be93a80d7f683b5964b217c64da",
+    "semantic_hash": "92926be93a80d7f683b5964b217c64da"
+  },
+  "NodesApi/NodeLogin.cs": {
+    "mtime": 1781300072.881874,
+    "ast_hash": "e03620be3e57d91ea2b652cbf4af720f",
+    "semantic_hash": "e03620be3e57d91ea2b652cbf4af720f"
+  },
+  "NodesApi/NodeMapping.cs": {
+    "mtime": 1784511827.371137,
+    "ast_hash": "ceeeb6edb5d93162ed7804e91e9e3574",
+    "semantic_hash": "ceeeb6edb5d93162ed7804e91e9e3574"
+  },
+  "Program.cs": {
+    "mtime": 1785103424.5262947,
+    "ast_hash": "0b846d590e95240b9818f37402ee9192",
+    "semantic_hash": "0b846d590e95240b9818f37402ee9192"
+  },
+  "Services/AuthService.cs": {
+    "mtime": 1781299971.7461483,
+    "ast_hash": "4a26535e98e09e245796557aa798fa29",
+    "semantic_hash": "4a26535e98e09e245796557aa798fa29"
+  },
+  "Services/CameraCrudService.cs": {
+    "mtime": 1785103419.3770168,
+    "ast_hash": "9986cb45b77e8be7500fec4fe0829a0b",
+    "semantic_hash": "9986cb45b77e8be7500fec4fe0829a0b"
+  },
+  "Services/CameraManager.cs": {
+    "mtime": 1751839664.8291101,
+    "ast_hash": "24a7f68b647fc09b094b6cfd8fe0eb83",
+    "semantic_hash": "24a7f68b647fc09b094b6cfd8fe0eb83"
+  },
+  "Services/CameraServiceFactory.cs": {
+    "mtime": 1785103418.9540255,
+    "ast_hash": "b78433240831527af359510e762a4ac6",
+    "semantic_hash": "b78433240831527af359510e762a4ac6"
+  },
+  "Services/ConnectionSql.cs": {
+    "mtime": 1746308461.8955915,
+    "ast_hash": "d2e76e6ac9f4df4e3643fcc9d89c61fc",
+    "semantic_hash": "d2e76e6ac9f4df4e3643fcc9d89c61fc"
+  },
+  "Services/ConnectionSqlite.cs": {
+    "mtime": 1746308461.8955915,
+    "ast_hash": "4ee7fc65dc609a210b4c8645db917670",
+    "semantic_hash": "4ee7fc65dc609a210b4c8645db917670"
+  },
+  "Services/FocusService.cs": {
+    "mtime": 1785103419.9884322,
+    "ast_hash": "01bc302ee0e66d18783d4f2543fd0108",
+    "semantic_hash": "01bc302ee0e66d18783d4f2543fd0108"
+  },
+  "Services/GroupCalibrationService.cs": {
+    "mtime": 1785103420.392088,
+    "ast_hash": "301e7ae23f6582d773e643f63e656cc2",
+    "semantic_hash": "301e7ae23f6582d773e643f63e656cc2"
+  },
+  "Services/IdsPeakCameraService.cs": {
+    "mtime": 1785103418.5465574,
+    "ast_hash": "64b235f452772189286c6faf9652043f",
+    "semantic_hash": "64b235f452772189286c6faf9652043f"
+  },
+  "Services/IdsUEyeCameraService.cs": {
+    "mtime": 1785103418.219079,
+    "ast_hash": "064a8ca07ac3843287c51a80e7113a9a",
+    "semantic_hash": "064a8ca07ac3843287c51a80e7113a9a"
+  },
+  "Services/IncreaseService.cs": {
+    "mtime": 1781307723.009722,
+    "ast_hash": "2fde3cc94a36c697934fdaaafb5fe347",
+    "semantic_hash": "2fde3cc94a36c697934fdaaafb5fe347"
+  },
+  "Services/MicroscopeService.cs": {
+    "mtime": 1781307725.9029088,
+    "ast_hash": "9b150cd80c7b74919bf19b71572e7715",
+    "semantic_hash": "9b150cd80c7b74919bf19b71572e7715"
+  },
+  "Services/PhaseCorrelationService.cs": {
+    "mtime": 1781299923.3932202,
+    "ast_hash": "bd39c02bc3988e93112e7770a4b6ca1c",
+    "semantic_hash": "bd39c02bc3988e93112e7770a4b6ca1c"
+  },
+  "Services/PicsCalibrationService.cs": {
+    "mtime": 1785104250.0364244,
+    "ast_hash": "a636f63883d72f68c827bbf77a13ac0f",
+    "semantic_hash": "a636f63883d72f68c827bbf77a13ac0f"
+  },
+  "Services/TourCrudService.cs": {
+    "mtime": 1784671324.355116,
+    "ast_hash": "8df07977693040f26adba77f78f7d4fe",
+    "semantic_hash": "8df07977693040f26adba77f78f7d4fe"
+  },
+  "Services/VideoCaptureCameraService.cs": {
+    "mtime": 1785103417.8149526,
+    "ast_hash": "76a96e8d16033c621c661de80c9fcf68",
+    "semantic_hash": "76a96e8d16033c621c661de80c9fcf68"
+  },
+  "appsettings.Development.json": {
+    "mtime": 1746308006.6838746,
+    "ast_hash": "804b473502a4c415cf75db61c56c32aa",
+    "semantic_hash": "804b473502a4c415cf75db61c56c32aa"
+  },
+  "appsettings.json": {
+    "mtime": 1779400579.600391,
+    "ast_hash": "c52f31181ed0161f2bb25e598e1a9e4c",
+    "semantic_hash": "c52f31181ed0161f2bb25e598e1a9e4c"
+  },
+  ".github/copilot-instructions.md": {
+    "mtime": 1779037629.3503447,
+    "ast_hash": "d1166292cd4a78c998e7096499582da0",
+    "semantic_hash": "d1166292cd4a78c998e7096499582da0"
+  },
+  "Database/EntityRepo/Readme.md": {
+    "mtime": 1775327037.4189157,
+    "ast_hash": "53c6aaa606301101b8f725a62698e90b",
+    "semantic_hash": "53c6aaa606301101b8f725a62698e90b"
+  },
+  "Database/ThorlabsApp.txt": {
+    "mtime": 1746308461.8870263,
+    "ast_hash": "5bc3adccb3ae34768d251533d951c825",
+    "semantic_hash": "5bc3adccb3ae34768d251533d951c825"
+  },
+  "Readme.md": {
+    "mtime": 1779037015.3562527,
+    "ast_hash": "e9186436dab460c25c301b4d8653163b",
+    "semantic_hash": "e9186436dab460c25c301b4d8653163b"
+  },
+  "entity-sqlite.md": {
+    "mtime": 1779037670.3561783,
+    "ast_hash": "10865d7b2716097dcf8e91824cd2e7c9",
+    "semantic_hash": "10865d7b2716097dcf8e91824cd2e7c9"
+  }
+}

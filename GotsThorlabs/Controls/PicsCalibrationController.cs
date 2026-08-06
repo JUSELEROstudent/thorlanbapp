@@ -106,7 +106,7 @@ namespace GotsThorlabs.Controls
             // magnitudes: lista de pasos separados por coma, admite negativos, p. ej.
             // "-1000,-100,-10,-1,1,10,100,1000". Si se omite, el servicio usa el valor
             // histórico (0, 1, 10, 100, 1000, solo avance).
-            int[]? parsedMagnitudes = null;
+            int[]? parsedMagnitudes = new[] { -1000, -100, -10, -1, 1, 10, 100, 1000 };
             if (!string.IsNullOrWhiteSpace(magnitudes))
             {
                 var parts = magnitudes.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);

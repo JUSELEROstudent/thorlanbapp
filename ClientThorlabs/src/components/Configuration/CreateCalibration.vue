@@ -140,16 +140,28 @@
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
               </button>
-              <div class="flex-1">
-                <span class="text-sm font-medium text-gray-900">
-                  {{ resolveCameraName(element.cameraId, element.camera) }} ·
-                  {{ resolveMicroscopeName(element.microscopeId, element.microscope) }} ·
-                  {{ resolveIncreaseName(element.increaseId, element.increase) }}
+              <!-- La información adicional encabeza la tarjeta: es el texto que escribe
+                   quien crea la configuración, así que describe el montaje mejor que la
+                   combinación de equipos. Debajo, cada equipo en su propia línea. -->
+              <div class="flex-1 min-w-0">
+                <span class="text-sm font-medium text-gray-900 block truncate">
+                  {{ element.aditionalInfo || 'Configuración sin descripción' }}
                 </span>
-                <p class="text-xs text-gray-500">
-                  {{ formatDate(element.date) }}
-                  <span v-if="element.aditionalInfo"> - {{ element.aditionalInfo }}</span>
-                </p>
+                <dl class="mt-1 space-y-0.5 text-xs text-gray-600">
+                  <div class="flex gap-1">
+                    <dt class="text-gray-400 shrink-0">Cámara:</dt>
+                    <dd class="truncate">{{ resolveCameraName(element) }}</dd>
+                  </div>
+                  <div class="flex gap-1">
+                    <dt class="text-gray-400 shrink-0">Aumento:</dt>
+                    <dd class="truncate">{{ resolveIncreaseName(element) }}</dd>
+                  </div>
+                  <div class="flex gap-1">
+                    <dt class="text-gray-400 shrink-0">Microscopio:</dt>
+                    <dd class="truncate">{{ resolveMicroscopeName(element) }}</dd>
+                  </div>
+                </dl>
+                <p class="text-xs text-gray-400 mt-1">{{ formatDate(element.date) }}</p>
               </div>
             </div>
             <button @click="deleteElement(element.groupCailbrationId)" class="btn btn-error btn-xs">
@@ -340,7 +352,7 @@
               <!-- Verificación de enfoque: se dispara sola al abrir este panel. No bloquea
                    la calibración (se puede continuar igual), solo advierte cuando la
                    nitidez medida está por debajo del umbral configurado para la cámara. -->
-              <div class="mt-3 rounded border p-3" :class="focusChecks[element.groupCailbrationId]?.isAcceptable === false ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-white'">
+              <div class="mt-3 rounded border p-3" :class="focusChecks[element.groupCailbrationId]?.status === 'Insufficient' ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-white'">
                 <div class="flex items-center justify-between gap-2">
                   <span class="text-xs font-semibold text-gray-700">Enfoque de la cámara</span>
                   <button
@@ -359,21 +371,44 @@
                     {{ focusChecks[element.groupCailbrationId].error }}
                   </p>
                   <template v-else>
-                    <p class="text-xs mt-1" :class="focusChecks[element.groupCailbrationId].isAcceptable ? 'text-green-700' : 'text-red-700'">
+                    <p
+                      class="text-xs mt-1"
+                      :class="{
+                        'text-green-700': focusChecks[element.groupCailbrationId].status === 'Acceptable',
+                        'text-red-700': focusChecks[element.groupCailbrationId].status === 'Insufficient',
+                        'text-gray-600': focusChecks[element.groupCailbrationId].status === 'Unknown'
+                      }"
+                    >
                       Nitidez: {{ focusChecks[element.groupCailbrationId].score }}
                       <span v-if="focusChecks[element.groupCailbrationId].threshold != null">(umbral: {{ focusChecks[element.groupCailbrationId].threshold }})</span>
-                      — {{ focusChecks[element.groupCailbrationId].isAcceptable ? 'Enfocada' : 'Desenfocada' }}
+                      —
+                      <template v-if="focusChecks[element.groupCailbrationId].status === 'Acceptable'">Enfocada</template>
+                      <template v-else-if="focusChecks[element.groupCailbrationId].status === 'Insufficient'">Desenfocada</template>
+                      <template v-else>sin umbral calibrado, no se puede juzgar</template>
                     </p>
-                    <p v-if="focusChecks[element.groupCailbrationId].message" class="text-xs text-red-600 mt-1">
+                    <!-- Gris cuando solo falta calibrar el umbral: es una tarea pendiente,
+                         no un fallo del enfoque. -->
+                    <p
+                      v-if="focusChecks[element.groupCailbrationId].message"
+                      class="text-xs mt-1"
+                      :class="focusChecks[element.groupCailbrationId].status === 'Insufficient' ? 'text-red-600' : 'text-gray-500'"
+                    >
                       {{ focusChecks[element.groupCailbrationId].message }}
                     </p>
                     <label
-                      v-if="focusChecks[element.groupCailbrationId].isAcceptable === false"
+                      v-if="focusChecks[element.groupCailbrationId].status === 'Insufficient'"
                       class="flex items-center gap-2 mt-2 text-xs text-red-700"
                     >
                       <input type="checkbox" class="checkbox checkbox-xs" v-model="focusChecks[element.groupCailbrationId].acknowledged" />
                       Entiendo, continuar de todas formas
                     </label>
+                    <p
+                      v-else-if="focusChecks[element.groupCailbrationId].status === 'Unknown'"
+                      class="text-xs text-gray-500 mt-2"
+                    >
+                      Enfoque la muestra y calibre el umbral desde los parámetros de la cámara
+                      para que esta comprobación pueda avisarle.
+                    </p>
                   </template>
                 </template>
               </div>
@@ -439,13 +474,19 @@ const isRunningAutoCalibration = reactive<Record<string, boolean>>({})
 // duplicación que hacía larga esta lista.
 
 // ── Verificación de enfoque antes de calibrar ───────────────────
-// Se advierte si la nitidez está bajo el umbral configurado para la cámara,
+// Se advierte si la nitidez está bajo el umbral calibrado para la cámara,
 // pero no bloquea: el usuario puede marcar "continuar de todas formas".
+//
+// 'Unknown' (cámara sin umbral calibrado) no cuenta como problema: no se sabe si
+// está enfocada, así que no hay nada que advertir ni que reconocer. Solo se invita
+// a calibrar el umbral para que la comprobación pase a ser útil.
+type FocusStatus = 'Unknown' | 'Insufficient' | 'Acceptable'
+
 interface FocusCheckState {
   loading: boolean
   score?: number
   threshold?: number | null
-  isAcceptable?: boolean
+  status?: FocusStatus
   message?: string | null
   error?: string
   acknowledged: boolean
@@ -481,6 +522,12 @@ interface GroupCalibrationElement {
   increaseId: string
   date: string
   aditionalInfo: string
+  // El backend ya resuelve los nombres (GroupCalibrationResponseDTO). Vienen en null
+  // solo cuando el id no corresponde a ningún registro.
+  cameraName?: string | null
+  microscopeName?: string | null
+  increaseName?: string | null
+  increaseValue?: string | null
   camera?: CameraElement | null
   microscope?: MicroscopeElement | null
   increase?: IncreaseElement | null
@@ -563,16 +610,17 @@ const checkFocus = async (groupId: string, cameraName?: string) => {
     const result = await $fetch(`${config.public.apiUrl}/api/Focus/evaluate`, {
       method: 'POST',
       query: { cameraName }
-    }) as { score: number; threshold: number | null; isAcceptable: boolean; message?: string | null }
+    }) as { score: number; threshold: number | null; status: FocusStatus; message?: string | null }
 
     focusChecks[groupId] = {
       loading: false,
       score: result.score,
       threshold: result.threshold,
-      isAcceptable: result.isAcceptable,
+      status: result.status,
       message: result.message,
-      // Si ya está enfocada no hace falta que el usuario marque nada.
-      acknowledged: result.isAcceptable
+      // Solo se pide reconocimiento cuando de verdad está por debajo del umbral.
+      // Sin umbral calibrado no hay nada que reconocer: la comprobación no opinó.
+      acknowledged: result.status !== 'Insufficient'
     }
   } catch (error) {
     console.error('Error al verificar el enfoque:', error)
@@ -614,7 +662,7 @@ const runAutoCalibration = async (groupId: string) => {
   }
 
   const focus = focusChecks[groupId]
-  if (focus && focus.isAcceptable === false && !focus.acknowledged) {
+  if (focus && focus.status === 'Insufficient' && !focus.acknowledged) {
     alertStore.NewAlert({
       type: 'error',
       tittle: 'Enfoque bajo',
@@ -1034,25 +1082,29 @@ const saveNewRecord = async () => {
   }
 }
 
-const resolveCameraName = (cameraId: string, camera?: CameraElement | null) => {
-  if (camera?.name) {
-    return camera.name
-  }
-  return cameraList.value.find((item) => item.cameraId === cameraId)?.name ?? 'Cámara no encontrada'
+// El nombre que manda el backend es la fuente principal; las listas locales quedan
+// como respaldo para el momento entre que se pinta la tarjeta y termina de cargar
+// fetchReferences, y por si algún consumidor futuro entrega la entidad anidada.
+const resolveCameraName = (element: GroupCalibrationElement) => {
+  return element.cameraName
+    ?? element.camera?.name
+    ?? cameraList.value.find((item) => item.cameraId === element.cameraId)?.name
+    ?? 'Cámara no encontrada'
 }
 
-const resolveMicroscopeName = (microscopeId: string, microscope?: MicroscopeElement | null) => {
-  if (microscope?.name) {
-    return microscope.name
-  }
-  return microscopeList.value.find((item) => item.microscopeId === microscopeId)?.name ?? 'Microscopio no encontrado'
+const resolveMicroscopeName = (element: GroupCalibrationElement) => {
+  return element.microscopeName
+    ?? element.microscope?.name
+    ?? microscopeList.value.find((item) => item.microscopeId === element.microscopeId)?.name
+    ?? 'Microscopio no encontrado'
 }
 
-const resolveIncreaseName = (increaseId: string, increase?: IncreaseElement | null) => {
-  if (increase?.name) {
-    return `${increase.name} (${increase.value})`
-  }
-  const fallback = increaseList.value.find((item) => item.increaseId === increaseId)
+const resolveIncreaseName = (element: GroupCalibrationElement) => {
+  const name = element.increaseName ?? element.increase?.name
+  const value = element.increaseValue ?? element.increase?.value
+  if (name) return value ? `${name} (${value})` : name
+
+  const fallback = increaseList.value.find((item) => item.increaseId === element.increaseId)
   return fallback ? `${fallback.name} (${fallback.value})` : 'Incremento no encontrado'
 }
 

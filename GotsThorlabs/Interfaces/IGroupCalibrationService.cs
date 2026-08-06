@@ -5,7 +5,12 @@ namespace GotsThorlabs.Interfaces
 {
     public interface IGroupCalibrationService
     {
-        Task<IEnumerable<GroupCalibration>> GetAllAsync(CancellationToken ct);
+        /// <summary>
+        /// Todos los grupos de calibración con el nombre de la cámara, el microscopio y
+        /// el objetivo ya resueltos, para que la vista no tenga que cruzar identificadores
+        /// contra listas que pide por separado.
+        /// </summary>
+        Task<IEnumerable<GroupCalibrationResponseDTO>> GetAllAsync(CancellationToken ct);
 
         /// <summary>
         /// Todos los grupos de calibración con la cámara, el microscopio y el objetivo
@@ -15,7 +20,7 @@ namespace GotsThorlabs.Interfaces
         /// </summary>
         Task<IEnumerable<GroupCalibration>> GetAllWithDetailsAsync(CancellationToken ct);
 
-        Task<GroupCalibration?> GetByIdAsync(string id, CancellationToken ct);
+        Task<GroupCalibrationResponseDTO?> GetByIdAsync(string id, CancellationToken ct);
         Task<GroupCalibration> CreateAsync(GroupCalibrationDTO dto, CancellationToken ct);
         Task UpdateAsync(string id, GroupCalibrationDTO dto, CancellationToken ct);
         Task DeleteAsync(string id, CancellationToken ct);

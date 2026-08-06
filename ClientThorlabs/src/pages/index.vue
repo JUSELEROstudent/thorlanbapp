@@ -36,10 +36,46 @@
             </div> 
             
         </div>
-        <div class="flex justify-center bg-black">
-            <div v-show="isendrequest" class=" flex justify-center bg-black aspect-video max-h-[90vh]" >
-            <img  ref="imgRef" src="https://localhost:7166/SouerceStaticFiles/boat.jpg">
-        </div>    
+        <!-- El visor tiene tres estados. Antes era un <img> fijo apuntando a una imagen
+             de ejemplo que no existe (boat.jpg, con host y puerto escritos a mano), así
+             que hasta que arrancaba un recorrido se veía el icono de imagen rota. -->
+        <div class="flex justify-center bg-black rounded">
+            <div v-show="isendrequest" class="flex justify-center items-center bg-black aspect-video max-h-[90vh] w-full">
+
+                <!-- 1. Recorrido en curso: el mosaico en vivo que llega por SignalR. -->
+                <img v-show="hasLiveFrame" ref="imgRef" class="max-h-full max-w-full object-contain" />
+
+                <!-- 2. En reposo con un recorrido ya ensamblado: se muestra el último.
+                        Va etiquetado porque, sin decirlo, una imagen a pantalla completa
+                        en esta vista se lee como si fuera la captura en vivo. -->
+                <div v-if="!hasLiveFrame && lastStitchedTour" class="relative w-full h-full flex items-center justify-center">
+                    <img
+                        :src="lastStitchedUrl!"
+                        class="max-h-full max-w-full object-contain opacity-90"
+                        @error="lastStitchedTour = null"
+                    />
+                    <div class="absolute top-2 left-2 bg-black/70 text-white text-xs rounded px-2 py-1">
+                        Último recorrido ensamblado · {{ lastStitchedTour.nameFolder }}
+                        <span class="text-gray-300">— no es la vista en vivo</span>
+                    </div>
+                </div>
+
+                <!-- 3. En reposo y sin nada que mostrar. -->
+                <div v-else-if="!hasLiveFrame" class="text-center text-gray-400 p-10">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                         stroke-linejoin="round" class="mx-auto mb-3 text-gray-600">
+                        <rect x="3" y="3" width="18" height="18" rx="2" />
+                        <path d="M3 9h18M9 3v18" />
+                    </svg>
+                    <p class="text-sm font-medium text-gray-300">Sin recorrido en curso</p>
+                    <p class="text-xs mt-1 max-w-sm mx-auto">
+                        Seleccione dispositivo y grupo, indique el área a rastrear y pulse
+                        <span class="text-gray-300">Iniciar</span>. El mosaico se irá formando aquí
+                        a medida que se capturen las imágenes.
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
 </template>
@@ -65,6 +101,40 @@ const canStartStream = computed(() => {
     return hasDevice && hasGroup;
 });
 
+// Se marca en cuanto llega el primer cuadro del recorrido. No basta con
+// statusstreamimg: ese solo cubre el instante de la llamada que abre el stream, y
+// entre pulsar Iniciar y recibir la primera imagen pasan varios segundos moviendo
+// el motor, durante los cuales el <img> aún no tiene src.
+const hasLiveFrame = ref<boolean>(false);
+
+interface StitchedTour {
+    idTour: number;
+    nameFolder: string;
+    stitchingUrl: string | null;
+}
+
+// El backend devuelve los recorridos del más reciente al más antiguo e indica cuál
+// tiene ya su mosaico generado, así que basta con quedarse con el primero.
+const lastStitchedTour = ref<StitchedTour | null>(null);
+
+const lastStitchedUrl = computed(() =>
+    lastStitchedTour.value?.stitchingUrl
+        ? `${config.public.apiUrl}${lastStitchedTour.value.stitchingUrl}`
+        : null
+);
+
+const loadLastStitchedTour = async () => {
+    try {
+        const tours = await $fetch<StitchedTour[]>(`${config.public.apiUrl}/api/Tour`);
+        lastStitchedTour.value = (tours || []).find((tour) => !!tour.stitchingUrl) ?? null;
+    } catch (error) {
+        // Es solo el contenido de reposo del visor: si falla, se cae al mensaje
+        // vacío en vez de molestar con una alerta.
+        console.error('No se pudo cargar el último recorrido ensamblado:', error);
+        lastStitchedTour.value = null;
+    }
+};
+
 let hubConnection = await new signalR.HubConnectionBuilder()
     .withUrl(`${config.public.apiUrl}/UpdateStatus`, {
         skipNegotiation: true,
@@ -76,7 +146,11 @@ let hubConnection = await new signalR.HubConnectionBuilder()
 
 
 onMounted( async () => {
-  
+
+  // No se espera: el visor en reposo es secundario y no debe retrasar el pintado
+  // de los selectores de dispositivo y grupo.
+  loadLastStitchedTour();
+
   try {
       const myHeaders = new Headers()
       myHeaders.append('Authorization', 'Bearer ' + localStorage.getItem('stringjwt'))
@@ -128,9 +202,18 @@ onMounted( async () => {
         // solo se manda un valor cualquiera para cumplir la firma del método.
         hubConnection.stream("Imgupdate", 0, areaX.value, areaY.value, currentGroup.value, currentDevice.value).subscribe({
             next: (item: string) => {
-                if (imgRef.value) { imgRef.value.src = `${item}` }
+                if (imgRef.value) {
+                    imgRef.value.src = `${item}`;
+                    hasLiveFrame.value = true;
+                }
             },
-            complete: () => { console.log("Stream completed"); },
+            complete: () => {
+                console.log("Stream completed");
+                // Al terminar el recorrido, su mosaico pasa a ser el más reciente:
+                // se relee para que el visor en reposo muestre el que se acaba de tomar
+                // y no el anterior.
+                loadLastStitchedTour();
+            },
             error: (err: Error) => { alertStore.NewAlert({type: 'error',data: err.message, tittle:'Revisar conexiones '}) },
         });
     } catch (err) {  alertStore.NewAlert({type: 'error',data: 'error al establecer coneccion signalr [ES]', tittle:'Revisar conexiones '}) }

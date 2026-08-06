@@ -17,8 +17,13 @@ namespace GotsThorlabs.Controls
             _service = service;
         }
 
+        /// <summary>
+        /// Grupos de calibración con el nombre de la cámara, el microscopio y el objetivo
+        /// ya resueltos. La vista los muestra tal cual; no necesita cruzar identificadores
+        /// contra otras listas para saber a qué equipos pertenece cada grupo.
+        /// </summary>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<GroupCalibration>>> GetAllAsync(CancellationToken ct)
+        public async Task<ActionResult<IEnumerable<GroupCalibrationResponseDTO>>> GetAllAsync(CancellationToken ct)
         {
             var groups = await _service.GetAllAsync(ct);
             return Ok(groups);
@@ -38,7 +43,7 @@ namespace GotsThorlabs.Controls
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<GroupCalibration>> GetByIdAsync(string id, CancellationToken ct)
+        public async Task<ActionResult<GroupCalibrationResponseDTO>> GetByIdAsync(string id, CancellationToken ct)
         {
             var group = await _service.GetByIdAsync(id, ct);
             if (group is null) return NotFound();

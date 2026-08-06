@@ -145,24 +145,64 @@
           <div class="px-4 py-2 bg-gray-50 border-b border-gray-200 rounded-t-lg">
             <h4 class="text-sm font-semibold text-gray-800">Enfoque</h4>
           </div>
-          <div class="p-4">
+          <div class="p-4 space-y-3">
             <div class="flex items-start justify-between gap-4">
               <div class="flex-1">
-                <label class="block text-sm font-medium text-gray-700">Umbral de nitidez</label>
+                <div class="flex items-center gap-2">
+                  <label class="block text-sm font-medium text-gray-700">Umbral de nitidez</label>
+                  <span
+                    class="badge badge-xs"
+                    :class="response?.isFocusThresholdCalibrated ? 'badge-success' : 'badge-ghost'"
+                  >
+                    {{ response?.isFocusThresholdCalibrated ? 'Calibrado' : 'Sin calibrar' }}
+                  </span>
+                </div>
                 <p class="text-xs text-gray-500 mt-0.5">
-                  Por debajo de este valor se advierte antes de lanzar una calibración. La escala
-                  depende del montaje óptico: obsérvela en el streaming con la muestra bien
-                  enfocada y anote un valor algo menor al que vea.
+                  Enfoque la muestra a mano lo mejor posible y pulse calibrar: se toman varias
+                  capturas y se guarda como umbral una fracción de la nitidez medida. La nitidez
+                  no tiene escala absoluta, así que el único valor con sentido es el que se mide
+                  en este montaje.
+                </p>
+                <p v-if="!response?.isFocusThresholdCalibrated" class="text-xs text-gray-500 mt-1">
+                  Mientras no esté calibrado, el indicador de enfoque no puede avisar si la
+                  muestra está lo bastante nítida.
                 </p>
               </div>
-              <input
-                v-model="focusThreshold"
-                type="number"
-                step="any"
-                class="input input-bordered input-sm w-32 shrink-0"
-                placeholder="sin definir"
-              />
+              <button
+                class="btn btn-primary btn-sm shrink-0"
+                :disabled="isLearningThreshold || isLoading"
+                @click="learnThreshold"
+              >
+                <span v-if="isLearningThreshold" class="loading loading-spinner loading-xs"></span>
+                {{ isLearningThreshold ? 'Midiendo...' : 'Calibrar umbral' }}
+              </button>
             </div>
+
+            <div v-if="lastLearned" class="rounded bg-gray-50 border border-gray-200 p-3 text-xs text-gray-600">
+              Nitidez medida: <span class="font-mono">{{ lastLearned.measuredSharpness }}</span>
+              sobre {{ lastLearned.samples }} capturas
+              (<span class="font-mono">{{ lastLearned.readings.join(', ') }}</span>).
+              Umbral guardado: <span class="font-mono">{{ lastLearned.threshold }}</span>
+              ({{ Math.round(lastLearned.margin * 100) }}% de la medida).
+              <p v-if="lastLearned.message" class="text-amber-700 mt-1">{{ lastLearned.message }}</p>
+            </div>
+
+            <!-- Se conserva la edición manual para casos puntuales (replicar el umbral de
+                 otro equipo idéntico), pero deja de ser el camino principal: escrito a
+                 ojo el número no significa nada. -->
+            <details class="text-xs">
+              <summary class="cursor-pointer text-gray-500">Ajustar el umbral a mano (avanzado)</summary>
+              <div class="flex items-center gap-2 mt-2">
+                <input
+                  v-model="focusThreshold"
+                  type="number"
+                  step="any"
+                  class="input input-bordered input-sm w-32"
+                  placeholder="sin definir"
+                />
+                <span class="text-gray-500">Se guarda con el resto de parámetros.</span>
+              </div>
+            </details>
           </div>
         </div>
 
@@ -212,6 +252,17 @@ interface ParametersResponse {
   descriptors: CameraParameterDescriptor[]
   saved: Record<string, string>
   focusThreshold?: string | null
+  isFocusThresholdCalibrated?: boolean
+}
+
+interface FocusThresholdLearned {
+  cameraName: string
+  samples: number
+  measuredSharpness: number
+  margin: number
+  threshold: number
+  readings: number[]
+  message?: string | null
 }
 
 const alertStore = alertsClient()
@@ -224,6 +275,8 @@ const values = ref<Record<string, string>>({})
 const focusThreshold = ref<string>('')
 const isLoading = ref(false)
 const isSaving = ref(false)
+const isLearningThreshold = ref(false)
+const lastLearned = ref<FocusThresholdLearned | null>(null)
 
 const descriptors = computed(() => response.value?.descriptors || [])
 
@@ -283,6 +336,7 @@ const loadParameters = async () => {
     // "el usuario no configuró esto" de "el usuario eligió justo este valor".
     values.value = { ...(result?.saved || {}) }
     focusThreshold.value = result?.focusThreshold || ''
+    lastLearned.value = null
   } catch (error: any) {
     console.error('Error al cargar los parámetros:', error)
     response.value = null
@@ -293,6 +347,46 @@ const loadParameters = async () => {
     })
   } finally {
     isLoading.value = false
+  }
+}
+
+/**
+ * Mide la nitidez que alcanza este montaje con la muestra ya enfocada y guarda una
+ * fracción de esa medida como umbral.
+ *
+ * Es el reemplazo del número escrito a mano: la nitidez no tiene escala absoluta, así
+ * que el único valor con sentido es el que se mide en esta cámara, con esta muestra y
+ * con los parámetros de captura actuales.
+ */
+const learnThreshold = async () => {
+  const cameraName = response.value?.cameraName
+  if (!cameraName) return
+
+  isLearningThreshold.value = true
+  try {
+    const result = await api.post<FocusThresholdLearned>(
+      `/api/Focus/learn-threshold?cameraName=${encodeURIComponent(cameraName)}`
+    )
+    lastLearned.value = result
+
+    alertStore.NewAlert({
+      type: 'OK',
+      tittle: 'Umbral calibrado',
+      data: `Umbral fijado en ${result.threshold} (nitidez medida: ${result.measuredSharpness}).`
+    })
+
+    // El backend ya persistió el umbral; se relee para no dejar en pantalla el valor
+    // anterior y para refrescar el indicador de "calibrado".
+    await loadParameters()
+  } catch (error: any) {
+    console.error('Error al calibrar el umbral de enfoque:', error)
+    alertStore.NewAlert({
+      type: 'error',
+      tittle: 'Error',
+      data: error?.data || 'No se pudo calibrar el umbral. Verifique que la cámara no esté ocupada por el streaming.'
+    })
+  } finally {
+    isLearningThreshold.value = false
   }
 }
 

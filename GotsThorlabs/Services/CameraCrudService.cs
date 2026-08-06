@@ -1,3 +1,4 @@
+using GotsThorlabs.BLL;
 using GotsThorlabs.Database.EntityRepo;
 using GotsThorlabs.Database.EntityRepo.Entities;
 using GotsThorlabs.Interfaces;
@@ -99,7 +100,8 @@ namespace GotsThorlabs.Services
                 CameraName = camera.Name,
                 DriverType = camera.DriverType,
                 Saved = saved?.Values ?? new Dictionary<string, string>(),
-                FocusThreshold = saved?.FocusThreshold
+                FocusThreshold = saved?.FocusThreshold,
+                IsFocusThresholdCalibrated = FocusCriterion.FromSettings(camera.SettingsJson).IsCalibrated
             };
 
             var provider = _cameraFactory.GetParameterProvider(camera.DriverType);
@@ -178,7 +180,17 @@ namespace GotsThorlabs.Services
 
             var threshold = dto.NormalizeFocusThreshold();
             if (threshold != null)
+            {
                 settings.FocusThreshold = threshold;
+
+                // Un umbral escrito a mano se marca con la versión de métrica actual: sin
+                // el sello quedaría como heredado y el veredicto de nitidez saldría siempre
+                // como "sin calibrar", ignorando en silencio lo que el usuario acaba de
+                // guardar. Lo recomendable sigue siendo aprenderlo con
+                // POST /api/Focus/learn-threshold, que lo mide en lugar de estimarlo.
+                settings.FocusMetricVersion = FocusMetrics.MetricVersion;
+                settings.FocusSettingsFingerprint = settings.Fingerprint();
+            }
 
             camera.SettingsJson = settings.ToJson();
             await _db.SaveChangesAsync(ct);

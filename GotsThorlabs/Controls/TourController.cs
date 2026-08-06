@@ -16,8 +16,12 @@ namespace GotsThorlabs.Controls
             _service = service;
         }
 
+        /// <summary>
+        /// Recorridos existentes, del más reciente al más antiguo, indicando cuáles
+        /// tienen el stitching ya generado (hasStitching / stitchingUrl).
+        /// </summary>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TourEntity>>> GetAllAsync(CancellationToken ct)
+        public async Task<ActionResult<IEnumerable<TourResponseDTO>>> GetAllAsync(CancellationToken ct)
         {
             var tours = await _service.GetAllAsync(ct);
             return Ok(tours);

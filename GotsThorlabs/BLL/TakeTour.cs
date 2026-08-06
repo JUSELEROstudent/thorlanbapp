@@ -546,7 +546,7 @@ namespace GotsThorlabs.BLL
                     image[y]?.Dispose();
                     image[y] = ownedFrame;
 
-                    // Nitidez de la imagen: varianza del Laplaciano.
+                    // Nitidez de la imagen: varianza del Laplaciano normalizada.
                     //
                     // Antes aquí se calculaba el Laplaciano en 'shaperesult' y acto
                     // seguido se descartaba, porque MeanStdDev se aplicaba sobre
@@ -555,9 +555,14 @@ namespace GotsThorlabs.BLL
                     // cruda — una medida de contraste, no de enfoque. FocusMetrics mide
                     // sobre el Laplaciano, que es lo que corresponde.
                     //
-                    // Ojo: las filas de 'image' anteriores a este cambio tienen valores
-                    // en otra escala y no son comparables con las nuevas.
-                    focusScore = FocusMetrics.VarianceOfLaplacian(ownedFrame);
+                    // Se usa Sharpness (normalizada por región, escala y luminancia) y no
+                    // la varianza cruda, para que el valor guardado aquí sea el mismo que
+                    // muestra el streaming y el que se compara contra el umbral de la
+                    // cámara. Con la cruda, tres sitios mostraban tres números distintos.
+                    //
+                    // Ojo: las filas de 'image' anteriores a cada uno de estos cambios
+                    // tienen valores en otra escala y no son comparables con las nuevas.
+                    focusScore = FocusMetrics.Sharpness(ownedFrame);
 
                     Rect region = new Rect(ownedFrame.Cols * x, ownedFrame.Rows * y, ownedFrame.Cols, ownedFrame.Rows);
                     ownedFrame.CopyTo(mosaic.SubMat(region));

@@ -50,5 +50,49 @@ namespace GotsThorlabs.Controls
                 return StatusCode(500, $"Error al evaluar el enfoque: {ex.Message}");
             }
         }
+
+        /// <summary>
+        /// Calibra el umbral de nitidez de una cámara a partir de la muestra que está
+        /// viendo ahora mismo. Debe llamarse con la muestra ya enfocada a mano: lo que
+        /// se guarda es una fracción de la nitidez medida en ese momento, que pasa a ser
+        /// la referencia de este montaje óptico.
+        /// </summary>
+        [HttpPost("learn-threshold")]
+        public async Task<ActionResult<FocusThresholdLearnedDTO>> LearnThresholdAsync(
+            [FromQuery] string cameraName,
+            CancellationToken ct,
+            [FromQuery] int? samples = null,
+            [FromQuery] double? margin = null)
+        {
+            if (string.IsNullOrWhiteSpace(cameraName))
+                return BadRequest("cameraName es requerido.");
+
+            try
+            {
+                var result = await _service.LearnThresholdAsync(cameraName, samples, margin, ct);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (OperationCanceledException)
+            {
+                // El cliente cerró la petición a mitad del muestreo; no es un error del servidor.
+                return StatusCode(499, "Calibración de umbral cancelada.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error al calibrar el umbral de enfoque: {ex.Message}");
+            }
+        }
     }
 }

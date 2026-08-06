@@ -8,16 +8,58 @@ namespace GotsThorlabs.Services
 {
     public class TourCrudService : ITourCrudService
     {
-        private readonly ThorlabsDbContext _db;
+        /// <summary>Nombre fijo con el que ProcessTourData guarda el mosaico.</summary>
+        private const string StitchingFileName = "openNative.jpg";
 
-        public TourCrudService(ThorlabsDbContext db)
+        private readonly ThorlabsDbContext _db;
+        private readonly IWebHostEnvironment _environment;
+
+        public TourCrudService(ThorlabsDbContext db, IWebHostEnvironment environment)
         {
             _db = db;
+            _environment = environment;
         }
 
-        public async Task<IEnumerable<TourEntity>> GetAllAsync(CancellationToken ct)
+        public async Task<IEnumerable<TourResponseDTO>> GetAllAsync(CancellationToken ct)
         {
-            return await _db.Tours.AsNoTracking().ToListAsync(ct);
+            var tours = await _db.Tours.AsNoTracking().ToListAsync(ct);
+
+            // El orden lo decide quien consulta, pero el caso habitual es querer el
+            // recorrido más reciente, así que se devuelven ya ordenados. Date se guarda
+            // como texto: se ordena por fecha cuando se puede parsear y, si no, por
+            // IdTour, que es incremental y sirve de desempate estable.
+            return tours
+                .OrderByDescending(t => DateTime.TryParse(t.Date, out var parsed) ? parsed : DateTime.MinValue)
+                .ThenByDescending(t => t.IdTour)
+                .Select(ToResponse)
+                .ToList();
+        }
+
+        private TourResponseDTO ToResponse(TourEntity tour)
+        {
+            // Se comprueba contra ContentRootPath, que es la misma raíz que usa el
+            // PhysicalFileProvider de Program.cs para servir /SouerceStaticFiles. Con
+            // CurrentDirectory (lo que usa el resto del archivo) el resultado coincide
+            // al arrancar normalmente, pero no si el proceso se lanza desde otra carpeta
+            // — y entonces el flag diría que hay mosaico donde la URL da 404.
+            var relativePath = $"/SouerceStaticFiles/{tour.NameFolder}/{StitchingFileName}";
+            var fullPath = Path.Combine(_environment.ContentRootPath, "StaticFiles", tour.NameFolder, StitchingFileName);
+            var exists = System.IO.File.Exists(fullPath);
+
+            return new TourResponseDTO
+            {
+                IdTour = tour.IdTour,
+                Date = tour.Date,
+                NameFolder = tour.NameFolder,
+                NumberX = tour.NumberX,
+                NumberY = tour.NumberY,
+                NumberZ = tour.NumberZ,
+                Camera = tour.Camera,
+                EndStatus = tour.EndStatus,
+                PicsCalibrationId = tour.PicsCalibrationId,
+                HasStitching = exists,
+                StitchingUrl = exists ? relativePath : null
+            };
         }
 
         public async Task<TourEntity?> GetByIdAsync(long id, CancellationToken ct)

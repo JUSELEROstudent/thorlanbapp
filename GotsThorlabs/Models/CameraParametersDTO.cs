@@ -26,6 +26,14 @@ namespace GotsThorlabs.Models
         public Dictionary<string, string> Saved { get; set; } = new();
 
         public string? FocusThreshold { get; set; }
+
+        /// <summary>
+        /// False cuando no hay umbral, o cuando el guardado se midió con una versión
+        /// anterior de la métrica y ya no es comparable. En ambos casos el indicador de
+        /// nitidez no puede emitir veredicto y hay que ejecutar
+        /// POST /api/Focus/learn-threshold.
+        /// </summary>
+        public bool IsFocusThresholdCalibrated { get; set; }
     }
 
     /// <summary>Cuerpo de PUT /api/camera/{id}/parameters.</summary>
