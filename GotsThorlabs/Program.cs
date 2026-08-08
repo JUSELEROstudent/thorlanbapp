@@ -85,6 +85,7 @@ builder.Services.AddScoped<GotsThorlabs.Interfaces.IAuthService, GotsThorlabs.Se
 // Evaluación de enfoque: scoped porque usa el DbContext para resolver la cámara,
 // y recibe el CameraServiceFactory (singleton) para capturar el cuadro.
 builder.Services.AddScoped<GotsThorlabs.Interfaces.IFocusService, GotsThorlabs.Services.FocusService>();
+builder.Services.AddScoped<GotsThorlabs.Interfaces.IMotorCalibrationService, GotsThorlabs.Services.MotorCalibrationService>();
 
 var app = builder.Build();
 

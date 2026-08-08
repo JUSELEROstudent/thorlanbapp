@@ -127,10 +127,39 @@ namespace GotsThorlabs.BLL
             // PicsCalibrationService.RunAutoCalibrationAsync: si el motor se mueve aquí
             // con una configuración distinta a la que se usó al calibrar, la relación
             // píxeles/step medida en la calibración deja de ser válida para el tour real.
-            currentDeviceSettings.Drive.Channel(chanelsDevice[1]).StepRate = 200;
-            currentDeviceSettings.Drive.Channel(chanelsDevice[1]).StepAcceleration = 100;
-            currentDeviceSettings.Drive.Channel(chanelsDevice[2]).StepRate = 200;
-            currentDeviceSettings.Drive.Channel(chanelsDevice[2]).StepAcceleration = 100;
+            // Los parámetros salen de la caracterización mecánica del grupo (tabla
+            // motorCalibration) y ya no de literales repetidos en dos archivos. Esa
+            // duplicación era el riesgo: si el valor del recorrido y el de la calibración
+            // divergían, la relación píxeles/paso quedaba medida para un comportamiento
+            // del motor distinto del que se usaba después, sin ninguna señal visible.
+            //
+            // .Trim() defensivo: evita que un espacio en blanco accidental en el valor que
+            // llega del cliente SignalR haga que el filtro no matchee ningún registro.
+            var groupCalibrationIdTrimmed = groupCalibrationId?.Trim() ?? groupCalibrationId;
+
+            var motorCalibration = _db.MotorCalibrations
+                .AsNoTracking()
+                .Include(m => m.AxisStepCalibrations)
+                .Where(m => m.GroupCailbrationId == groupCalibrationIdTrimmed)
+                .OrderByDescending(m => m.Acepted)
+                .ThenByDescending(m => m.Date)
+                .FirstOrDefault();
+
+            int stepRate = (int)(motorCalibration?.StepRate ?? 200);
+            int stepAcceleration = (int)(motorCalibration?.StepAcceleration ?? 100);
+
+            if (motorCalibration == null)
+            {
+                Console.WriteLine("[TakeTour] AVISO: el grupo no tiene caracterización mecánica del motor. " +
+                    "Se usan los valores por defecto (StepRate=200, StepAcceleration=100) y el tamaño de paso " +
+                    "nominal de 30 nm SIN VERIFICAR: el área recorrida en milímetros puede no corresponder " +
+                    "con la solicitada.");
+            }
+
+            currentDeviceSettings.Drive.Channel(chanelsDevice[1]).StepRate = stepRate;
+            currentDeviceSettings.Drive.Channel(chanelsDevice[1]).StepAcceleration = stepAcceleration;
+            currentDeviceSettings.Drive.Channel(chanelsDevice[2]).StepRate = stepRate;
+            currentDeviceSettings.Drive.Channel(chanelsDevice[2]).StepAcceleration = stepAcceleration;
             deviceconnect.SetSettings(currentDeviceSettings, true, true);
 
 
@@ -142,10 +171,6 @@ namespace GotsThorlabs.BLL
             // Se obtienen todas las calibraciones del grupo y se calculan los parámetros
             // del grid (número de imágenes, espaciado del motor, overlap) en base al área
             // deseada (mm) y a la mejor calibración disponible por eje.
-            // .Trim() defensivo (igual que se hace con 'device' más abajo): evita que un
-            // espacio en blanco accidental en el valor recibido del cliente SignalR haga
-            // que el filtro no matchee ningún registro.
-            var groupCalibrationIdTrimmed = groupCalibrationId?.Trim() ?? groupCalibrationId;
             var allCalibrations = _db.PicsCalibrations.AsNoTracking().Where(x => x.GroupCailbrationId == groupCalibrationIdTrimmed).ToList();
 
             // Diagnóstico: deja registro explícito de con qué GroupCalibrationId llegó la
@@ -190,7 +215,22 @@ namespace GotsThorlabs.BLL
                 frameWidth = 1920;
             }
 
-            var grid = MosaicGridCalculator.Calculate(areaX_mm, areaY_mm, allCalibrations, frameWidth, frameHeight);
+            // Tamaño de paso medido con pie de rey, por eje. Si el grupo no tiene esa
+            // caracterización, Calculate cae al nominal de 30 nm y lo reporta en el
+            // resultado para que quede constancia de que el área en mm es una estimación.
+            double? stepNmX = ReadMeasuredStepNm(motorCalibration, "x");
+            double? stepNmY = ReadMeasuredStepNm(motorCalibration, "y");
+
+            var grid = MosaicGridCalculator.Calculate(
+                areaX_mm, areaY_mm, allCalibrations, frameWidth, frameHeight, stepNmX, stepNmY);
+
+            if (!grid.StepSizeMeasured)
+            {
+                Console.WriteLine("[TakeTour] AVISO: tamaño de paso SIN VERIFICAR " +
+                    $"(X={grid.StepSizeNmX:G6} nm, Y={grid.StepSizeNmY:G6} nm, nominal). " +
+                    "El recorrido funciona igual, pero el área cubierta en milímetros es una " +
+                    "estimación. Ejecute la medición con pie de rey para este grupo.");
+            }
 
             Console.WriteLine($"[TakeTour] Grid calculado: ImagesX={grid.ImagesX}, ImagesY={grid.ImagesY}, " +
                 $"frame={frameWidth}x{frameHeight}px, MotorStepX={grid.MotorStepX}, MotorStepY={grid.MotorStepY}, " +
@@ -403,6 +443,24 @@ namespace GotsThorlabs.BLL
         ///<param>
         /// Device, canal a mover y posicion a mover.
         ///</param>
+
+        /// <summary>
+        /// Tamaño de paso medido para un eje, o null si ese eje no está caracterizado.
+        /// Solo se acepta el valor cuando la medición de ambos sentidos está completa: un
+        /// eje a medias daría un número peor que el nominal, no mejor.
+        /// </summary>
+        private static double? ReadMeasuredStepNm(
+            GotsThorlabs.Database.EntityRepo.Entities.MotorCalibration? calibration, string axisName)
+        {
+            var axis = calibration?.AxisStepCalibrations
+                .FirstOrDefault(a => string.Equals(a.AxisName, axisName, StringComparison.OrdinalIgnoreCase));
+
+            if (axis == null || axis.Status != "complete") return null;
+
+            return StepSizeCalculator.TryParse(axis.StepSizeNm, out var value) && value > 0
+                ? value
+                : null;
+        }
 
         public static bool Move_Method1(KCubeInertialMotor device, InertialMotorStatus.MotorChannels channel, int position)
         {

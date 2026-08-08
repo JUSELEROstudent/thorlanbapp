@@ -221,12 +221,27 @@ namespace GotsThorlabs.Services
             // coincidía con la que el tour usa al moverse, la relación píxeles/step
             // medida aquí quedaba calculada para un comportamiento del motor distinto
             // al que realmente se usa después — la calibración dejaba de ser válida.
+            // Los valores salen de la caracterización mecánica del grupo (motorCalibration)
+            // y ya no de literales que había que mantener sincronizados a mano con
+            // TakeTour.Createmosaicstepbystep. Si el grupo aún no está caracterizado se usan
+            // los mismos valores por defecto que el recorrido, de modo que ambos siguen
+            // coincidiendo por construcción.
+            var motorCalibration = _db.MotorCalibrations
+                .AsNoTracking()
+                .Where(m => m.GroupCailbrationId == groupCalibrationId)
+                .OrderByDescending(m => m.Acepted)
+                .ThenByDescending(m => m.Date)
+                .FirstOrDefault();
+
+            var calibrationStepRate = (int)(motorCalibration?.StepRate ?? 200);
+            var calibrationStepAcceleration = (int)(motorCalibration?.StepAcceleration ?? 100);
+
             var calibrationMotorConfig = device.GetInertialMotorConfiguration(kimDeviceId);
             var calibrationDeviceSettings = ThorlabsInertialMotorSettings.GetSettings(calibrationMotorConfig);
-            calibrationDeviceSettings.Drive.Channel(InertialMotorStatus.MotorChannels.Channel1).StepRate = 200;
-            calibrationDeviceSettings.Drive.Channel(InertialMotorStatus.MotorChannels.Channel1).StepAcceleration = 100;
-            calibrationDeviceSettings.Drive.Channel(InertialMotorStatus.MotorChannels.Channel2).StepRate = 200;
-            calibrationDeviceSettings.Drive.Channel(InertialMotorStatus.MotorChannels.Channel2).StepAcceleration = 100;
+            calibrationDeviceSettings.Drive.Channel(InertialMotorStatus.MotorChannels.Channel1).StepRate = calibrationStepRate;
+            calibrationDeviceSettings.Drive.Channel(InertialMotorStatus.MotorChannels.Channel1).StepAcceleration = calibrationStepAcceleration;
+            calibrationDeviceSettings.Drive.Channel(InertialMotorStatus.MotorChannels.Channel2).StepRate = calibrationStepRate;
+            calibrationDeviceSettings.Drive.Channel(InertialMotorStatus.MotorChannels.Channel2).StepAcceleration = calibrationStepAcceleration;
             device.SetSettings(calibrationDeviceSettings, true, true);
 
             var channel = axis.ToLower() == "x"

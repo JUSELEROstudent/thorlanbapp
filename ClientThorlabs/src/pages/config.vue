@@ -1,72 +1,49 @@
 <template>
-   <div class=" w-full flex-col space-y-4 p-4 ">
-      <div class="flex flex-row space-x-4 items-center px-4 bg-gray rounded p-1">
-        <label class="flex cursor-pointer gap-2 self-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>
-            <input type="checkbox" value="synthwave" class="toggle theme-controller"/>
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-        </label>
-      <div class="flex-1">
-        <button class="btn btn-success float-end"> GUARDAR</button>
-      </div>
-    </div>
-    <div>
-      <div class="w-full flex flex-row space-x-4 p-4">
-        <div class="flex-1 space-y-4">
-          <CameraStreamCapture />
-
-          <div class="collapse collapse-arrow bg-gray shadow">
-            <input type="checkbox" v-model="isParametersAccordionOpen" />
-            <div class="collapse-title text-sm font-semibold text-white">
-              Parámetros de captura de la cámara
-            </div>
-            <div class="collapse-content">
-              <!-- Configuración por cámara (guardada como JSON, según su driver): la
-                   usa tanto el streaming como la calibración automática, que la aplica
-                   justo antes de capturar. Va debajo del streaming (y no en la columna
-                   de configuración general) porque son ajustes que se consultan junto
-                   a la vista previa en vivo, no parte del alta de cámara/microscopio. -->
-              <CameraParameters />
-            </div>
-          </div>
-        </div>
-
-        <div class="flex-1 space-y-4">
-          <div class="collapse collapse-arrow bg-gray shadow">
-            <input type="checkbox" v-model="isAccordionOpen" />
-            <div class="collapse-title text-sm font-semibold text-white">
-              Configuración (Cámara, Microscopio, Increase)
-            </div>
-            <div class="collapse-content space-y-4">
-              <CardConfigMicroscope />
-                        <!-- Componente cardConfigElement -->
-              <cardConfigCamera />
-                        <!-- Componente cardConfigElement -->
-              <CardConfigIncrease />
-            </div>
-          </div>
-
-          <CreateCalibration />
-        </div>
+  <div class="w-full flex flex-col gap-4 p-4">
+    <!-- Cabecera de la sección con su navegación propia.
+         Antes esta página apilaba en una sola pantalla el streaming, los parámetros de
+         cámara, el alta de equipos y la creación de combos. Se separó en rutas hijas
+         porque ya no cabía nada más y porque cada bloque se usa en un momento distinto
+         del trabajo, no a la vez. -->
+    <div class="rounded bg-gray p-3 flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h1 class="text-lg font-semibold text-white">Configuración</h1>
+        <p class="text-xs text-gray-300">Equipos, cámara y calibración del montaje.</p>
       </div>
 
+      <label class="flex cursor-pointer gap-2 items-center" title="Tema claro / oscuro">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" /></svg>
+        <input type="checkbox" value="synthwave" class="toggle theme-controller" />
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
+      </label>
     </div>
+
+    <div role="tablist" class="tabs tabs-boxed bg-base-200 overflow-x-auto flex-nowrap">
+      <NuxtLink
+        v-for="tab in tabs"
+        :key="tab.to"
+        role="tab"
+        class="tab whitespace-nowrap"
+        active-class="tab-active"
+        :to="tab.to"
+      >
+        {{ tab.label }}
+      </NuxtLink>
+      <NuxtLink role="tab" class="tab whitespace-nowrap" to="/calibraciones">
+        Registros
+        <span class="badge badge-ghost badge-xs ml-2">otra vista</span>
+      </NuxtLink>
+    </div>
+
+    <NuxtPage />
   </div>
 </template>
+
 <script setup lang="ts">
-import CardConfigIncrease from '~/components/Configuration/cardConfigIncrease.vue';
-import cardConfigCamera from '../components/Configuration/cardConfigCamera.vue'
-import CardConfigMicroscope from '~/components/Configuration/cardConfigMicroscope.vue';
-import CameraStreamCapture from '~/components/Configuration/CameraStreamCapture.vue';
-import CameraParameters from '~/components/Configuration/CameraParameters.vue';
-import CreateCalibration from '~/components/Configuration/CreateCalibration.vue';
-
-const isAccordionOpen = ref(false)
-const isParametersAccordionOpen = ref(false)
-
-function alerta()
-{
-    alert('dio click')
-}
-
+const tabs = [
+  { to: '/config/equipos', label: 'Equipos' },
+  { to: '/config/camara', label: 'Cámara' },
+  { to: '/config/combos', label: 'Combos de calibración' },
+  { to: '/config/pasos', label: 'Paso del motor' }
+]
 </script>

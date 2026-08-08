@@ -19,8 +19,28 @@
             <span v-show="statusbar" class="self-center text-white" >STREAMING ALL</span></div>
         <div class="flex justify-center transition-transform duration-200 hover:scale-110" :class="{ 'w-48 justify-stretch mx-2' : statusbar}" title="Manual"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="white" d="M9.808 5.508a2.576 2.576 0 0 0-1.638-.206l-1.183.226a2.852 2.852 0 0 0-2.004 1.5c-1.367 2.672-2.4 4.862-2.799 6.729c-.411 1.926-.16 3.575 1.08 5.076c.82.996 2.229.794 2.963-.036c.558-.632 1.195-1.364 1.817-2.086a2.153 2.153 0 0 1 1.63-.749h4.655c.625 0 1.22.274 1.63.749c.622.722 1.259 1.454 1.817 2.086c.734.83 2.142 1.032 2.964.036c1.239-1.501 1.49-3.15 1.08-5.076c-.4-1.867-1.433-4.057-2.8-6.73a2.852 2.852 0 0 0-2.004-1.5l-1.183-.225a2.576 2.576 0 0 0-1.638.206c-.144.071-.291.149-.44.23a2.344 2.344 0 0 1-1.113.296h-1.281c-.377 0-.758-.104-1.113-.297c-.149-.08-.296-.158-.44-.23m-1.37 1.197c.274-.052.528-.021.732.08c.127.064.26.134.397.208c.54.292 1.153.47 1.794.47h1.281a3.77 3.77 0 0 0 1.794-.47c.137-.074.27-.144.398-.208c.203-.101.457-.132.732-.08l1.183.226c.43.082.8.359 1 .747c1.38 2.699 2.32 4.724 2.673 6.377c.34 1.595.121 2.773-.784 3.869a.407.407 0 0 1-.348.149a.642.642 0 0 1-.443-.222a236.759 236.759 0 0 1-1.806-2.073a3.582 3.582 0 0 0-2.712-1.244H9.674a3.582 3.582 0 0 0-2.712 1.244c-.62.72-1.252 1.447-1.806 2.073a.642.642 0 0 1-.443.222a.407.407 0 0 1-.348-.15c-.905-1.095-1.125-2.273-.784-3.868c.353-1.653 1.294-3.678 2.674-6.377a1.423 1.423 0 0 1 1-.747zM12 11a1 1 0 1 0 0-2a1 1 0 0 0 0 2"/></svg>
             <span v-show="statusbar" class="self-center text-white" >MANUAL opa</span></div>   
-        <div class="flex justify-center transition-transform duration-200 hover:scale-110" :class="{ 'w-48 justify-stretch mx-2' : statusbar}" title="Configuration"> <NuxtLink href="/config"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="white" d="M6 20q-.425 0-.712-.288T5 19v-6H4q-.425 0-.712-.288T3 12q0-.425.288-.712T4 11h4q.425 0 .713.288T9 12q0 .425-.288.713T8 13H7v6q0 .425-.288.713T6 20M6 9q-.425 0-.712-.288T5 8V5q0-.425.288-.712T6 4q.425 0 .713.288T7 5v3q0 .425-.288.713T6 9m4 0q-.425 0-.712-.288T9 8q0-.425.288-.712T10 7h1V5q0-.425.288-.712T12 4q.425 0 .713.288T13 5v2h1q.425 0 .713.288T15 8q0 .425-.288.713T14 9zm2 11q-.425 0-.712-.288T11 19v-7q0-.425.288-.712T12 11q.425 0 .713.288T13 12v7q0 .425-.288.713T12 20m6 0q-.425 0-.712-.288T17 19v-2h-1q-.425 0-.712-.288T15 16q0-.425.288-.712T16 15h4q.425 0 .713.288T21 16q0 .425-.288.713T20 17h-1v2q0 .425-.288.713T18 20m0-7q-.425 0-.712-.288T17 12V5q0-.425.288-.712T18 4q.425 0 .713.288T19 5v7q0 .425-.288.713T18 13"/></svg></NuxtLink>
-            <span v-show="statusbar" class="self-center text-white" >CONFIGURATION</span></div>
+        <!-- Configuración es ahora una sección con varias vistas, así que la barra abre un
+             menú en vez de llevar a una sola página. Se incluye aquí también Registros,
+             que vive fuera de /config pero pertenece al mismo trabajo.
+             El menú NO usa el dropdown de daisyUI: la columna que lo contiene tiene
+             overflow-y-auto, y basta con que un eje no sea 'visible' para que el navegador
+             recorte también el otro, de modo que un panel absoluto que sale de los 64 px
+             de la barra queda cortado. Se saca del contenedor con Teleport y se posiciona
+             en fijo a partir del recuadro del botón. -->
+        <div
+          ref="configTrigger"
+          class="flex justify-center transition-transform duration-200 hover:scale-110 cursor-pointer"
+          :class="{ 'w-48 justify-stretch mx-2' : statusbar}"
+          title="Configuración"
+          role="button"
+          tabindex="0"
+          @click="toggleConfigMenu"
+          @keydown.enter.prevent="toggleConfigMenu"
+          @keydown.space.prevent="toggleConfigMenu"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="white" d="M6 20q-.425 0-.712-.288T5 19v-6H4q-.425 0-.712-.288T3 12q0-.425.288-.712T4 11h4q.425 0 .713.288T9 12q0 .425-.288.713T8 13H7v6q0 .425-.288.713T6 20M6 9q-.425 0-.712-.288T5 8V5q0-.425.288-.712T6 4q.425 0 .713.288T7 5v3q0 .425-.288.713T6 9m4 0q-.425 0-.712-.288T9 8q0-.425.288-.712T10 7h1V5q0-.425.288-.712T12 4q.425 0 .713.288T13 5v2h1q.425 0 .713.288T15 8q0 .425-.288.713T14 9zm2 11q-.425 0-.712-.288T11 19v-7q0-.425.288-.712T12 11q.425 0 .713.288T13 12v7q0 .425-.288.713T12 20m6 0q-.425 0-.712-.288T17 19v-2h-1q-.425 0-.712-.288T15 16q0-.425.288-.712T16 15h4q.425 0 .713.288T21 16q0 .425-.288.713T20 17h-1v2q0 .425-.288.713T18 20m0-7q-.425 0-.712-.288T17 12V5q0-.425.288-.712T18 4q.425 0 .713.288T19 5v7q0 .425-.288.713T18 13"/></svg>
+          <span v-show="statusbar" class="self-center text-white">CONFIGURACIÓN</span>
+        </div>
         <div class="flex justify-center transition-transform duration-200 hover:scale-110" :class="{ 'w-48 justify-stretch mx-2' : statusbar}" title="Calibraciones"> <NuxtLink href="/calibraciones"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="white" d="M9 2a1 1 0 0 0-1 1v1H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V3a1 1 0 1 0-2 0v1H9V3a1 1 0 0 0-1-1zM6 8h12v11H6zm2 2v2h2v-2zm4 0v2h2v-2zm4 0v2h2v-2zm-8 4v2h2v-2zm4 0v2h2v-2zm4 0v2h2v-2z"/></svg></NuxtLink>
             <span v-show="statusbar" class="self-center text-white" >CALIBRACIONES</span></div>
         <div class="flex justify-center transition-transform duration-200 hover:scale-110" :class="{ 'w-48 justify-stretch mx-2' : statusbar}" title="Upload"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="white" d="M11 19h2v-4.175l1.6 1.6L16 15l-4-4l-4 4l1.425 1.4L11 14.825zm-5 3q-.825 0-1.412-.587T4 20V4q0-.825.588-1.412T6 2h8l6 6v12q0 .825-.587 1.413T18 22zm7-13V4H6v16h12V9zM6 4v5zv16z"/></svg>
@@ -34,6 +54,24 @@
     </div>
 
     <slot></slot>
+
+    <!-- Menú de Configuración, fuera de la barra para que no lo recorte su scroll. -->
+    <Teleport to="body">
+      <div v-if="configMenuOpen" class="fixed inset-0 z-[60]" @click="configMenuOpen = false">
+        <ul
+          class="menu bg-base-100 rounded-box w-60 p-2 shadow-xl text-sm absolute"
+          :style="configMenuStyle"
+          @click.stop
+        >
+          <li><NuxtLink to="/config/equipos" @click="configMenuOpen = false">Equipos</NuxtLink></li>
+          <li><NuxtLink to="/config/camara" @click="configMenuOpen = false">Cámara</NuxtLink></li>
+          <li class="menu-title text-xs">Calibración</li>
+          <li><NuxtLink to="/config/combos" @click="configMenuOpen = false">Combos</NuxtLink></li>
+          <li><NuxtLink to="/config/pasos" @click="configMenuOpen = false">Paso del motor</NuxtLink></li>
+          <li><NuxtLink to="/calibraciones" @click="configMenuOpen = false">Registros e imágenes</NuxtLink></li>
+        </ul>
+      </div>
+    </Teleport>
 
     <div class="absolute w-96 right-0 bottom-0 " >
       <div role="alert" class="alert mt-1" :class="{'alert-error':(item.type==`error`),'alert-success':(item.type==`OK`),'alert-warning':(item.type==`warning`)}"  v-for="item, index in listadolog" :key="index">
@@ -52,8 +90,51 @@ const listadolog: ErrorItemAlert = alertList.listAelerts
 
 
 function changestatusvar() {
-  statusbar.value = !statusbar.value; 
+  statusbar.value = !statusbar.value;
 }
+
+// ── Menú de Configuración ────────────────────────────────────────
+// Se posiciona a mano a partir del recuadro del botón porque el panel se renderiza
+// en <body> (Teleport) para escapar del recorte de la barra lateral, y allí ya no
+// puede colocarse en relación al botón por CSS.
+const configTrigger = ref<HTMLElement | null>(null)
+const configMenuOpen = ref(false)
+const configMenuStyle = ref<Record<string, string>>({})
+
+function positionConfigMenu() {
+  const el = configTrigger.value
+  if (!el) return
+
+  const rect = el.getBoundingClientRect()
+  const menuHeight = 260 // alto aproximado del panel, para no salirse por abajo
+  const top = Math.min(rect.top, Math.max(8, window.innerHeight - menuHeight - 8))
+
+  configMenuStyle.value = {
+    top: `${top}px`,
+    left: `${rect.right + 8}px`
+  }
+}
+
+function toggleConfigMenu() {
+  configMenuOpen.value = !configMenuOpen.value
+  if (configMenuOpen.value) nextTick(positionConfigMenu)
+}
+
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') configMenuOpen.value = false
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', onKeydown)
+  window.addEventListener('resize', positionConfigMenu)
+  window.addEventListener('scroll', positionConfigMenu, true)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown)
+  window.removeEventListener('resize', positionConfigMenu)
+  window.removeEventListener('scroll', positionConfigMenu, true)
+})
 
 
 </script>

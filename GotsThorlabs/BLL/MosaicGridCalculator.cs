@@ -119,6 +119,18 @@ namespace GotsThorlabs.BLL
             /// <summary>Eje de la imagen ("dx" o "dy") donde se refleja el movimiento del motor Y.</summary>
             public string ImageAxisY { get; set; }
 
+            /// <summary>Nanómetros por paso empleados en el eje X (medidos o nominales).</summary>
+            public double StepSizeNmX { get; set; }
+
+            /// <summary>Nanómetros por paso empleados en el eje Y (medidos o nominales).</summary>
+            public double StepSizeNmY { get; set; }
+
+            /// <summary>
+            /// False cuando algún eje cayó al nominal por no tener caracterización mecánica.
+            /// En ese caso el área recorrida en milímetros es una estimación sin verificar.
+            /// </summary>
+            public bool StepSizeMeasured { get; set; }
+
             /// <summary>Signo (+1/-1) del desplazamiento de la imagen al mover el motor X en positivo.</summary>
             public int ImageDirectionX { get; set; }
 
@@ -187,12 +199,22 @@ namespace GotsThorlabs.BLL
         /// <param name="frameHeight">Alto del frame de la cámara en pixeles.</param>
         /// <returns>Parámetros calculados del grid.</returns>
         /// <exception cref="InvalidOperationException">Si no hay calibración válida.</exception>
+        /// <param name="measuredNmPerStepX">
+        /// Nanómetros por paso medidos con pie de rey para el eje X, o null si esa
+        /// caracterización no existe. Cuando falta se cae al nominal <see cref="NmPerStep"/>,
+        /// que NO está verificado: el tamaño real de paso de un actuador inercial depende
+        /// de la carga y de los parámetros de accionamiento, así que el área que el usuario
+        /// pide en milímetros puede no corresponder con la que se recorre.
+        /// </param>
+        /// <param name="measuredNmPerStepY">Equivalente para el eje Y.</param>
         public static GridResult Calculate(
             decimal areaX_mm,
             decimal areaY_mm,
             List<PicsCalibration> allCalibrations,
             int frameWidth,
-            int frameHeight)
+            int frameHeight,
+            double? measuredNmPerStepX = null,
+            double? measuredNmPerStepY = null)
         {
             if (allCalibrations == null || allCalibrations.Count == 0)
                 throw new InvalidOperationException("No hay calibraciones disponibles para el grupo.");
@@ -233,16 +255,25 @@ namespace GotsThorlabs.BLL
             int motorStepX = (int)Math.Clamp(motorStepXLong, 1, int.MaxValue);
             int motorStepY = (int)Math.Clamp(motorStepYLong, 1, int.MaxValue);
 
-            // Valores informativos en mm, usando el tamaño nominal del step.
-            // OJO: el step real del actuador piezo-inercial varía con carga y
-            // dirección, así que estos valores son estimados.
-            double mmPerStepNominal = NmPerStep / 1_000_000.0;
-            double pixelsPerMmX = fitX.PxPerStep / mmPerStepNominal;
-            double pixelsPerMmY = fitY.PxPerStep / mmPerStepNominal;
+            // Conversión a milímetros. Se usa el tamaño de paso MEDIDO por eje cuando
+            // existe una caracterización mecánica del motor; si no, se cae al nominal.
+            //
+            // Esto no es solo informativo: stepMm determina cuántas imágenes hacen falta
+            // para cubrir el área que pidió el usuario. Con el nominal equivocado, el
+            // recorrido cubre un área distinta de la solicitada sin que nada lo delate.
+            bool stepMeasuredX = measuredNmPerStepX is > 0;
+            bool stepMeasuredY = measuredNmPerStepY is > 0;
+            double nmPerStepX = stepMeasuredX ? measuredNmPerStepX!.Value : NmPerStep;
+            double nmPerStepY = stepMeasuredY ? measuredNmPerStepY!.Value : NmPerStep;
+
+            double mmPerStepX = nmPerStepX / 1_000_000.0;
+            double mmPerStepY = nmPerStepY / 1_000_000.0;
+            double pixelsPerMmX = fitX.PxPerStep / mmPerStepX;
+            double pixelsPerMmY = fitY.PxPerStep / mmPerStepY;
             double mmPerImageX = framePxX / pixelsPerMmX;
             double mmPerImageY = framePxY / pixelsPerMmY;
-            double stepMmX = motorStepX * mmPerStepNominal;
-            double stepMmY = motorStepY * mmPerStepNominal;
+            double stepMmX = motorStepX * mmPerStepX;
+            double stepMmY = motorStepY * mmPerStepY;
 
             // Número de imágenes necesarias para cubrir el área + 1 (garantiza cobertura del borde final)
             double areaX = (double)areaX_mm;
@@ -298,7 +329,10 @@ namespace GotsThorlabs.BLL
                 MotorStepX = motorStepX,
                 MotorStepY = motorStepY,
                 CalibrationX = fitX.Representative,
-                CalibrationY = fitY.Representative
+                CalibrationY = fitY.Representative,
+                StepSizeNmX = nmPerStepX,
+                StepSizeNmY = nmPerStepY,
+                StepSizeMeasured = stepMeasuredX && stepMeasuredY
             };
         }
 

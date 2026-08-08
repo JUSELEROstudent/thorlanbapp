@@ -23,6 +23,9 @@ namespace GotsThorlabs.Database.EntityRepo
         public virtual DbSet<Increase> Increases { get; set; } = null!;
         public virtual DbSet<Microscope> Microscopes { get; set; } = null!;
         public virtual DbSet<PicsCalibration> PicsCalibrations { get; set; } = null!;
+        public virtual DbSet<MotorCalibration> MotorCalibrations { get; set; } = null!;
+        public virtual DbSet<AxisStepCalibration> AxisStepCalibrations { get; set; } = null!;
+        public virtual DbSet<AxisStepMeasurement> AxisStepMeasurements { get; set; } = null!;
         public virtual DbSet<Tour> Tours { get; set; } = null!;
         public virtual DbSet<User> Users { get; set; } = null!;
 
@@ -179,6 +182,67 @@ namespace GotsThorlabs.Database.EntityRepo
                 entity.HasOne(d => d.GroupCailbration)
                     .WithMany(p => p.PicsCalibrations)
                     .HasForeignKey(d => d.GroupCailbrationId);
+            });
+
+            modelBuilder.Entity<MotorCalibration>(entity =>
+            {
+                entity.ToTable("motorCalibration");
+
+                entity.HasIndex(e => e.GroupCailbrationId, "IX_motorCalibration_groupCailbrationId");
+
+                entity.Property(e => e.MotorCalibrationId).HasColumnName("motorCalibrationId");
+                entity.Property(e => e.GroupCailbrationId).HasColumnName("groupCailbrationId");
+                entity.Property(e => e.KimDeviceId).HasColumnName("kimDeviceId");
+                entity.Property(e => e.StepRate).HasColumnName("stepRate");
+                entity.Property(e => e.StepAcceleration).HasColumnName("stepAcceleration");
+                entity.Property(e => e.Status).HasColumnName("status");
+                entity.Property(e => e.Acepted).HasColumnName("acepted");
+                entity.Property(e => e.Date).HasColumnName("date");
+                entity.Property(e => e.AditionalInfo).HasColumnName("aditionalInfo");
+
+                entity.HasOne(d => d.GroupCailbration)
+                    .WithMany(p => p.MotorCalibrations)
+                    .HasForeignKey(d => d.GroupCailbrationId);
+            });
+
+            modelBuilder.Entity<AxisStepCalibration>(entity =>
+            {
+                entity.ToTable("axisStepCalibration");
+
+                entity.HasIndex(e => e.MotorCalibrationId, "IX_axisStepCalibration_motorCalibrationId");
+
+                entity.Property(e => e.AxisStepCalibrationId).HasColumnName("axisStepCalibrationId");
+                entity.Property(e => e.MotorCalibrationId).HasColumnName("motorCalibrationId");
+                entity.Property(e => e.AxisName).HasColumnType("TEXT(5)").HasColumnName("axisName");
+                entity.Property(e => e.StepSizeNmForward).HasColumnName("stepSizeNmForward");
+                entity.Property(e => e.StepSizeNmBackward).HasColumnName("stepSizeNmBackward");
+                entity.Property(e => e.StepSizeNm).HasColumnName("stepSizeNm");
+                entity.Property(e => e.HysteresisPct).HasColumnName("hysteresisPct");
+                entity.Property(e => e.RelativeErrorPct).HasColumnName("relativeErrorPct");
+                entity.Property(e => e.Status).HasColumnName("status");
+
+                entity.HasOne(d => d.MotorCalibration)
+                    .WithMany(p => p.AxisStepCalibrations)
+                    .HasForeignKey(d => d.MotorCalibrationId);
+            });
+
+            modelBuilder.Entity<AxisStepMeasurement>(entity =>
+            {
+                entity.ToTable("axisStepMeasurement");
+
+                entity.HasIndex(e => e.AxisStepCalibrationId, "IX_axisStepMeasurement_axisStepCalibrationId");
+
+                entity.Property(e => e.AxisStepMeasurementId).HasColumnName("axisStepMeasurementId");
+                entity.Property(e => e.AxisStepCalibrationId).HasColumnName("axisStepCalibrationId");
+                entity.Property(e => e.Direction).HasColumnType("TEXT(10)").HasColumnName("direction");
+                entity.Property(e => e.Sequence).HasColumnName("sequence");
+                entity.Property(e => e.StepsCommanded).HasColumnName("stepsCommanded");
+                entity.Property(e => e.CaliperReadingMm).HasColumnName("caliperReadingMm");
+                entity.Property(e => e.MeasuredAt).HasColumnName("measuredAt");
+
+                entity.HasOne(d => d.AxisStepCalibration)
+                    .WithMany(p => p.AxisStepMeasurements)
+                    .HasForeignKey(d => d.AxisStepCalibrationId);
             });
 
             modelBuilder.Entity<Tour>(entity =>

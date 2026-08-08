@@ -8,6 +8,7 @@ namespace GotsThorlabs.Database.EntityRepo.Entities
         public GroupCalibration()
         {
             PicsCalibrations = new HashSet<PicsCalibration>();
+            MotorCalibrations = new HashSet<MotorCalibration>();
         }
 
         public string GroupCailbrationId { get; set; } = null!;
@@ -21,5 +22,11 @@ namespace GotsThorlabs.Database.EntityRepo.Entities
         public virtual Increase Increase { get; set; } = null!;
         public virtual Microscope Microscope { get; set; } = null!;
         public virtual ICollection<PicsCalibration> PicsCalibrations { get; set; }
+
+        /// <summary>
+        /// Caracterizaciones mecánicas del motor para este grupo. Se conserva el
+        /// histórico; la vigente es la que tiene Acepted = 1.
+        /// </summary>
+        public virtual ICollection<MotorCalibration> MotorCalibrations { get; set; }
     }
 }
