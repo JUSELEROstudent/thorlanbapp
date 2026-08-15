@@ -1,4 +1,4 @@
-﻿using GotsThorlabs.Interfaces;
+using GotsThorlabs.Interfaces;
 using GotsThorlabs.Database.EntityRepo;
 using GotsThorlabs.Database.EntityRepo.Entities;
 using Microsoft.AspNetCore.SignalR;
@@ -64,7 +64,7 @@ namespace GotsThorlabs.BLL
         }
 
        
-        public async IAsyncEnumerable<dynamic> Createmosaicstepbystep(decimal areaX_mm, decimal areaY_mm, string kimDeviceId, string groupCalibrationId)
+        public async IAsyncEnumerable<dynamic> Createmosaicstepbystep(decimal areaX_mm, decimal areaY_mm, string kimDeviceId, string groupCalibrationId, SweepPattern sweepPattern = SweepPattern.SerpentineScaled)
         {
             _areaX_mm = areaX_mm;
             _areaY_mm = areaY_mm;
@@ -218,11 +218,27 @@ namespace GotsThorlabs.BLL
             // Tamaño de paso medido con pie de rey, por eje. Si el grupo no tiene esa
             // caracterización, Calculate cae al nominal de 30 nm y lo reporta en el
             // resultado para que quede constancia de que el área en mm es una estimación.
-            double? stepNmX = ReadMeasuredStepNm(motorCalibration, "x");
-            double? stepNmY = ReadMeasuredStepNm(motorCalibration, "y");
+            // Se usa el paso de IDA y no la media: el eje X solo avanza en sentido
+            // positivo durante todo el recorrido, y en Y la distancia que cubre cada
+            // columna se define por la ida (la vuelta se compensa con más pasos).
+            double? stepNmX = ReadMeasuredStepNm(motorCalibration, "x", forward: true);
+            double? stepNmY = ReadMeasuredStepNm(motorCalibration, "y", forward: true);
+            double? stepNmYBack = ReadMeasuredStepNm(motorCalibration, "y", forward: false);
 
             var grid = MosaicGridCalculator.Calculate(
-                areaX_mm, areaY_mm, allCalibrations, frameWidth, frameHeight, stepNmX, stepNmY);
+                areaX_mm, areaY_mm, allCalibrations, frameWidth, frameHeight,
+                stepNmX, stepNmY, stepNmYBack);
+
+            Console.WriteLine($"[TakeTour] Patrón de barrido: {sweepPattern}. " +
+                $"MotorStepY ida={grid.MotorStepY}, vuelta={grid.MotorStepYBackward} " +
+                $"(compensación {(grid.BackwardStepMeasured ? "medida" : "no disponible")}).");
+
+            if (sweepPattern == SweepPattern.SerpentineScaled && !grid.BackwardStepMeasured)
+            {
+                Console.WriteLine("[TakeTour] AVISO: se pidió serpentina escalada pero el eje Y no tiene " +
+                    "medido el sentido de vuelta. Se comporta como serpentina simple: las columnas de " +
+                    "vuelta quedarán más cortas que las de ida.");
+            }
 
             if (!grid.StepSizeMeasured)
             {
@@ -255,6 +271,12 @@ namespace GotsThorlabs.BLL
             //      columnas impares → baja  (i_motor: ImagesY-1 → 0)
             //   El almacenamiento en image[] siempre usa el índice espacial k
             //   para que VConcat preserve el orden espacial correcto.
+            // Posición comandada del eje Y al empezar la columna actual. Se lleva a mano
+            // porque con los pasos escalados por sentido las posiciones ya no son
+            // múltiplos de un único MotorStepY.
+            long yColumnStart = 0;
+            long yColumnEnd = 0;
+
             for (int j = 0; j < grid.ImagesX; j++)
             {
                 bool estatusMovementA = Move_Method1(deviceconnect, chanelsDevice[1], j * grid.MotorStepX);
@@ -265,28 +287,70 @@ namespace GotsThorlabs.BLL
                     throw new Exception("Error al mover el dispositivo (eje X), revisar la coneccion [ES]");
                 }
 
+                // El unidireccional recorre siempre en positivo; las serpentinas alternan.
+                bool descending = sweepPattern != SweepPattern.Unidirectional && (j % 2 == 1);
+
+                // Solo la serpentina escalada compensa el sentido; las otras dos usan el
+                // mismo número de pasos en ambos.
+                int stepY = (descending && sweepPattern == SweepPattern.SerpentineScaled)
+                    ? grid.MotorStepYBackward
+                    : grid.MotorStepY;
+
                 for (int k = 0; k < grid.ImagesY; k++)
                 {
-                    // Índice lógico del motor en Y según el patrón S
-                    int i_motor = (j % 2 == 0) ? k : (grid.ImagesY - 1 - k);
+                    // k es el orden de visita; la fila FÍSICA es la que decide dónde se
+                    // guarda. Antes se almacenaba por orden de visita, de modo que las
+                    // columnas descendentes quedaban invertidas de arriba abajo respecto
+                    // de las ascendentes y el mosaico salía con columnas espejadas.
+                    int spatialRow = descending ? (grid.ImagesY - 1 - k) : k;
+                    long yTarget = yColumnStart + (descending ? -(long)k * stepY : (long)k * stepY);
 
                     Mat frame = new Mat();
 
-                    bool estatusMovement = Move_Method1(deviceconnect, chanelsDevice[2], i_motor * grid.MotorStepY);
+                    bool estatusMovement = Move_Method1(deviceconnect, chanelsDevice[2], (int)yTarget);
                     if (!estatusMovement)
                     {
                         deviceconnect.StopPolling();
                         deviceconnect.Disconnect(true);
                         throw new Exception("Error al mover el dispositivo (eje Y), revisar la coneccion [ES]");
                     }
-                    // Tomar imagen guardando en el índice espacial k (orden vertical correcto)
-                    string pathsave = TakeAPic("unitofpics", fullnamefolder, j, k, 0);
+
+                    if (k == grid.ImagesY - 1) yColumnEnd = yTarget;
+
+                    string pathsave = TakeAPic("unitofpics", fullnamefolder, j, spatialRow, 0);
                     var splitpathdir = pathsave.Split($"{Path.DirectorySeparatorChar}");
                     int dimpath = splitpathdir.Length;
                     var namephotounits = splitpathdir[dimpath - 1];
                     var urlunitpi = urlslocals[2] + $"/SouerceStaticFiles/{namefolder}/" + namephotounits + "?ranmd=" + rand.Next().ToString();
                     yield return urlunitpi;
                 }
+                // Punto de partida de la siguiente columna.
+                if (sweepPattern == SweepPattern.Unidirectional)
+                {
+                    // Hay que volver físicamente al inicio de la columna. Comandar los
+                    // mismos pasos que se subieron dejaría el eje corto, porque el
+                    // retroceso rinde menos: se comanda la cantidad equivalente en
+                    // distancia usando el paso de vuelta.
+                    long returnSteps = (long)(grid.ImagesY - 1) * grid.MotorStepYBackward;
+                    long yReturn = yColumnEnd - returnSteps;
+
+                    if (j < grid.ImagesX - 1)
+                    {
+                        if (!Move_Method1(deviceconnect, chanelsDevice[2], (int)yReturn))
+                        {
+                            deviceconnect.StopPolling();
+                            deviceconnect.Disconnect(true);
+                            throw new Exception("Error al retornar el eje Y entre columnas, revisar la coneccion [ES]");
+                        }
+                    }
+                    yColumnStart = yReturn;
+                }
+                else
+                {
+                    // Las serpentinas empiezan la siguiente columna donde terminó esta.
+                    yColumnStart = yColumnEnd;
+                }
+
                 Mat mosaicv = new Mat();
                 Cv2.VConcat(image, mosaicv);
                 finalimg[j] = mosaicv;
@@ -450,14 +514,17 @@ namespace GotsThorlabs.BLL
         /// eje a medias daría un número peor que el nominal, no mejor.
         /// </summary>
         private static double? ReadMeasuredStepNm(
-            GotsThorlabs.Database.EntityRepo.Entities.MotorCalibration? calibration, string axisName)
+            GotsThorlabs.Database.EntityRepo.Entities.MotorCalibration? calibration,
+            string axisName,
+            bool forward)
         {
             var axis = calibration?.AxisStepCalibrations
                 .FirstOrDefault(a => string.Equals(a.AxisName, axisName, StringComparison.OrdinalIgnoreCase));
 
             if (axis == null || axis.Status != "complete") return null;
 
-            return StepSizeCalculator.TryParse(axis.StepSizeNm, out var value) && value > 0
+            var raw = forward ? axis.StepSizeNmForward : axis.StepSizeNmBackward;
+            return StepSizeCalculator.TryParse(raw, out var value) && value > 0
                 ? value
                 : null;
         }

@@ -86,6 +86,7 @@ builder.Services.AddScoped<GotsThorlabs.Interfaces.IAuthService, GotsThorlabs.Se
 // y recibe el CameraServiceFactory (singleton) para capturar el cuadro.
 builder.Services.AddScoped<GotsThorlabs.Interfaces.IFocusService, GotsThorlabs.Services.FocusService>();
 builder.Services.AddScoped<GotsThorlabs.Interfaces.IMotorCalibrationService, GotsThorlabs.Services.MotorCalibrationService>();
+builder.Services.AddScoped<GotsThorlabs.Interfaces.ITourPlanningService, GotsThorlabs.Services.TourPlanningService>();
 
 var app = builder.Build();
 

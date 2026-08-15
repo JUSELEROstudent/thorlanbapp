@@ -294,6 +294,10 @@ namespace GotsThorlabs.Hubs
           decimal areaY_mm,
           string groupCalibrationId,
           string device,
+          // Patrón de barrido. Se recibe como entero para no atar el cliente al nombre
+          // del enum; por defecto la serpentina escalada, que es la que corrige el
+          // desajuste entre columnas sin coste de movimientos en vacío.
+          int sweepPattern,
          [EnumeratorCancellation]
         CancellationToken cancellationToken)
         {
@@ -321,7 +325,12 @@ namespace GotsThorlabs.Hubs
             }
 
             var controlmotor = new TakeTour(resolvedLocalIdentifier, _db, cameraService);
-            var processimgs = controlmotor.Createmosaicstepbystep(areaX_mm, areaY_mm, device.Trim(), groupCalibrationId);
+            var pattern = Enum.IsDefined(typeof(SweepPattern), sweepPattern)
+                ? (SweepPattern)sweepPattern
+                : SweepPattern.SerpentineScaled;
+
+            var processimgs = controlmotor.Createmosaicstepbystep(
+                areaX_mm, areaY_mm, device.Trim(), groupCalibrationId, pattern);
             await foreach (var url in processimgs)
             {
                 yield return url;

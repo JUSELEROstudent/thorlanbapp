@@ -1,4 +1,4 @@
-﻿using Dapper;
+using Dapper;
 using GotsThorlabs.Database.EntityRepo.Entities;
 using GotsThorlabs.Interfaces;
 using GotsThorlabs.Services;
@@ -173,7 +173,7 @@ namespace GotsThorlabs.BLL
         ///<remarks>
         ///devuelve la url de la ubicacion en el servidor de la imagen actual del mapeo
         ///</remarks>
-        public IAsyncEnumerable<dynamic> Createmosaicstepbystep(decimal areaX_mm, decimal areaY_mm, string kimDeviceId, string groupCalibrationId)
+        public IAsyncEnumerable<dynamic> Createmosaicstepbystep(decimal areaX_mm, decimal areaY_mm, string kimDeviceId, string groupCalibrationId, SweepPattern sweepPattern = SweepPattern.SerpentineScaled)
         {
             // Este motor legacy no soporta el cálculo de grid basado en calibración.
             // La nueva firma se mantiene para cumplir con ITakeTour, pero el cálculo

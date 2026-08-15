@@ -126,6 +126,20 @@ namespace GotsThorlabs.BLL
             public double StepSizeNmY { get; set; }
 
             /// <summary>
+            /// Pasos entre filas cuando la columna se recorre en sentido negativo.
+            ///
+            /// Un actuador inercial avanza menos al retroceder, así que comandar los mismos
+            /// pasos que en la ida deja la columna más corta. Este valor los escala por la
+            /// razón entre el paso de ida y el de vuelta, de modo que ambas columnas cubran
+            /// la misma distancia física. Si no hay medición de vuelta es igual a
+            /// <see cref="MotorStepY"/> y el recorrido se comporta como antes.
+            /// </summary>
+            public int MotorStepYBackward { get; set; }
+
+            /// <summary>True cuando MotorStepYBackward procede de una medición real.</summary>
+            public bool BackwardStepMeasured { get; set; }
+
+            /// <summary>
             /// False cuando algún eje cayó al nominal por no tener caracterización mecánica.
             /// En ese caso el área recorrida en milímetros es una estimación sin verificar.
             /// </summary>
@@ -214,7 +228,8 @@ namespace GotsThorlabs.BLL
             int frameWidth,
             int frameHeight,
             double? measuredNmPerStepX = null,
-            double? measuredNmPerStepY = null)
+            double? measuredNmPerStepY = null,
+            double? measuredNmPerStepYBackward = null)
         {
             if (allCalibrations == null || allCalibrations.Count == 0)
                 throw new InvalidOperationException("No hay calibraciones disponibles para el grupo.");
@@ -275,6 +290,16 @@ namespace GotsThorlabs.BLL
             double stepMmX = motorStepX * mmPerStepX;
             double stepMmY = motorStepY * mmPerStepY;
 
+            // Pasos equivalentes para recorrer la misma distancia física hacia atrás.
+            // Solo tiene sentido con ambos sentidos medidos; si falta la vuelta se deja
+            // igual que la ida, que es el comportamiento histórico.
+            bool backwardMeasured = stepMeasuredY && measuredNmPerStepYBackward is > 0;
+            int motorStepYBackward = backwardMeasured
+                ? (int)Math.Clamp(
+                    (long)Math.Round(motorStepY * nmPerStepY / measuredNmPerStepYBackward!.Value),
+                    1, int.MaxValue)
+                : motorStepY;
+
             // Número de imágenes necesarias para cubrir el área + 1 (garantiza cobertura del borde final)
             double areaX = (double)areaX_mm;
             double areaY = (double)areaY_mm;
@@ -332,7 +357,9 @@ namespace GotsThorlabs.BLL
                 CalibrationY = fitY.Representative,
                 StepSizeNmX = nmPerStepX,
                 StepSizeNmY = nmPerStepY,
-                StepSizeMeasured = stepMeasuredX && stepMeasuredY
+                StepSizeMeasured = stepMeasuredX && stepMeasuredY,
+                MotorStepYBackward = motorStepYBackward,
+                BackwardStepMeasured = backwardMeasured
             };
         }
 

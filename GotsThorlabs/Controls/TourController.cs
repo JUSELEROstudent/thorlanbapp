@@ -10,10 +10,12 @@ namespace GotsThorlabs.Controls
     public class TourController : ControllerBase
     {
         private readonly ITourCrudService _service;
+        private readonly ITourPlanningService _planning;
 
-        public TourController(ITourCrudService service)
+        public TourController(ITourCrudService service, ITourPlanningService planning)
         {
             _service = service;
+            _planning = planning;
         }
 
         /// <summary>
@@ -25,6 +27,33 @@ namespace GotsThorlabs.Controls
         {
             var tours = await _service.GetAllAsync(ct);
             return Ok(tours);
+        }
+
+        /// <summary>
+        /// Estima cuánto tardará un recorrido con la configuración indicada, sin lanzarlo.
+        /// Sondea la cámara una vez para conocer la resolución, así que puede tardar un
+        /// segundo en responder.
+        /// </summary>
+        [HttpGet("estimate")]
+        public async Task<ActionResult<GotsThorlabs.BLL.TourTimeEstimator.Estimate>> EstimateAsync(
+            [FromQuery] string groupCalibrationId,
+            [FromQuery] decimal areaXmm,
+            [FromQuery] decimal areaYmm,
+            CancellationToken ct,
+            [FromQuery] int sweepPattern = (int)GotsThorlabs.BLL.SweepPattern.SerpentineScaled)
+        {
+            var pattern = Enum.IsDefined(typeof(GotsThorlabs.BLL.SweepPattern), sweepPattern)
+                ? (GotsThorlabs.BLL.SweepPattern)sweepPattern
+                : GotsThorlabs.BLL.SweepPattern.SerpentineScaled;
+
+            try
+            {
+                return Ok(await _planning.EstimateAsync(groupCalibrationId, areaXmm, areaYmm, pattern, ct));
+            }
+            catch (KeyNotFoundException ex) { return NotFound(ex.Message); }
+            catch (ArgumentException ex) { return BadRequest(ex.Message); }
+            catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
+            catch (Exception ex) { return StatusCode(500, $"Error al estimar el recorrido: {ex.Message}"); }
         }
 
         [HttpGet("{id:int}")]

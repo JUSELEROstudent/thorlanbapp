@@ -29,13 +29,58 @@
                 <input type="number" step="0.1" v-model="areaY" class="input input-bordered w-full ml-2" name="fname" placeholder="Y mm" title="Tamaño Y en milímetros"  >
                 </div>
             </label>
-            <div class="flex-1 " > 
+            <label style="color: white;" for="sweepSelect" class="space-x-2"><span>Barrido</span></label>
+            <select id="sweepSelect" v-model.number="sweepPattern" class="select select-bordered w-full max-w-xs" :title="sweepHint">
+                <option :value="1">Serpentina compensada</option>
+                <option :value="0">Serpentina simple (rápida)</option>
+                <option :value="2">Unidireccional (lento)</option>
+            </select>
+
+            <div class="flex-1 " >
                  <button @click="InitStreamImg()" class="btn btn-success bg-blue-900 float-end " :class="{'btn-disabled': statusstreamimg || !canStartStream }">
-                Iniciar 
+                Iniciar
                  </button>
-            </div> 
+            </div>
             
         </div>
+        <!-- Estimación previa. Un recorrido puede pasar de la hora y hasta ahora no había
+             forma de saberlo sin lanzarlo. El cálculo lo hace el backend con el mismo
+             MosaicGridCalculator que ejecuta el recorrido, así que no puede divergir. -->
+        <div v-if="canStartStream" class="rounded bg-gray p-3 text-white text-sm">
+            <div v-if="isEstimating" class="flex items-center gap-2 text-gray-300">
+                <span class="loading loading-spinner loading-xs"></span> Calculando estimación…
+            </div>
+
+            <div v-else-if="estimateError" class="text-amber-300 text-xs">
+                No se pudo estimar: {{ estimateError }}
+            </div>
+
+            <div v-else-if="estimate" class="flex flex-wrap items-center gap-x-6 gap-y-2">
+                <div>
+                    <span class="text-xs text-gray-400 block">Duración estimada</span>
+                    <span class="font-mono text-lg">{{ formatDuration(estimate.totalSeconds) }}</span>
+                </div>
+                <div>
+                    <span class="text-xs text-gray-400 block">Imágenes</span>
+                    <span class="font-mono">{{ estimate.imagesX }} × {{ estimate.imagesY }} = {{ estimate.totalImages }}</span>
+                </div>
+                <div>
+                    <span class="text-xs text-gray-400 block">Área que se cubrirá</span>
+                    <span class="font-mono">{{ estimate.coveredXmm.toFixed(2) }} × {{ estimate.coveredYmm.toFixed(2) }} mm</span>
+                </div>
+                <div>
+                    <span class="text-xs text-gray-400 block">Reparto</span>
+                    <span class="font-mono text-xs">
+                        motor {{ formatDuration(estimate.motionSeconds) }} · cámara {{ formatDuration(estimate.captureSeconds) }}
+                    </span>
+                </div>
+
+                <div v-if="estimate.warnings?.length" class="w-full space-y-1">
+                    <p v-for="(w, i) in estimate.warnings" :key="i" class="text-xs text-amber-300">{{ w }}</p>
+                </div>
+            </div>
+        </div>
+
         <!-- El visor tiene tres estados. Antes era un <img> fijo apuntando a una imagen
              de ejemplo que no existe (boat.jpg, con host y puerto escritos a mano), así
              que hasta que arrancaba un recorrido se veía el icono de imagen rota. -->
@@ -95,6 +140,72 @@ const imgRef = ref<HTMLImageElement | null>(null);
 const statusstreamimg = ref<boolean>(false);
 const areaX = ref<number>(10.0);
 const areaY = ref<number>(8.0);
+
+// Patrón de barrido: 0 serpentina simple, 1 serpentina compensada, 2 unidireccional.
+// Por defecto la compensada, que iguala el espaciado entre columnas de ida y de vuelta
+// sin añadir movimientos en vacío.
+const sweepPattern = ref<number>(1);
+
+// ── Estimación previa del recorrido ──────────────────────────────
+interface TourEstimate {
+  imagesX: number; imagesY: number; totalImages: number;
+  motionSeconds: number; captureSeconds: number; totalSeconds: number;
+  coveredXmm: number; coveredYmm: number;
+  stepSizeMeasured: boolean;
+  warnings: string[];
+}
+
+const estimate = ref<TourEstimate | null>(null);
+const isEstimating = ref<boolean>(false);
+const estimateError = ref<string | null>(null);
+let estimateTimer: ReturnType<typeof setTimeout> | null = null;
+
+const formatDuration = (seconds: number) => {
+  if (!Number.isFinite(seconds) || seconds < 0) return '—';
+  const h = Math.floor(seconds / 3600);
+  const m = Math.round((seconds % 3600) / 60);
+  return h > 0 ? `${h} h ${m} min` : `${Math.max(m, 1)} min`;
+};
+
+const fetchEstimate = async () => {
+  if (!canStartStream.value || !(areaX.value > 0) || !(areaY.value > 0)) {
+    estimate.value = null;
+    return;
+  }
+
+  isEstimating.value = true;
+  estimateError.value = null;
+  try {
+    const query = new URLSearchParams({
+      groupCalibrationId: currentGroup.value,
+      areaXmm: String(areaX.value),
+      areaYmm: String(areaY.value),
+      sweepPattern: String(sweepPattern.value)
+    });
+    estimate.value = await $fetch<TourEstimate>(`${config.public.apiUrl}/api/Tour/estimate?${query}`);
+  } catch (error: any) {
+    // El aviso se muestra en el panel; no se lanza alerta porque el usuario puede
+    // estar todavía escribiendo el área y no ha pedido nada explícitamente.
+    estimate.value = null;
+    estimateError.value = error?.data || 'no hay calibración suficiente para este combo';
+  } finally {
+    isEstimating.value = false;
+  }
+};
+
+// Se espera a que el usuario deje de teclear: cada estimación sondea la cámara.
+watch([currentGroup, areaX, areaY, sweepPattern], () => {
+  if (estimateTimer) clearTimeout(estimateTimer);
+  estimateTimer = setTimeout(fetchEstimate, 600);
+});
+
+onBeforeUnmount(() => { if (estimateTimer) clearTimeout(estimateTimer); });
+
+const sweepHint = computed(() => ({
+  0: 'Rápida. Las columnas de vuelta quedan más cortas porque el actuador avanza menos al retroceder.',
+  1: 'Recomendada. Escala los pasos en las columnas de vuelta para que cubran la misma distancia física.',
+  2: 'Todas las capturas en el mismo sentido, con retorno compensado entre columnas. Aproximadamente el doble de tiempo.'
+}[sweepPattern.value]));
 const canStartStream = computed(() => {
     const hasDevice = `${currentDevice.value ?? ""}`.trim().length > 0;
     const hasGroup = `${currentGroup.value ?? ""}`.trim().length > 0;
@@ -200,7 +311,7 @@ onMounted( async () => {
         // calibración (groupCalibrationId -> Camera), no de este primer
         // parámetro: por eso ya no hay selector de cámara en esta vista, y aquí
         // solo se manda un valor cualquiera para cumplir la firma del método.
-        hubConnection.stream("Imgupdate", 0, areaX.value, areaY.value, currentGroup.value, currentDevice.value).subscribe({
+        hubConnection.stream("Imgupdate", 0, areaX.value, areaY.value, currentGroup.value, currentDevice.value, sweepPattern.value).subscribe({
             next: (item: string) => {
                 if (imgRef.value) {
                     imgRef.value.src = `${item}`;
