@@ -42,6 +42,20 @@ namespace GotsThorlabs.BLL
             public int MotorStepYBackward { get; set; }
             public long StepRate { get; set; }
 
+            /// <summary>
+            /// Pasos del movimiento individual más largo del recorrido. Es el número que
+            /// decide si un recorrido es viable: el resto del tiempo se reparte en muchos
+            /// desplazamientos cortos, pero un único movimiento desmedido es el que antes
+            /// agotaba el límite fijo de dos minutos y cortaba el recorrido a medias.
+            /// </summary>
+            public long LongestMoveSteps { get; set; }
+
+            /// <summary>Duración teórica de ese movimiento a la velocidad configurada.</summary>
+            public double LongestMoveSeconds { get; set; }
+
+            /// <summary>Tiempo que se le concede a ese movimiento antes de darlo por perdido.</summary>
+            public double LongestMoveBudgetSeconds { get; set; }
+
             public string Pattern { get; set; } = default!;
 
             /// <summary>Área que el recorrido cubrirá realmente, en milímetros.</summary>
@@ -93,6 +107,13 @@ namespace GotsThorlabs.BLL
             // El primer avance en X es a la posición 0, donde ya está: ImagesX-1 movimientos.
             motion += Math.Max(grid.ImagesX - 1, 0) * MoveSeconds(grid.MotorStepX);
 
+            // Movimiento individual más largo. En la serpentina es el mayor de los pasos
+            // entre imágenes; en el unidireccional lo es, con diferencia, el retorno que
+            // deshace una columna entera de una sola vez.
+            long longestMove = Math.Max(grid.MotorStepX, Math.Max(grid.MotorStepY, stepOdd));
+            if (pattern == SweepPattern.Unidirectional)
+                longestMove = Math.Max(longestMove, (long)movesPerColumn * grid.MotorStepYBackward);
+
             int total = grid.ImagesX * grid.ImagesY;
             double capture = total * CaptureSeconds;
 
@@ -111,8 +132,21 @@ namespace GotsThorlabs.BLL
                 Pattern = pattern.ToString(),
                 CoveredXmm = Math.Max(grid.ImagesX - 1, 0) * grid.StepMmX,
                 CoveredYmm = Math.Max(grid.ImagesY - 1, 0) * grid.StepMmY,
-                StepSizeMeasured = grid.StepSizeMeasured
+                StepSizeMeasured = grid.StepSizeMeasured,
+                LongestMoveSteps = longestMove,
+                LongestMoveSeconds = longestMove / (double)rate,
+                LongestMoveBudgetSeconds = MotorMotion.TimeoutForMs(longestMove, rate) / 1000.0
             };
+
+            if (estimate.LongestMoveSeconds > 120)
+            {
+                estimate.Warnings.Add(
+                    $"Hay un movimiento de {longestMove} pasos que por sí solo tarda " +
+                    $"{estimate.LongestMoveSeconds / 60:F1} min a {rate} pasos/s (se le conceden " +
+                    $"{estimate.LongestMoveBudgetSeconds / 60:F1} min antes de darlo por perdido). " +
+                    "Subir StepRate o reducir el área lo acorta; si el eje rinde muy pocos píxeles " +
+                    "por paso, revise también su montaje mecánico.");
+            }
 
             if (!grid.StepSizeMeasured)
             {

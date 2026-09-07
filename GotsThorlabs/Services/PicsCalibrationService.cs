@@ -1,4 +1,5 @@
 using System.Globalization;
+using GotsThorlabs.BLL;
 using GotsThorlabs.Database.EntityRepo;
 using GotsThorlabs.Database.EntityRepo.Entities;
 using GotsThorlabs.Interfaces;
@@ -261,7 +262,7 @@ namespace GotsThorlabs.Services
 
                     try
                     {
-                        MoveMotor(device, channel, 0);
+                        MoveMotor(device, channel, 0, calibrationStepRate);
                     }
                     catch (Exception ex)
                     {
@@ -295,7 +296,7 @@ namespace GotsThorlabs.Services
 
                     try
                     {
-                        MoveMotor(device, channel, step);
+                        MoveMotor(device, channel, step, calibrationStepRate);
                     }
                     catch (Exception ex)
                     {
@@ -400,36 +401,24 @@ namespace GotsThorlabs.Services
             return results;
         }
 
-        private static void MoveMotor(KCubeInertialMotor device, InertialMotorStatus.MotorChannels channel, int position)
+        /// <summary>
+        /// Mueve y espera a que la platina llegue antes de dejar capturar, para que la
+        /// correlación de fase no mida sobre una imagen tomada en movimiento.
+        ///
+        /// El presupuesto de tiempo se calcula a partir de la distancia y de la velocidad
+        /// con la que se está calibrando. La versión anterior usaba una constante de dos
+        /// minutos: los tramos largos de esta calibración son de miles de pasos y con una
+        /// velocidad baja se agotaba sin que nada fuese mal.
+        /// </summary>
+        private static void MoveMotor(
+            KCubeInertialMotor device,
+            InertialMotorStatus.MotorChannels channel,
+            int position,
+            long stepRate)
         {
-            if (device.GetPosition(channel) == position)
-                return;
-
-            // Start the move (timeout 0 = non-blocking, returns immediately).
-            device.MoveTo(channel, position, 0);
-
-            // Poll the actual position until the motor reaches the target.
-            // The inertial motor moves by applying vibration pulses; the position
-            // counter only increments as the stage physically moves. We wait
-            // however long it takes — no fixed timeout — so the camera never
-            // captures before the stage has arrived.
-            const int pollIntervalMs = 100;
-            const int settleMs       = 500;  // extra settle after arriving (let vibrations damp)
-            const int safetyMaxMs    = 120_000; // 2 min safety valve
-
-            var elapsed = 0;
-            while (device.GetPosition(channel) != position)
-            {
-                Thread.Sleep(pollIntervalMs);
-                elapsed += pollIntervalMs;
-                if (elapsed >= safetyMaxMs)
-                    throw new InvalidOperationException(
-                        $"El motor no alcanzó la posición {position} tras {safetyMaxMs / 1000}s " +
-                        $"(posición actual: {device.GetPosition(channel)}).");
-            }
-
-            // The stage arrived — let any residual vibration dampen before capture.
-            Thread.Sleep(settleMs);
+            var result = MotorMotion.MoveAndWait(device, channel, position, stepRate);
+            if (!result.Ok)
+                throw new InvalidOperationException(result.Describe(channel.ToString()));
         }
 
         public async Task UpdateAsync(string id, PicsCalibrationUpdateDTO dto, CancellationToken ct)

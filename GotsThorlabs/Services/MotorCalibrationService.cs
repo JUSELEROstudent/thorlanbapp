@@ -204,7 +204,7 @@ namespace GotsThorlabs.Services
                 }
                 device.SetSettings(settings, true, true);
 
-                MoveAndWait(device, channel, dto.TargetSteps, ct);
+                MoveAndWait(device, channel, dto.TargetSteps, calibration.StepRate, ct);
             }
             finally
             {
@@ -368,32 +368,29 @@ namespace GotsThorlabs.Services
             }
         }
 
-        private static void MoveAndWait(KCubeInertialMotor device, InertialMotorStatus.MotorChannels channel, int position, CancellationToken ct)
+        /// <summary>
+        /// Un tramo de esta medición son decenas de miles de pasos, así que el tiempo que
+        /// hay que conceder depende de la distancia y de la velocidad configuradas. Antes
+        /// se resolvía con una constante de 15 minutos elegida para este procedimiento —
+        /// generosa para no cortar la medición, pero por eso mismo inútil para detectar un
+        /// eje trabado, que tardaba un cuarto de hora en delatarse. Al delegar en
+        /// MotorMotion el presupuesto se ajusta solo y quien detecta el atasco es la
+        /// ventana de estancamiento, en segundos.
+        /// </summary>
+        private static void MoveAndWait(
+            KCubeInertialMotor device,
+            InertialMotorStatus.MotorChannels channel,
+            int position,
+            long stepRate,
+            CancellationToken ct)
         {
-            if (device.GetPosition(channel) == position) return;
+            var result = MotorMotion.MoveAndWait(device, channel, position, stepRate, ct);
 
-            device.MoveTo(channel, position, 0);
-
-            const int pollIntervalMs = 100;
-            const int settleMs = 500;
-            // Un tramo de la medición son decenas de miles de pasos: a 200 pasos/s eso son
-            // varios minutos, muy por encima de la válvula de 2 min que usa el recorrido
-            // normal. El límite aquí se dimensiona para el procedimiento, no se elimina.
-            const int safetyMaxMs = 900_000; // 15 min
-
-            var elapsed = 0;
-            while (device.GetPosition(channel) != position)
-            {
+            if (result.Status == MoveStatus.Cancelled)
                 ct.ThrowIfCancellationRequested();
-                Thread.Sleep(pollIntervalMs);
-                elapsed += pollIntervalMs;
-                if (elapsed >= safetyMaxMs)
-                    throw new InvalidOperationException(
-                        $"El motor no alcanzó la posición {position} tras {safetyMaxMs / 60000} minutos. " +
-                        "Verifique que el eje no esté trabado o al final de su recorrido.");
-            }
 
-            Thread.Sleep(settleMs);
+            if (!result.Ok)
+                throw new InvalidOperationException(result.Describe(channel.ToString()));
         }
 
         private static InertialMotorStatus.MotorChannels ResolveChannel(string axisName) =>

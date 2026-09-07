@@ -70,6 +70,14 @@ namespace GotsThorlabs.BLL
         public const double MinTotalDisplacementPx = 2.0;
 
         /// <summary>
+        /// Discrepancia relativa máxima que se tolera entre los píxeles por milímetro que
+        /// deduce cada eje antes de avisar. Un 25 % deja pasar las diferencias normales de
+        /// medición sin dejar escapar una inconsistencia real, que se manifiesta como un
+        /// factor de dos o más.
+        /// </summary>
+        public const double MaxPixelsPerMmMismatch = 0.25;
+
+        /// <summary>
         /// Límite máximo de imágenes permitidas por eje. Es una válvula de
         /// seguridad adicional (además de <see cref="MaxMosaicBytes"/>) para
         /// detectar de inmediato un grid absurdo (p.ej. producto de un
@@ -180,6 +188,15 @@ namespace GotsThorlabs.BLL
 
             /// <summary>Registro de calibración representativo del eje Y (el de más steps usado en la regresión).</summary>
             public PicsCalibration CalibrationY { get; set; }
+
+            /// <summary>
+            /// Problemas detectados en los datos de calibración que no impiden calcular el
+            /// grid pero sí ponen en duda el resultado. Son avisos y no excepciones a
+            /// propósito: el recorrido puede seguir siendo útil aunque el área en
+            /// milímetros no sea de fiar, y bloquearlo dejaría al operador sin forma de
+            /// avanzar mientras rehace la calibración.
+            /// </summary>
+            public List<string> Warnings { get; set; } = new();
         }
 
         /// <summary>
@@ -290,6 +307,34 @@ namespace GotsThorlabs.BLL
             double stepMmX = motorStepX * mmPerStepX;
             double stepMmY = motorStepY * mmPerStepY;
 
+            var warnings = new List<string>();
+
+            // Contraste entre dos mediciones independientes de lo mismo. Cada eje deduce
+            // los píxeles por milímetro por un camino distinto: la calibración óptica
+            // (píxeles por paso, de la correlación de fase) dividida por la mecánica
+            // (nanómetros por paso, del pie de rey). Como la cámara y el objetivo son los
+            // mismos para los dos ejes, ambos resultados tienen que coincidir. Si no
+            // coinciden, una de las dos calibraciones está mal — y como stepMm decide
+            // cuántas imágenes se toman, el recorrido cubrirá un área distinta de la que
+            // se pidió. Nada cruzaba antes estas dos medidas, de modo que una discrepancia
+            // de un orden de magnitud no se manifestaba por ninguna parte.
+            if (stepMeasuredX && stepMeasuredY && pixelsPerMmX > 0 && pixelsPerMmY > 0)
+            {
+                double ratio = Math.Max(pixelsPerMmX, pixelsPerMmY) / Math.Min(pixelsPerMmX, pixelsPerMmY);
+                if (ratio - 1.0 > MaxPixelsPerMmMismatch)
+                {
+                    warnings.Add(
+                        $"Las calibraciones óptica y mecánica no son consistentes entre ejes: X implica " +
+                        $"{pixelsPerMmX:F0} px/mm y Y implica {pixelsPerMmY:F0} px/mm, una diferencia de " +
+                        $"{ratio:F2}x cuando deberían coincidir (misma cámara y misma óptica en ambos ejes). " +
+                        $"Con esos números una sola imagen cubriría {mmPerImageX:F4} mm en X y " +
+                        $"{mmPerImageY:F4} mm en Y, relación {mmPerImageX / mmPerImageY:F2}:1 frente a " +
+                        $"{(double)framePxX / framePxY:F2}:1 del sensor. Uno de los dos ejes tiene mal medido " +
+                        $"el tamaño de paso con pie de rey o el desplazamiento óptico: el recorrido se puede " +
+                        $"ejecutar, pero el área en milímetros no será la solicitada.");
+                }
+            }
+
             // Pasos equivalentes para recorrer la misma distancia física hacia atrás.
             // Solo tiene sentido con ambos sentidos medidos; si falta la vuelta se deja
             // igual que la ida, que es el comportamiento histórico.
@@ -359,7 +404,8 @@ namespace GotsThorlabs.BLL
                 StepSizeNmY = nmPerStepY,
                 StepSizeMeasured = stepMeasuredX && stepMeasuredY,
                 MotorStepYBackward = motorStepYBackward,
-                BackwardStepMeasured = backwardMeasured
+                BackwardStepMeasured = backwardMeasured,
+                Warnings = warnings
             };
         }
 

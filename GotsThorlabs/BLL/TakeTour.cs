@@ -224,10 +224,29 @@ namespace GotsThorlabs.BLL
             double? stepNmX = ReadMeasuredStepNm(motorCalibration, "x", forward: true);
             double? stepNmY = ReadMeasuredStepNm(motorCalibration, "y", forward: true);
             double? stepNmYBack = ReadMeasuredStepNm(motorCalibration, "y", forward: false);
+            // El sentido de vuelta de X no interviene en el cálculo del grid (X nunca
+            // retrocede mientras se toman imágenes) pero sí en el regreso al origen del
+            // final, que sí es un movimiento hacia atrás y rinde menos por paso.
+            double? stepNmXBack = ReadMeasuredStepNm(motorCalibration, "x", forward: false);
 
-            var grid = MosaicGridCalculator.Calculate(
-                areaX_mm, areaY_mm, allCalibrations, frameWidth, frameHeight,
-                stepNmX, stepNmY, stepNmYBack);
+            MosaicGridCalculator.GridResult grid;
+            try
+            {
+                grid = MosaicGridCalculator.Calculate(
+                    areaX_mm, areaY_mm, allCalibrations, frameWidth, frameHeight,
+                    stepNmX, stepNmY, stepNmYBack);
+            }
+            catch
+            {
+                // El KIM ya está tomado en este punto. Si el grid no se puede calcular
+                // hay que soltarlo antes de propagar, o queda ocupado y el siguiente
+                // intento falla al conectar sin relación aparente con la causa real.
+                try { deviceconnect.StopPolling(); deviceconnect.Disconnect(true); } catch { }
+                throw;
+            }
+
+            foreach (var advertencia in grid.Warnings)
+                Console.WriteLine($"[TakeTour] AVISO DE CALIBRACIÓN: {advertencia}");
 
             Console.WriteLine($"[TakeTour] Patrón de barrido: {sweepPattern}. " +
                 $"MotorStepY ida={grid.MotorStepY}, vuelta={grid.MotorStepYBackward} " +
@@ -253,6 +272,17 @@ namespace GotsThorlabs.BLL
                 $"PxPerStepX={grid.PxPerStepX:G6}, PxPerStepY={grid.PxPerStepY:G6}, " +
                 $"StepMmX={grid.StepMmX:G6}, StepMmY={grid.StepMmY:G6}.");
 
+            // Estimación previa. El tiempo de cada movimiento ya se conoce en este punto,
+            // así que se deja registrado antes de empezar en lugar de descubrir a mitad
+            // del recorrido que faltaba una hora.
+            var estimate = TourTimeEstimator.Calculate(grid, sweepPattern, stepRate);
+            Console.WriteLine($"[TakeTour] Estimación: {estimate.TotalImages} imágenes, " +
+                $"{estimate.TotalSeconds / 60:F1} min en total ({estimate.MotionSeconds / 60:F1} de motor, " +
+                $"{estimate.CaptureSeconds / 60:F1} de captura). Movimiento más largo: " +
+                $"{estimate.LongestMoveSteps} pasos ≈ {estimate.LongestMoveSeconds:F0}s a {estimate.StepRate} pasos/s.");
+            foreach (var advertencia in estimate.Warnings)
+                Console.WriteLine($"[TakeTour] AVISO DE PLANIFICACIÓN: {advertencia}");
+
             // Inicializar arrays dinámicamente con el grid calculado.
             // columns = eje X (Channel1), rows = eje Y (Channel2)
             columns = grid.ImagesX;
@@ -262,7 +292,55 @@ namespace GotsThorlabs.BLL
             mosaic = new Mat();
             // fin inicialización grid
 
+            // ORIGEN DEL RECORRIDO
+            // El KIM101 no tiene referencia absoluta —no hay encoder ni se usan finales
+            // de carrera—, así que el origen de un recorrido es, por definición, el punto
+            // donde está la platina al empezar. Eso no se decía en ninguna parte y el
+            // recorrido comandaba posiciones absolutas contra el contador heredado del
+            // recorrido anterior. Con eso el primer movimiento acababa siendo un viaje de
+            // más de cien mil pasos (varios minutos), y encima terminaba en un punto que
+            // ya no era el origen físico, porque el contador se había desplazado respecto
+            // de la platina durante el recorrido previo (ver AxisTravel). Redefinir el
+            // cero aquí hace explícito lo que el recorrido ya daba por supuesto y elimina
+            // ese viaje inicial: no mueve el motor, solo reetiqueta la posición actual.
+            int origenX, origenY;
+            try
+            {
+                int heredadoX = deviceconnect.GetPosition(chanelsDevice[1]);
+                int heredadoY = deviceconnect.GetPosition(chanelsDevice[2]);
+                deviceconnect.SetPositionToZero(chanelsDevice[1]);
+                deviceconnect.SetPositionToZero(chanelsDevice[2]);
+                origenX = deviceconnect.GetPosition(chanelsDevice[1]);
+                origenY = deviceconnect.GetPosition(chanelsDevice[2]);
+                Console.WriteLine($"[TakeTour] Origen fijado en la posición actual de la platina. " +
+                    $"Contador heredado X={heredadoX}, Y={heredadoY} -> ahora X={origenX}, Y={origenY}.");
+            }
+            catch (Exception ex)
+            {
+                // Todavía no hay fila de tour que marcar, pero el KIM sí está tomado: hay
+                // que soltarlo o queda ocupado hasta reiniciar la aplicación.
+                try { deviceconnect.StopPolling(); deviceconnect.Disconnect(true); } catch { }
+                throw new HubException($"No se pudo fijar el origen del recorrido en el dispositivo KIM: {ex.Message}");
+            }
+            if (origenX != 0 || origenY != 0)
+                Console.WriteLine($"[TakeTour] ADVERTENCIA: el contador no quedó en cero al redefinir el origen " +
+                    $"(X={origenX}, Y={origenY}). El recorrido continúa, pero el regreso al origen del final " +
+                    $"puede quedar desplazado.");
+
+            // Seguimiento de la posición FÍSICA, que deja de coincidir con el contador en
+            // cuanto los dos sentidos rinden distinto. Es lo que permite deshacer al final
+            // el desplazamiento real y no el contable.
+            var travelX = new AxisTravel(
+                stepNmX ?? MosaicGridCalculator.NmPerStep,
+                stepNmXBack ?? stepNmX ?? MosaicGridCalculator.NmPerStep,
+                origenX);
+            var travelY = new AxisTravel(
+                stepNmY ?? MosaicGridCalculator.NmPerStep,
+                stepNmYBack ?? stepNmY ?? MosaicGridCalculator.NmPerStep,
+                origenY);
+
             string fullnamefolder = CreateTour(grid.CalibrationX.PicsCalibrationId);
+            bool tourCompleted = false;
 
             // RECORRIDO EN PATRÓN "S":
             // - El eje X (Channel1) siempre avanza (j * MotorStepX).
@@ -274,111 +352,210 @@ namespace GotsThorlabs.BLL
             // Posición comandada del eje Y al empezar la columna actual. Se lleva a mano
             // porque con los pasos escalados por sentido las posiciones ya no son
             // múltiplos de un único MotorStepY.
-            long yColumnStart = 0;
-            long yColumnEnd = 0;
+            long yColumnStart = origenY;
+            long yColumnEnd = origenY;
 
-            for (int j = 0; j < grid.ImagesX; j++)
+            try
             {
-                bool estatusMovementA = Move_Method1(deviceconnect, chanelsDevice[1], j * grid.MotorStepX);
-                if (!estatusMovementA)
+                for (int j = 0; j < grid.ImagesX; j++)
                 {
-                    deviceconnect.StopPolling();
-                    deviceconnect.Disconnect(true);
-                    throw new Exception("Error al mover el dispositivo (eje X), revisar la coneccion [ES]");
-                }
+                    long xTarget = origenX + (long)j * grid.MotorStepX;
+                    var moveX = MotorMotion.MoveAndWait(deviceconnect, chanelsDevice[1], (int)xTarget, stepRate);
+                    if (!moveX.Ok)
+                        throw new Exception(
+                            $"Recorrido detenido en la columna {j + 1} de {grid.ImagesX}. {moveX.Describe("X")}");
+                    travelX.Record(moveX.PositionReached);
 
-                // El unidireccional recorre siempre en positivo; las serpentinas alternan.
-                bool descending = sweepPattern != SweepPattern.Unidirectional && (j % 2 == 1);
+                    // El unidireccional recorre siempre en positivo; las serpentinas alternan.
+                    bool descending = sweepPattern != SweepPattern.Unidirectional && (j % 2 == 1);
 
-                // Solo la serpentina escalada compensa el sentido; las otras dos usan el
-                // mismo número de pasos en ambos.
-                int stepY = (descending && sweepPattern == SweepPattern.SerpentineScaled)
-                    ? grid.MotorStepYBackward
-                    : grid.MotorStepY;
+                    // Solo la serpentina escalada compensa el sentido; las otras dos usan el
+                    // mismo número de pasos en ambos.
+                    int stepY = (descending && sweepPattern == SweepPattern.SerpentineScaled)
+                        ? grid.MotorStepYBackward
+                        : grid.MotorStepY;
 
-                for (int k = 0; k < grid.ImagesY; k++)
-                {
-                    // k es el orden de visita; la fila FÍSICA es la que decide dónde se
-                    // guarda. Antes se almacenaba por orden de visita, de modo que las
-                    // columnas descendentes quedaban invertidas de arriba abajo respecto
-                    // de las ascendentes y el mosaico salía con columnas espejadas.
-                    int spatialRow = descending ? (grid.ImagesY - 1 - k) : k;
-                    long yTarget = yColumnStart + (descending ? -(long)k * stepY : (long)k * stepY);
-
-                    Mat frame = new Mat();
-
-                    bool estatusMovement = Move_Method1(deviceconnect, chanelsDevice[2], (int)yTarget);
-                    if (!estatusMovement)
+                    for (int k = 0; k < grid.ImagesY; k++)
                     {
-                        deviceconnect.StopPolling();
-                        deviceconnect.Disconnect(true);
-                        throw new Exception("Error al mover el dispositivo (eje Y), revisar la coneccion [ES]");
+                        // k es el orden de visita; la fila FÍSICA es la que decide dónde se
+                        // guarda. Antes se almacenaba por orden de visita, de modo que las
+                        // columnas descendentes quedaban invertidas de arriba abajo respecto
+                        // de las ascendentes y el mosaico salía con columnas espejadas.
+                        int spatialRow = descending ? (grid.ImagesY - 1 - k) : k;
+                        long yTarget = yColumnStart + (descending ? -(long)k * stepY : (long)k * stepY);
+
+                        var moveY = MotorMotion.MoveAndWait(deviceconnect, chanelsDevice[2], (int)yTarget, stepRate);
+                        if (!moveY.Ok)
+                            throw new Exception(
+                                $"Recorrido detenido en la columna {j + 1} de {grid.ImagesX}, " +
+                                $"fila {k + 1} de {grid.ImagesY}. {moveY.Describe("Y")}");
+                        travelY.Record(moveY.PositionReached);
+
+                        if (k == grid.ImagesY - 1) yColumnEnd = yTarget;
+
+                        string pathsave = TakeAPic("unitofpics", fullnamefolder, j, spatialRow, 0);
+                        var splitpathdir = pathsave.Split($"{Path.DirectorySeparatorChar}");
+                        int dimpath = splitpathdir.Length;
+                        var namephotounits = splitpathdir[dimpath - 1];
+                        var urlunitpi = urlslocals[2] + $"/SouerceStaticFiles/{namefolder}/" + namephotounits + "?ranmd=" + rand.Next().ToString();
+                        yield return urlunitpi;
                     }
-
-                    if (k == grid.ImagesY - 1) yColumnEnd = yTarget;
-
-                    string pathsave = TakeAPic("unitofpics", fullnamefolder, j, spatialRow, 0);
-                    var splitpathdir = pathsave.Split($"{Path.DirectorySeparatorChar}");
-                    int dimpath = splitpathdir.Length;
-                    var namephotounits = splitpathdir[dimpath - 1];
-                    var urlunitpi = urlslocals[2] + $"/SouerceStaticFiles/{namefolder}/" + namephotounits + "?ranmd=" + rand.Next().ToString();
-                    yield return urlunitpi;
-                }
-                // Punto de partida de la siguiente columna.
-                if (sweepPattern == SweepPattern.Unidirectional)
-                {
-                    // Hay que volver físicamente al inicio de la columna. Comandar los
-                    // mismos pasos que se subieron dejaría el eje corto, porque el
-                    // retroceso rinde menos: se comanda la cantidad equivalente en
-                    // distancia usando el paso de vuelta.
-                    long returnSteps = (long)(grid.ImagesY - 1) * grid.MotorStepYBackward;
-                    long yReturn = yColumnEnd - returnSteps;
-
-                    if (j < grid.ImagesX - 1)
+                    // Punto de partida de la siguiente columna.
+                    if (sweepPattern == SweepPattern.Unidirectional)
                     {
-                        if (!Move_Method1(deviceconnect, chanelsDevice[2], (int)yReturn))
+                        // Hay que volver físicamente al inicio de la columna. Comandar los
+                        // mismos pasos que se subieron dejaría el eje corto, porque el
+                        // retroceso rinde menos: se comanda la cantidad equivalente en
+                        // distancia usando el paso de vuelta.
+                        long returnSteps = (long)(grid.ImagesY - 1) * grid.MotorStepYBackward;
+                        long yReturn = yColumnEnd - returnSteps;
+
+                        if (j < grid.ImagesX - 1)
                         {
-                            deviceconnect.StopPolling();
-                            deviceconnect.Disconnect(true);
-                            throw new Exception("Error al retornar el eje Y entre columnas, revisar la coneccion [ES]");
+                            // Este es el movimiento más largo del patrón unidireccional:
+                            // deshace de una vez toda la columna. Con el límite fijo de dos
+                            // minutos que había antes, era el primero en agotarlo.
+                            var moveBack = MotorMotion.MoveAndWait(
+                                deviceconnect, chanelsDevice[2], (int)yReturn, stepRate, settleMs: 0);
+                            if (!moveBack.Ok)
+                                throw new Exception(
+                                    $"Recorrido detenido al retornar el eje Y tras la columna {j + 1} " +
+                                    $"de {grid.ImagesX}. {moveBack.Describe("Y")}");
+                            travelY.Record(moveBack.PositionReached);
                         }
+                        yColumnStart = yReturn;
                     }
-                    yColumnStart = yReturn;
+                    else
+                    {
+                        // Las serpentinas empiezan la siguiente columna donde terminó esta.
+                        yColumnStart = yColumnEnd;
+                    }
+
+                    Mat mosaicv = new Mat();
+                    Cv2.VConcat(image, mosaicv);
+                    finalimg[j] = mosaicv;
+
+                    string mosaicpathv = Path.Combine(fullnamefolder, $"columnpic{j}.jpg");
+
+                    mosaicv.SaveImage(mosaicpathv);
+                    var namephoto1 = mosaicpathv.Split($"{Path.DirectorySeparatorChar}");
+                    int lengtpicpath1 = namephoto1.Length;
+                    var namepicstream1 = namephoto1[lengtpicpath1 - 1];
+                    var urlstaticfiles1 = urlslocals[2] + $"/SouerceStaticFiles/{namefolder}/" + namepicstream1 + "?ranmd=" + rand.Next().ToString();
+                    yield return urlstaticfiles1;
                 }
-                else
+
+                Cv2.HConcat(finalimg, mosaic);
+                string mosaicpath = Path.Combine(fullnamefolder, $"HxV.jpg");
+                mosaic.SaveImage(mosaicpath);
+                var namephoto = mosaicpath.Split($"{Path.DirectorySeparatorChar}");
+                int lengtpicpath = namephoto.Length;
+                var namepicstream = namephoto[lengtpicpath - 1];
+
+                var urlstaticfiles = urlslocals[2] + $"/SouerceStaticFiles/{namefolder}/" + namepicstream + "?ranmd=" + rand.Next().ToString();
+                EndStatus("succes");
+                tourCompleted = true;
+                yield return urlstaticfiles;
+            }
+            finally
+            {
+                // Se ejecuta tanto si el recorrido terminó como si se cortó por un fallo o
+                // porque el cliente dejó de consumir el streaming. Antes cada salida hacía
+                // su propia limpieza a mano y la vía de error no marcaba el tour, que se
+                // quedaba con el estado vacío: un recorrido cortado era indistinguible en
+                // la base de datos de uno todavía en marcha.
+                //
+                // El estado se escribe ANTES de tocar el motor: devolver la platina al
+                // origen puede llevar varios minutos, y si el proceso se cae durante esa
+                // maniobra el recorrido volvería a quedar sin marcar, que es justo lo que
+                // se está corrigiendo.
+                if (!tourCompleted)
                 {
-                    // Las serpentinas empiezan la siguiente columna donde terminó esta.
-                    yColumnStart = yColumnEnd;
+                    try { EndStatus("error"); }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[TakeTour] No se pudo marcar el recorrido como fallido: {ex.Message}");
+                    }
                 }
 
-                Mat mosaicv = new Mat();
-                Cv2.VConcat(image, mosaicv);
-                finalimg[j] = mosaicv;
+                FinalizeTour(deviceconnect, travelX, travelY, stepRate);
+            }
+        }
 
-                string mosaicpathv = Path.Combine(fullnamefolder, $"columnpic{j}.jpg");
+        /// <summary>
+        /// Cierre del recorrido: devuelve la platina al punto físico donde empezó, vuelve
+        /// a sincronizar el contador con ese origen y suelta el dispositivo.
+        ///
+        /// Devolver la platina importa más de lo que parece. El contador y la posición
+        /// real se separan durante el recorrido (ver <see cref="AxisTravel"/>), así que
+        /// sin este cierre cada recorrido dejaba la platina en un sitio distinto del que
+        /// decía el contador, y el error se acumulaba de un recorrido al siguiente.
+        /// </summary>
+        private static void FinalizeTour(
+            KCubeInertialMotor device,
+            AxisTravel travelX,
+            AxisTravel travelY,
+            long stepRate)
+        {
+            try
+            {
+                if (device.IsConnected)
+                {
+                    ReturnToPhysicalOrigin(device, InertialMotorStatus.MotorChannels.Channel1, travelX, stepRate, "X");
+                    ReturnToPhysicalOrigin(device, InertialMotorStatus.MotorChannels.Channel2, travelY, stepRate, "Y");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[TakeTour] No se pudo devolver la platina al origen: {ex.Message}");
+            }
+            finally
+            {
+                try { device.StopPolling(); } catch { }
+                try { device.Disconnect(true); } catch { }
+            }
+        }
 
-                mosaicv.SaveImage(mosaicpathv);
-                var namephoto1 = mosaicpathv.Split($"{Path.DirectorySeparatorChar}");
-                int lengtpicpath1 = namephoto1.Length;
-                var namepicstream1 = namephoto1[lengtpicpath1 - 1];
-                var urlstaticfiles1 = urlslocals[2] + $"/SouerceStaticFiles/{namefolder}/" + namepicstream1 + "?ranmd=" + rand.Next().ToString();
-                yield return urlstaticfiles1;
+        /// <summary>
+        /// Lleva un eje al punto físico donde empezó el recorrido y pone su contador a
+        /// cero. El número de pasos del retorno no es el mismo que se recorrió a la ida,
+        /// porque cada sentido rinde una distancia distinta por paso.
+        /// </summary>
+        private static void ReturnToPhysicalOrigin(
+            KCubeInertialMotor device,
+            InertialMotorStatus.MotorChannels channel,
+            AxisTravel travel,
+            long stepRate,
+            string axisLabel)
+        {
+            int target = travel.CounterForPhysicalOrigin();
+
+            if (target != travel.Counter)
+            {
+                Console.WriteLine($"[TakeTour] Devolviendo el eje {axisLabel} al origen: " +
+                    $"desplazamiento físico acumulado {travel.PhysicalMm:F4} mm, " +
+                    $"contador {travel.Counter} -> {target}.");
+
+                var result = MotorMotion.MoveAndWait(device, channel, target, stepRate, settleMs: 0);
+                if (!result.Ok)
+                {
+                    Console.WriteLine($"[TakeTour] {result.Describe(axisLabel)} " +
+                        "El contador no se pone a cero: el siguiente recorrido tomará como origen " +
+                        "el punto donde haya quedado la platina.");
+                    return;
+                }
+                travel.Record(result.PositionReached);
             }
 
-            Cv2.HConcat(finalimg, mosaic);
-            string mosaicpath = Path.Combine(fullnamefolder, $"HxV.jpg");
-            mosaic.SaveImage(mosaicpath);
-            var namephoto = mosaicpath.Split($"{Path.DirectorySeparatorChar}");
-            int lengtpicpath = namephoto.Length;
-            var namepicstream = namephoto[lengtpicpath - 1];
-
-            // Tidy up and exit
-            deviceconnect.StopPolling();
-            deviceconnect.Disconnect(true);
-            var urlstaticfiles = urlslocals[2] + $"/SouerceStaticFiles/{namefolder}/" + namepicstream + "?ranmd=" + rand.Next().ToString();
-            EndStatus("succes");
-            yield return urlstaticfiles;
-
+            try
+            {
+                device.SetPositionToZero(channel);
+                Console.WriteLine($"[TakeTour] Eje {axisLabel} en su origen físico, contador a cero.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[TakeTour] Eje {axisLabel}: no se pudo poner el contador a cero: {ex.Message}");
+            }
         }
         public bool CreatesticherOpencv(int mode)/////// DEBE SER AISLADA EN SU PROPIA UNOT OF WORK
         {
@@ -529,49 +706,21 @@ namespace GotsThorlabs.BLL
                 : null;
         }
 
+        /// <summary>
+        /// Movimiento con espera hasta que la platina llega. Se conserva por
+        /// compatibilidad con quien lo llame desde fuera de esta clase; el recorrido usa
+        /// <see cref="MotorMotion.MoveAndWait"/> directamente, porque necesita saber POR
+        /// QUÉ falló un movimiento y un bool no lo permite: un límite de tiempo agotado,
+        /// un eje trabado y una caída de comunicación llegaban aquí como el mismo
+        /// "false". Al no recibir la velocidad configurada del grupo, esta versión asume
+        /// la nominal, así que dimensiona el tiempo de forma más conservadora.
+        /// </summary>
         public static bool Move_Method1(KCubeInertialMotor device, InertialMotorStatus.MotorChannels channel, int position)
         {
-            // se crea la condicion para que la posicion a mover no sea igual a la acutal
-            if (device.GetPosition(channel) == position) { return true; }
-            try
-            {
-                // timeout 0 = no bloqueante: MoveTo retorna de inmediato, antes de que
-                // la platina termine de moverse. El motor inercial avanza aplicando
-                // pulsos de vibración y el contador de posición solo sube a medida que
-                // se mueve físicamente, así que hay que esperar a que GetPosition()
-                // reporte la posición pedida (y dejar que amortigüe la vibración
-                // residual) antes de dejar tomar la foto. Antes esta función retornaba
-                // "true" apenas se enviaba el comando, sin esperar nada, por lo que
-                // TakeAPic podía capturar con la platina todavía en movimiento —
-                // mismo patrón que ya se corrigió para la calibración automática en
-                // PicsCalibrationService.MoveMotor, replicado aquí para la toma real.
-                device.MoveTo(channel, position, 0);
-
-                const int pollIntervalMs = 100;
-                const int settleMs = 500;        // deja amortiguar la vibración residual tras llegar
-                const int safetyMaxMs = 120_000; // 2 min, válvula de seguridad ante un motor trabado
-
-                var elapsed = 0;
-                while (device.GetPosition(channel) != position)
-                {
-                    Thread.Sleep(pollIntervalMs);
-                    elapsed += pollIntervalMs;
-                    if (elapsed >= safetyMaxMs)
-                    {
-                        // El motor no llegó a la posición esperada dentro del tiempo de
-                        // seguridad: se reporta como movimiento fallido (igual que antes
-                        // cuando MoveTo lanzaba excepción) en vez de tomar la foto a ciegas.
-                        return false;
-                    }
-                }
-
-                Thread.Sleep(settleMs);
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-            return true;
+            var result = MotorMotion.MoveAndWait(device, channel, position, MotorMotion.DefaultStepRate);
+            if (!result.Ok)
+                Console.WriteLine($"[TakeTour] {result.Describe(channel.ToString())}");
+            return result.Ok;
         }
         /// <summary>
         /// funcion encargada de crear la carpeta y la persistencia para la tabla tour

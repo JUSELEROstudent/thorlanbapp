@@ -66,7 +66,13 @@ namespace GotsThorlabs.Services
                 ReadStepNm(motorCalibration, "y", forward: false));
 
             var estimate = TourTimeEstimator.Calculate(
-                grid, pattern, motorCalibration?.StepRate ?? 200);
+                grid, pattern, motorCalibration?.StepRate ?? MotorMotion.DefaultStepRate);
+
+            // Los problemas detectados al calcular el grid describen la calidad de la
+            // calibración, no del recorrido, pero es aquí donde el operador los va a leer
+            // antes de decidir si lanza el barrido.
+            foreach (var advertencia in grid.Warnings)
+                estimate.Warnings.Add(advertencia);
 
             if (motorCalibration == null)
             {
